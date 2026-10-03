@@ -24,7 +24,6 @@ FocusScope {
                 id: pinsTile
                 label: "My Pins"
                 column: 0; row: 1
-                focus: true
                 KeyNavigation.right: newsTile
                 KeyNavigation.up: openTrayTile
                 KeyNavigation.down: recentsTile
@@ -35,7 +34,6 @@ FocusScope {
                 id: recentsTile
                 label: "Recents"
                 column: 0; row: 2
-                focus: true
                 KeyNavigation.right: mediaTile
                 KeyNavigation.up: pinsTile
                 onActivated: console.log("Recents")
@@ -46,7 +44,6 @@ FocusScope {
                 label: "News"
                 column: 1; row: 0
                 columnSpan: 2; rowSpan: 2
-                focus: true
                 KeyNavigation.down: mediaTile
                 KeyNavigation.left: openTrayTile
                  KeyNavigation.right: searchTile
@@ -57,7 +54,6 @@ FocusScope {
                 id: mediaTile
                 label: "Media"
                 column: 1; row: 2
-                focus: true
                 KeyNavigation.right: appsTile
                 KeyNavigation.left: recentsTile
                 KeyNavigation.up: newsTile
@@ -68,7 +64,6 @@ FocusScope {
                 id: appsTile
                 label: "Apps"
                 column: 2; row: 2
-                focus: true
                 KeyNavigation.right: gamesTile
                 KeyNavigation.left: mediaTile
                 KeyNavigation.up: newsTile
@@ -79,7 +74,6 @@ FocusScope {
                 id: searchTile
                 label: "Search"
                 column: 3; row: 0
-                focus: true
                 KeyNavigation.left: newsTile
                 KeyNavigation.down: settingsTile
                 onActivated: root.tabRequested(0)
@@ -89,9 +83,9 @@ FocusScope {
                 id: settingsTile
                 label: "Settings"
                 column: 3; row: 1
-                focus: true
                 KeyNavigation.left: newsTile
                 KeyNavigation.up: searchTile
+                KeyNavigation.down: gamesTile
                 onActivated: root.tabRequested(6)
             }
 
@@ -99,7 +93,6 @@ FocusScope {
                 id: gamesTile
                 label: "Games"
                 column: 3; row: 2
-                focus: true
                 KeyNavigation.left: appsTile
                 KeyNavigation.up: settingsTile
                 onActivated: root.tabRequested(3)

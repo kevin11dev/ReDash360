@@ -28,6 +28,7 @@ qt_add_qml_module(appReDash360
         MoviesTv.qml
         Apps.qml
         Settings.qml
+        Tile.qml
         QML_FILES Tile.qml
 )
 

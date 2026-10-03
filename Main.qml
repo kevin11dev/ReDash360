@@ -1,13 +1,12 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts
 
 ApplicationWindow {
       id: window
 
       width: 1280
       height: 720
-      visible: Window.FullScreen
+      visibility: Window.FullScreen
       title: "ReDash360"
       color: "#eeeeee"
 
@@ -18,7 +17,7 @@ ApplicationWindow {
 
       readonly property var tabs: [
             {name: "bing", file: "Bing.qml"},
-            {name: "home", file: "HOme.qml"},
+            {name: "home", file: "Home.qml"},
             {name: "social", file: "Social.qml"},
             {name: "games", file: "Games.qml"},
             {name: "movies & tv", file: "MoviesTv.qml"},
@@ -77,7 +76,7 @@ ApplicationWindow {
                   orientation: ListView.Horizontal
                   spacing: window.pageGap
                   model: window.tabs
-                  Component.onCOmpleted: currentIndex = 1
+                  Component.onCompleted: currentIndex = 1
                   cacheBuffer: 10000
 
                   snapMode: ListView.SnapOneItem
