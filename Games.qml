@@ -1,29 +1,102 @@
 import QtQuick
 
-Rectangle {
-    color: "#eeeeee"
+TilePage {
+    id: root
+    cellWidth: 247
 
-    Text {
-        anchors.centerIn: parent
-        text: "GAMES"
-        color: "#107C10"
-        font.pixelSize: 48
-        font.bold: true
+    Tile{                                       //My Games
+        id: myGamesTile
+        label: "My Games"
+        column: 0; row: 0
+        focus: true
+        KeyNavigation.down: browseGamesTile
+        onActivated: console.log("My Games")
     }
 
-    Rectangle {
-        anchors.centerIn: parent
-        anchors.verticalCenterOffset: 90
+    Tile{                                       //Browse Games
+        id: browseGamesTile
+        label: "Browse Games"
+        column: 0; row: 1
+        focus: true
+        KeyNavigation.up: myGamesTile
+        KeyNavigation.down: searchGamesTile
+        onActivated: console.log("Browse Games")
+    }
 
-        width: 420
-        height: 120
-        color: "#107C10"
+    Tile{                                       //Search Games
+        id: searchGamesTile
+        label: "Search Games"
+        column: 0; row: 2
+        focus: true
+        KeyNavigation.up: browseGamesTile
+        onActivated: console.log("Search Games")
+    }
 
-        Text {
-            anchors.centerIn: parent
-            text: "Your Games Library"
-            color: "white"
-            font.pixelSize: 25
-        }
+    Tile{                                       //Game 1
+        id: game1Tile
+        label: "Game1"
+        column: 1; row: 0
+        columnSpan: 2
+        focus: true
+        KeyNavigation.down: browseGamesTile
+        onActivated: console.log("Game1")
+    }
+
+    Tile{                                       //Game 2
+        id: game2Tile
+        label: "Game2"
+        column: 3; row: 0
+        columnSpan: 2
+        focus: true
+        KeyNavigation.down: browseGamesTile
+        onActivated: console.log("Game2")
+    }
+
+    Tile{                                       //Game 3
+        id: game3Tile
+        label: "Game3"
+        column: 1; row: 1
+        columnSpan: 2
+        focus: true
+        KeyNavigation.down: browseGamesTile
+        onActivated: console.log("Game3")
+    }
+
+    Tile{                                       //Game 4
+        id: game4Tile
+        label: "Game4"
+        column: 3; row: 1
+        columnSpan: 2
+        focus: true
+        KeyNavigation.down: browseGamesTile
+        onActivated: console.log("Game4")
+    }
+
+    Tile{                                       //Add-ons
+        id: addOnsTile
+        label: "Add-ons"
+        column: 1; row: 2
+        focus: true
+        KeyNavigation.down: browseGamesTile
+        onActivated: console.log("Add-ons")
+    }
+
+    Tile{                                       //Demos
+        id: demosTile
+        label: "Demos"
+        column: 2; row: 2
+        focus: true
+        KeyNavigation.down: browseGamesTile
+        onActivated: console.log("Demos")
+    }
+
+    Tile{                                       //Recommended
+        id: recomendedTile
+        label: "Recommended"
+        column: 3; row: 2
+        columnSpan: 2
+        focus: true
+        KeyNavigation.down: browseGamesTile
+        onActivated: console.log("Recommended")
     }
 }

@@ -1,7 +1,7 @@
 import QtQuick
 
 Rectangle {
-    color: "#eeeeee"
+    color: "transparent"
 
     Text {
         anchors.centerIn: parent

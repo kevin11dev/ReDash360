@@ -9,16 +9,12 @@ Rectangle{
     property int columnSpan: 1
     property int rowSpan: 1
 
-    readonly property int cellWidth: 310
-    readonly property int cellHeight: 150
-    readonly property int gap: 4
-
     signal activated()
 
-    x: column * (cellWidth + gap)
-    y: row * (cellHeight + gap)
-    width: columnSpan * cellWidth + (columnSpan - 1) * gap
-    height: rowSpan * cellHeight + (rowSpan - 1) * gap
+    x: column * (parent.cellWidth + parent.gap)
+    y: row * (parent.cellHeight + parent.gap)
+    width: columnSpan * parent.cellWidth + (columnSpan - 1) * parent.gap
+    height: rowSpan * parent.cellHeight + (rowSpan - 1) * parent.gap
 
     color: "#107C10"
     border.color: "white"

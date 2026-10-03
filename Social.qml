@@ -1,29 +1,33 @@
 import QtQuick
 
-Rectangle {
-    color: "#eeeeee"
+TilePage {
+    id: root
 
-    Text {
-        anchors.centerIn: parent
-        text: "SOCIAL"
-        color: "#107C10"
-        font.pixelSize: 48
-        font.bold: true
+    Tile{                                       //Friends
+        id: friendsTile
+        label: "Friends"
+        column: 0; row: 0
+        focus: true
+        KeyNavigation.down: avatarStoreTile
+        onActivated: console.log("Friends")
     }
 
-    Rectangle {
-        anchors.centerIn: parent
-        anchors.verticalCenterOffset: 90
+    Tile{                                       //Avatar Store
+        id: avatarStoreTile
+        label: "Avatar Store"
+        column: 0; row: 1
+        focus: true
+        KeyNavigation.up: friendsTile
+        KeyNavigation.down: signInOutTile
+        onActivated: console.log("Avatar Store")
+    }
 
-        width: 420
-        height: 120
-        color: "#107C10"
-
-        Text {
-            anchors.centerIn: parent
-            text: "Friends and Profile"
-            color: "white"
-            font.pixelSize: 25
-        }
+    Tile{                                       //Sign In or Out
+        id: signInOutTile
+        label: "Sign In or Out"
+        column: 0; row: 2
+        focus: true
+        KeyNavigation.up: avatarStoreTile
+        onActivated: console.log("Sign In or Out")
     }
 }

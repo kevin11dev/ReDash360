@@ -29,7 +29,7 @@ qt_add_qml_module(appReDash360
         Apps.qml
         Settings.qml
         Tile.qml
-        QML_FILES Tile.qml
+        TilePage.qml
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

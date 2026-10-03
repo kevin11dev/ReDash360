@@ -8,7 +8,17 @@ ApplicationWindow {
       height: 720
       visibility: Window.FullScreen
       title: "ReDash360"
-      color: "#eeeeee"
+      background: Rectangle {
+            gradient: Gradient{
+                  GradientStop{position: 0.00; color: "#525357"}
+                  GradientStop{position: 0.20; color: "#65666a"}
+                  GradientStop{position: 0.40; color: "#808185"}
+                  GradientStop{position: 0.60; color: "#a0a0a2"}
+                  GradientStop{position: 0.78; color: "#b3b3b5"}
+                  GradientStop{position: 0.88; color: "#acadaf"}
+                  GradientStop{position: 1.00; color: "#8a8b8f"}
+            }
+      }
 
       Shortcut{
             sequence: "Esc"
@@ -37,15 +47,9 @@ ApplicationWindow {
 
             Row{
                   id: tabRow
-                  y: 120
+                  anchors.horizontalCenter:  parent.horizontalCenter
+                  y: 140
                   spacing: 48
-                  x: (canvas.width - window.pageWidth) / 2 - (tabRepeater.count > 0 ? tabRepeater.itemAt(pages.currentIndex).x : 0)
-                  Behavior on x {
-                        NumberAnimation {
-                              duration: 300
-                              easing.type: Easing.OutCubic
-                        }
-                  }
 
                   Repeater{
                         id: tabRepeater
@@ -57,8 +61,9 @@ ApplicationWindow {
 
                               text: modelData.name
                               font.pixelSize: 44
-                              color: "#333333"
-                              opacity: index === pages.currentIndex ? 1.0 : 0.45
+                              color: "white"
+                              font.weight: Font.Light
+                              opacity: index === pages.currentIndex ? 1.0 : 0.6
                               Behavior on opacity {NumberAnimation{duration: 200}}
 
                               TapHandler{onTapped: pages.currentIndex = index}
@@ -68,9 +73,13 @@ ApplicationWindow {
 
             ListView {
                   id: pages
-                  anchors.fill: parent
-                  anchors.topMargin: 200
-                  anchors.bottomMargin: 80
+
+                  anchors.top: tabRow.bottom
+                  anchors.topMargin: 90
+                  anchors.left: parent.left
+                  anchors.right: parent.right
+                  anchors.bottom: parent.bottom
+
                   focus: true
 
                   orientation: ListView.Horizontal
