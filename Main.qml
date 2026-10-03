@@ -7,144 +7,103 @@ ApplicationWindow {
 
       width: 1280
       height: 720
-      visible: true
+      visible: Window.FullScreen
       title: "ReDash360"
       color: "#eeeeee"
 
-      property int currentTab: 1
-
-      property var tabNames: [
-            "Bing",
-            "Home",
-            "Social",
-            "Games",
-            "Movies & TV",
-            "Apps",
-            "Settings"
-      ]
-
-      property var tabFiles: [
-            "Bing.qml",
-            "Home.qml",
-            "Social.qml",
-            "Games.qml",
-            "MoviesTv.qml",
-            "Apps.qml",
-            "Settings.qml"
-      ]
-
-      Rectangle{
-            id: topBar
-
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-
-            height: 70
-            color: "#eeeeee"
-
-            Row {
-                 anchors.left: parent.left
-                 anchors.leftMargin: 50
-                 anchors.verticalCenter: parent.verticalCenter
-                 spacing: 28
-
-                 Repeater {
-                        model: tabNames
-
-                        delegate: Item {
-                               required property int index
-
-                               width: tabText.implicitWidth
-                               height: topBar.height
-
-                               Text {
-                                    id: tabText
-
-                                    anchors.centerIn: parent
-                                    text: tabNames[index]
-                                    color: index === window.currentTab ? "#107C10" : "#777777"
-                                    font.pixelSize: 20
-                               }
-
-                               Rectangle{
-                                    anchors.bottom: parent.bottom
-                                    anchors.horizontalCenter: parent.horizontalCenter
-
-                                    width: tabText.implicitWidth
-                                    height: 3
-                                    color: "#107C10"
-                                    visible: index === window.currentTab
-                               }
-
-                               MouseArea{
-                                    anchors.fill: parent
-
-                                    onClicked:{
-                                          window.openTab(index)
-                                    }
-                               }
-                        }
-                 }
-            }
+      Shortcut{
+            sequence: "Esc"
+            onActivated: Qt.quit()
       }
 
-      StackView{
-            id: pageStack
+      readonly property var tabs: [
+            {name: "bing", file: "Bing.qml"},
+            {name: "home", file: "HOme.qml"},
+            {name: "social", file: "Social.qml"},
+            {name: "games", file: "Games.qml"},
+            {name: "movies & tv", file: "MoviesTv.qml"},
+            {name: "apps", file: "Apps.qml"},
+            {name: "settings", file: "Settings.qml"},
+      ]
 
-            anchors.top: topBar.bottom
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
+      readonly property int pageWidth: 1252
+      readonly property int pageGap: 160
 
-            initialItem: Qt.resolvedUrl("Home.qml")
+      Item{
+            id: canvas
+            width: 1920
+            height: 1080
+            anchors.centerIn: parent
+            scale: Math.min(window.width / width, window.height / height)
 
-            replaceEnter: Transition{
-                  ParallelAnimation {
+            Row{
+                  id: tabRow
+                  y: 120
+                  spacing: 48
+                  x: (canvas.width - window.pageWidth) / 2 - (tabRepeater.count > 0 ? tabRepeater.itemAt(pages.currentIndex).x : 0)
+                  Behavior on x {
                         NumberAnimation {
-                               property: "x"
-                               from: pageStack.width
-                               to: 0
-                               duration: 220
-                               easing.type: Easing.OutCubic
+                              duration: 300
+                              easing.type: Easing.OutCubic
                         }
+                  }
 
+                  Repeater{
+                        id: tabRepeater
+                        model: window.tabs
 
-                        NumberAnimation {
-                               property: "opacity"
-                               from: 0
-                               to: 1
-                               duration: 200
+                        delegate: Text{
+                              required property int index
+                              required property var modelData
+
+                              text: modelData.name
+                              font.pixelSize: 44
+                              color: "#333333"
+                              opacity: index === pages.currentIndex ? 1.0 : 0.45
+                              Behavior on opacity {NumberAnimation{duration: 200}}
+
+                              TapHandler{onTapped: pages.currentIndex = index}
                         }
                   }
             }
 
-            replaceExit: Transition{
-                  ParallelAnimation {
-                        NumberAnimation {
-                               property: "x"
-                               from: 0
-                               to: -pageStack.width
-                               duration: 220
-                               easing.type: Easing.OutCubic
-                        }
+            ListView {
+                  id: pages
+                  anchors.fill: parent
+                  anchors.topMargin: 200
+                  anchors.bottomMargin: 80
+                  focus: true
 
+                  orientation: ListView.Horizontal
+                  spacing: window.pageGap
+                  model: window.tabs
+                  Component.onCOmpleted: currentIndex = 1
+                  cacheBuffer: 10000
 
-                        NumberAnimation {
-                               property: "opacity"
-                               from: 1
-                               to: 0
-                               duration: 200
+                  snapMode: ListView.SnapOneItem
+                  highlightRangeMode: ListView.StrictlyEnforceRange
+                  preferredHighlightBegin: (width - window.pageWidth) / 2
+                  preferredHighlightEnd: preferredHighlightBegin + window.pageWidth
+                  highlightMoveDuration: 300
+
+                  delegate: Loader{
+                        id: page
+                        required property int index
+                        required property var modelData
+
+                        width: window.pageWidth
+                        height: pages.height
+                        source: modelData.file
+                        onLoaded: item.focus = true
+                        opacity: ListView.isCurrentItem ? 1.0 : 0.35
+                        Behavior on opacity {NumberAnimation {duration: 200}}
+
+                        Connections{
+                              target: page.item
+                              ignoreUnknownSignals: true
+                              function onTabRequested(index) {pages.currentIndex = index}
                         }
                   }
             }
-      }
-
-      function openTab(index){
-            if (index === currentTab)
-                 return
-
-            currentTab = index
-            pageStack.replace(Qt.resolvedUrl(tabFiles[index]))
       }
 }
