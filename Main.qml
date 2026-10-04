@@ -23,16 +23,19 @@ ApplicationWindow {
       Shortcut{
             sequence: "Q"
             onActivated: pages.decrementCurrentIndex()
+            enabled: !shelf.visible
       }
 
       Shortcut{
             sequence: "E"
             onActivated: pages.incrementCurrentIndex()
+            enabled: !shelf.visible
       }
 
       Shortcut{
             sequence: "Esc"
             onActivated: pages.currentIndex = 1
+            enabled: !shelf.visible
       }
 
 
@@ -120,7 +123,7 @@ ApplicationWindow {
                         Connections{
                               target: page.item
                               ignoreUnknownSignals: true
-                              function onTabRequested(index) {pages.currentIndex = index}
+                              function onTabRequested(index) {pages.currentIndex = index} function onShelfRequested() {shelf.open()}
                         }
                   }
             }
@@ -147,6 +150,11 @@ ApplicationWindow {
                         label: "Back"
                         visible: pages.currentIndex !== 1
                   }
+            }
+
+            GameShelf{
+                  id: shelf
+                  anchors.fill: parent
             }
       }
 }

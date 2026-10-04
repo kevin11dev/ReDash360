@@ -4,6 +4,7 @@ FocusScope {
     id: page
 
     signal tabRequested(int index)
+    signal shelfRequested()
 
     property alias cellWidth: grid.cellWidth
     property alias cellHeight: grid.cellHeight

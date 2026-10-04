@@ -9,7 +9,7 @@ TilePage {
         label: "My Games"
         column: 0; row: 0
         focus: true
-        onActivated: console.log("My Games")
+        onActivated: root.shelfRequested()
     }
 
     Tile{                                       //Browse Games
@@ -30,11 +30,11 @@ TilePage {
 
     Tile{                                       //Game 1
         id: game1Tile
-        label: "Game1"
+        label: "Blasphemous"
         column: 1; row: 0
         columnSpan: 2
         focus: true
-        onActivated: console.log("Game1")
+        onActivated: Launcher.play("Blasphemous", "steam steam://rungameid/774361")
     }
 
     Tile{                                       //Game 2

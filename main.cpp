@@ -8,6 +8,10 @@ int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
 
+    // Used by QSettings to name the config file: ~/.config/ReDash360/ReDash360.conf
+    app.setOrganizationName("ReDash360");
+    app.setApplicationName("ReDash360");
+
     QQmlApplicationEngine engine;
     QObject::connect(
         &engine,

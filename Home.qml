@@ -1,16 +1,18 @@
 import QtQuick
-import ReDash360
 
 TilePage {
     id: root
 
     Tile{                                       //Open Tray
         id: openTrayTile
-        label: "Open Tray"
+        label: Launcher.lastName !== "" ? Launcher.lastName : "Open Tray"
         hints: [{button: "Y", label: "Eject"}]
         column: 0; row: 0
         focus: true
-        onActivated: Launcher.run("eject -T")
+        onActivated: {
+            if(Launcher.lastCommand !== "")
+                Launcher.play(Launcher.lastName, Launcher.lastCOmmand)
+        }
     }
 
     Tile{                                       //Pins

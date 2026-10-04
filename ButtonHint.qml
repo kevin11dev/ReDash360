@@ -12,7 +12,7 @@ Row{
         width: 34
         height: 34
         radius: width / 2
-        anchors.verticalCenter: paren.verticalCenter
+        anchors.verticalCenter: parent.verticalCenter
         color:{
             switch(hint.button){
             case "A": return "#60a828"

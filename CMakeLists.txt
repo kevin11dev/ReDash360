@@ -16,7 +16,6 @@ endif()
 
 qt_add_executable(appReDash360
     main.cpp
-    gamepad.h gamepad.cpp
 )
 
 qt_add_qml_module(appReDash360
@@ -36,6 +35,8 @@ qt_add_qml_module(appReDash360
     SOURCES
         gamepad.h gamepad.cpp
         launcher.h launcher.cpp
+        gamelibrary.h gamelibrary.cpp
+        QML_FILES GameShelf.qml
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
