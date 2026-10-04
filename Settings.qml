@@ -65,6 +65,6 @@ TilePage {
         label: "Turn Off"
         column: 3; row: 1
         focus: true
-        onActivated: console.log("Turn Off")
+        onActivated: Qt.quit()
     }
 }

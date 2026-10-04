@@ -21,9 +21,20 @@ ApplicationWindow {
       }
 
       Shortcut{
-            sequence: "Esc"
-            onActivated: Qt.quit()
+            sequence: "Q"
+            onActivated: pages.decrementCurrentIndex()
       }
+
+      Shortcut{
+            sequence: "E"
+            onActivated: pages.incrementCurrentIndex()
+      }
+
+      Shortcut{
+            sequence: "Esc"
+            onActivated: pages.currentIndex = 1
+      }
+
 
       readonly property var tabs: [
             {name: "bing", file: "Bing.qml"},
