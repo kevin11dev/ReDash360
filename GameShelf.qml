@@ -27,6 +27,13 @@ FocusScope{
 
     MouseArea{
         anchors.fill: parent
+        hoverEnabled: true
+    }
+
+    Shortcut{
+        sequence: "Esc"
+        enabled: shelf.visible
+        onActivated: shelf.close()
     }
 
     Column{
