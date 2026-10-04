@@ -10,6 +10,7 @@ struct Game
     QString source;     // "Steam", "Heroic", "Faugus"
     QString command;    // what Launcher.play() should run
     QString cover;      // image URL (file:// or https://), or empty
+    QString banner;
 };
 
 // Every installed game, as a list model QML can show with a ListView/Repeater
@@ -26,7 +27,8 @@ public:
         NameRole = Qt::UserRole + 1,
         SourceRole,
         CommandRole,
-        CoverRole
+        CoverRole,
+        BannerRole
     };
 
     explicit GameLibrary(QObject *parent = nullptr);

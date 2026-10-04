@@ -68,6 +68,7 @@ QVariant GameLibrary::data(const QModelIndex &index, int role) const
     case SourceRole:  return game.source;
     case CommandRole: return game.command;
     case CoverRole:   return game.cover;
+    case BannerRole:  return game.banner;
     }
     return {};
 }
@@ -80,6 +81,7 @@ QHash<int, QByteArray> GameLibrary::roleNames() const
         { SourceRole, "source" },
         { CommandRole, "command" },
         { CoverRole, "cover" },
+        { BannerRole, "banner" },
         };
 }
 
@@ -150,6 +152,16 @@ QList<Game> GameLibrary::scanSteam()
                     game.cover = "https://cdn.cloudflare.steamstatic.com/steam/apps/"
                                  + id + "/library_600x900.jpg";
 
+                // Wide store banner (header.jpg) for wide tiles, cached or from Steam
+                QDirIterator header(root + "/appcache/librarycache/" + id,
+                                    { "header.jpg" }, QDir::Files,
+                                    QDirIterator::Subdirectories);
+                if (header.hasNext())
+                    game.banner = QUrl::fromLocalFile(header.next()).toString();
+                else
+                    game.banner = "https://cdn.cloudflare.steamstatic.com/steam/apps/"
+                                  + id + "/header.jpg";
+
                 games << game;
             }
         }
@@ -198,6 +210,7 @@ QList<Game> GameLibrary::scanHeroic()
                                + QString::fromUtf8(QUrl::toPercentEncoding(appName))
                                + "&runner=" + runner + "&gui=false";
                 game.cover = info.value("art_square").toString().replace("{ext}", "jpg");
+                game.banner = info.value("art_cover").toString().replace("{ext}", "jpg");
 
                 if (!game.name.isEmpty() && !appName.isEmpty())
                     games << game;
@@ -243,6 +256,10 @@ QList<Game> GameLibrary::scanFaugus()
             const QString cover = install.dataDir + "/covers/" + id + ".png";
             if (QFile::exists(cover))
                 game.cover = QUrl::fromLocalFile(cover).toString();
+
+            const QString banner = install.dataDir + "/banners/" + id + ".png";
+            if (QFile::exists(banner))
+                game.banner = QUrl::fromLocalFile(banner).toString();
 
             games << game;
         }

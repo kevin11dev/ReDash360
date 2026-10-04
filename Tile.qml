@@ -19,8 +19,6 @@ Rectangle{
     height: rowSpan * parent.cellHeight + (rowSpan - 1) * parent.gap
 
     color: "#107C10"
-    border.color: "white"
-    border.width: activeFocus ? 4 : 0
 
     scale: activeFocus ? 1.04 : 1.0
     z: activeFocus ? 1 : 0
@@ -32,12 +30,23 @@ Rectangle{
     }
 
     Text{
+        z: 2
         text: tile.label
         color: "white"
         font.pixelSize: 25
+        anchors.right: parent.right
         anchors.left: parent.left
         anchors.bottom: parent.bottom
         anchors.margins: 12
+        elide: Text.ElideRight
+    }
+
+    Rectangle{
+        anchors.fill: parent
+        z: 3
+        color: "transparent"
+        border.color: "white"
+        border.width: tile.activeFocus ? 4 : 0
     }
 
     MouseArea{

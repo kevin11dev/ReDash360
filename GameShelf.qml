@@ -111,7 +111,8 @@ FocusScope{
                 shelf.pickCallback({
                     name: currentItem.name,
                     command: currentItem.command,
-                    cover: currentItem.cover
+                    cover: currentItem.cover,
+                    banner: currentItem.banner
                 })
             } else {
                 Launcher.play(currentItem.name, currentItem.command)
@@ -127,6 +128,7 @@ FocusScope{
             required property string source
             required property string command
             required property string cover
+            required property string banner
 
             readonly property bool selected: ListView.isCurrentItem && list.activeFocus
 
