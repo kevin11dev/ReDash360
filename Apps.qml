@@ -9,8 +9,6 @@ TilePage {
         label: "My Apps"
         column: 0; row: 0
         focus: true
-        KeyNavigation.down: browseAppsTile
-        KeyNavigation.right: featuredAppsTile
         onActivated: console.log("My Apps")
     }
 
@@ -19,9 +17,6 @@ TilePage {
         label: "Browse Apps"
         column: 0; row: 1
         focus: true
-        KeyNavigation.up: myAppsTile
-        KeyNavigation.down: searchAppsTile
-        KeyNavigation.right: featuredAppsTile
         onActivated: console.log("Browse Apps")
     }
 
@@ -30,7 +25,6 @@ TilePage {
         label: "Search Apps"
         column: 0; row: 2
         focus: true
-        KeyNavigation.up: browseAppsTile
         onActivated: console.log("Search Apps")
     }
 
@@ -40,7 +34,6 @@ TilePage {
         column: 1; row: 0
         columnSpan: 2; rowSpan: 2
         focus: true
-        KeyNavigation.up: browseAppsTile
         onActivated: console.log("Featured Apps")
     }
 
@@ -49,7 +42,6 @@ TilePage {
         label: "App1"
         column: 3; row: 0
         focus: true
-        KeyNavigation.up: browseAppsTile
         onActivated: console.log("App1")
     }
 
@@ -58,7 +50,6 @@ TilePage {
         label: "App2"
         column: 4; row: 0
         focus: true
-        KeyNavigation.up: browseAppsTile
         onActivated: console.log("App2")
     }
 
@@ -67,7 +58,6 @@ TilePage {
         label: "App3"
         column: 3; row: 1
         focus: true
-        KeyNavigation.up: browseAppsTile
         onActivated: console.log("App3")
     }
 
@@ -76,7 +66,6 @@ TilePage {
         label: "App4"
         column: 4; row: 1
         focus: true
-        KeyNavigation.up: browseAppsTile
         onActivated: console.log("App4")
     }
 
@@ -85,7 +74,6 @@ TilePage {
         label: "App5"
         column: 1; row: 2
         focus: true
-        KeyNavigation.up: browseAppsTile
         onActivated: console.log("App5")
     }
 
@@ -94,7 +82,6 @@ TilePage {
         label: "App6"
         column: 2; row: 2
         focus: true
-        KeyNavigation.up: browseAppsTile
         onActivated: console.log("App6")
     }
 
@@ -103,7 +90,6 @@ TilePage {
         label: "App7"
         column: 3; row: 2
         focus: true
-        KeyNavigation.up: browseAppsTile
         onActivated: console.log("App7")
     }
 
@@ -112,7 +98,6 @@ TilePage {
         label: "App8"
         column: 4; row: 2
         focus: true
-        KeyNavigation.up: browseAppsTile
         onActivated: console.log("App8")
     }
 }

@@ -9,8 +9,6 @@ TilePage {
         label: "System"
         column: 0; row: 0
         focus: true
-        KeyNavigation.right: profileTile
-        KeyNavigation.down: networkTile
         onActivated: console.log("System")
     }
 
@@ -19,8 +17,6 @@ TilePage {
         label: "Network"
         column: 0; row: 1
         focus: true
-        KeyNavigation.right: displaySoundTile
-        KeyNavigation.up: systemTile
         onActivated: console.log("Network")
     }
 
@@ -29,8 +25,6 @@ TilePage {
         label: "Profile"
         column: 1; row: 0
         focus: true
-        KeyNavigation.right: preferencesTile
-        KeyNavigation.down: displaySoundTile
         onActivated: console.log("Profile")
     }
 
@@ -39,8 +33,6 @@ TilePage {
         label: "Display & Sound"
         column: 1; row: 1
         focus: true
-        KeyNavigation.right: storageTile
-        KeyNavigation.up: profileTile
         onActivated: console.log("Display & Sound")
     }
 
@@ -49,8 +41,6 @@ TilePage {
         label: "Preferences"
         column: 2; row: 0
         focus: true
-        KeyNavigation.right: controllersTile
-        KeyNavigation.down: storageTile
         onActivated: console.log("Preferences")
     }
 
@@ -59,8 +49,6 @@ TilePage {
         label: "Display & Sound"
         column: 2; row: 1
         focus: true
-        KeyNavigation.right: turnOffTile
-        KeyNavigation.up: preferencesTile
         onActivated: console.log("Display & Sound")
     }
 
@@ -69,8 +57,6 @@ TilePage {
         label: "Controllers"
         column: 3; row: 0
         focus: true
-        KeyNavigation.left: preferencesTile
-        KeyNavigation.down: turnOffTile
         onActivated: console.log("Controllers")
     }
 
@@ -79,8 +65,6 @@ TilePage {
         label: "Turn Off"
         column: 3; row: 1
         focus: true
-        KeyNavigation.left: storageTile
-        KeyNavigation.up: controllersTile
         onActivated: console.log("Turn Off")
     }
 }

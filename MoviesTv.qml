@@ -9,8 +9,6 @@ TilePage {
         label: "My Video Apps"
         column: 0; row: 0
         focus: true
-        KeyNavigation.down: browseAppsTile
-        KeyNavigation.right: featuredAppsTile
         onActivated: console.log("My Video Apps")
     }
 
@@ -19,8 +17,6 @@ TilePage {
         label: "Browse TV & Movies"
         column: 0; row: 1
         focus: true
-        KeyNavigation.down: browseAppsTile
-        KeyNavigation.right: featuredAppsTile
         onActivated: console.log("My Video Apps")
     }
 
@@ -29,8 +25,6 @@ TilePage {
         label: "Search TV & Movies"
         column: 0; row: 2
         focus: true
-        KeyNavigation.down: browseAppsTile
-        KeyNavigation.right: featuredAppsTile
         onActivated: console.log("My Video Apps")
     }
 
@@ -39,8 +33,6 @@ TilePage {
         label: "Xbox Video"
         column: 1; row: 0
         focus: true
-        KeyNavigation.down: browseAppsTile
-        KeyNavigation.right: featuredAppsTile
         onActivated: console.log("My Video Apps")
     }
 
@@ -49,8 +41,6 @@ TilePage {
         label: "Get Your TV App"
         column: 1; row: 1
         focus: true
-        KeyNavigation.down: browseAppsTile
-        KeyNavigation.right: featuredAppsTile
         onActivated: console.log("My Video Apps")
     }
 
@@ -60,8 +50,6 @@ TilePage {
         column: 1; row: 2
         columnSpan: 2
         focus: true
-        KeyNavigation.down: browseAppsTile
-        KeyNavigation.right: featuredAppsTile
         onActivated: console.log("My Video Apps")
     }
 
@@ -71,8 +59,6 @@ TilePage {
         column: 3; row: 2
         columnSpan: 2
         focus: true
-        KeyNavigation.down: browseAppsTile
-        KeyNavigation.right: featuredAppsTile
         onActivated: console.log("My Video Apps")
     }
 
@@ -82,8 +68,6 @@ TilePage {
         column: 2; row: 0
         columnSpan: 2; rowSpan: 2
         focus: true
-        KeyNavigation.down: browseAppsTile
-        KeyNavigation.right: featuredAppsTile
         onActivated: console.log("My Video Apps")
     }
 
@@ -92,8 +76,6 @@ TilePage {
         label: "New TV"
         column: 4; row: 0
         focus: true
-        KeyNavigation.down: browseAppsTile
-        KeyNavigation.right: featuredAppsTile
         onActivated: console.log("My Video Apps")
     }
 
@@ -102,8 +84,6 @@ TilePage {
         label: "Latest Films"
         column: 4; row: 1
         focus: true
-        KeyNavigation.down: browseAppsTile
-        KeyNavigation.right: featuredAppsTile
         onActivated: console.log("My Video Apps")
     }
 }

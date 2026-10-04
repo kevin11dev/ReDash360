@@ -9,7 +9,6 @@ TilePage {
         label: "My Games"
         column: 0; row: 0
         focus: true
-        KeyNavigation.down: browseGamesTile
         onActivated: console.log("My Games")
     }
 
@@ -18,8 +17,6 @@ TilePage {
         label: "Browse Games"
         column: 0; row: 1
         focus: true
-        KeyNavigation.up: myGamesTile
-        KeyNavigation.down: searchGamesTile
         onActivated: console.log("Browse Games")
     }
 
@@ -28,7 +25,6 @@ TilePage {
         label: "Search Games"
         column: 0; row: 2
         focus: true
-        KeyNavigation.up: browseGamesTile
         onActivated: console.log("Search Games")
     }
 
@@ -38,7 +34,6 @@ TilePage {
         column: 1; row: 0
         columnSpan: 2
         focus: true
-        KeyNavigation.down: browseGamesTile
         onActivated: console.log("Game1")
     }
 
@@ -48,7 +43,6 @@ TilePage {
         column: 3; row: 0
         columnSpan: 2
         focus: true
-        KeyNavigation.down: browseGamesTile
         onActivated: console.log("Game2")
     }
 
@@ -58,7 +52,6 @@ TilePage {
         column: 1; row: 1
         columnSpan: 2
         focus: true
-        KeyNavigation.down: browseGamesTile
         onActivated: console.log("Game3")
     }
 
@@ -68,7 +61,6 @@ TilePage {
         column: 3; row: 1
         columnSpan: 2
         focus: true
-        KeyNavigation.down: browseGamesTile
         onActivated: console.log("Game4")
     }
 
@@ -77,7 +69,6 @@ TilePage {
         label: "Add-ons"
         column: 1; row: 2
         focus: true
-        KeyNavigation.down: browseGamesTile
         onActivated: console.log("Add-ons")
     }
 
@@ -86,7 +77,6 @@ TilePage {
         label: "Demos"
         column: 2; row: 2
         focus: true
-        KeyNavigation.down: browseGamesTile
         onActivated: console.log("Demos")
     }
 
@@ -96,7 +86,6 @@ TilePage {
         column: 3; row: 2
         columnSpan: 2
         focus: true
-        KeyNavigation.down: browseGamesTile
         onActivated: console.log("Recommended")
     }
 }

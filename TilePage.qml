@@ -23,4 +23,55 @@ FocusScope {
         width: childrenRect.width
         height: childrenRect.height
     }
+
+    Keys.onPressed: (event) => {
+        const from = focusedTile()
+        if (!from)
+            return
+        const next = neighbour(from, event.key)
+        if (next) {
+            next.forceActiveFocus()
+            event.accepted = true
+        }
+    }
+
+    function focusedTile() {
+        for (let i = 0; i < grid.children.length; i++) {
+            if (grid.children[i].activeFocus)
+                return grid.children[i]
+        }
+        return null
+    }
+
+    function neighbour(from, key) {
+        let best = null
+        for (let i = 0; i < grid.children.length; i++) {
+            const t = grid.children[i]
+            if (t === from || t.columnSpan === undefined)   // skip non-tiles
+                continue
+
+            // Do the two tiles share any rows / any columns?
+            const rowsOverlap = t.row < from.row + from.rowSpan && t.row + t.rowSpan > from.row
+            const colsOverlap = t.column < from.column + from.columnSpan && t.column + t.columnSpan > from.column
+
+            let touching = false
+            if (key === Qt.Key_Right)
+                touching = rowsOverlap && t.column === from.column + from.columnSpan
+            else if (key === Qt.Key_Left)
+                touching = rowsOverlap && t.column + t.columnSpan === from.column
+            else if (key === Qt.Key_Down)
+                touching = colsOverlap && t.row === from.row + from.rowSpan
+            else if (key === Qt.Key_Up)
+                touching = colsOverlap && t.row + t.rowSpan === from.row
+            if (!touching)
+                continue
+
+            const linedUp = (key === Qt.Key_Left || key === Qt.Key_Right)
+                ? t.row <= from.row && from.row < t.row + t.rowSpan
+                : t.column <= from.column && from.column < t.column + t.columnSpan
+            if (!best || linedUp)
+                best = t
+        }
+        return best
+    }
 }
