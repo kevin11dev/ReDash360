@@ -7,7 +7,20 @@ FocusScope{
 
     property Item returnFocusTo: null
 
+    property var pickCallback: null
+    readonly property bool picking: pickCallback !== null
+
     function open() {
+        pickCallback = null
+        show()
+    }
+
+    function pick(callback) {
+        pickCallback = callback
+        show()
+    }
+
+    function show() {
         returnFocusTo = Window.activeFocusItem
         visible = true
         list.forceActiveFocus()
@@ -15,6 +28,7 @@ FocusScope{
 
     function close() {
         visible = false
+        pickCallback = null
         if(returnFocusTo)
             returnFocusTo.forceActiveFocus()
     }
@@ -43,7 +57,7 @@ FocusScope{
 
         Text{
             anchors.right: parent.right
-            text: "My Games"
+            text: shelf.picking ? "choose a game" : "my games"
             color: "white"
             font.pixelSize: 56
             font.weight: Font.Light
