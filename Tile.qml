@@ -11,6 +11,7 @@ Rectangle{
     property var hints: []
 
     signal activated()
+    signal yPressed()
 
     x: column * (parent.cellWidth + parent.gap)
     y: row * (parent.cellHeight + parent.gap)
@@ -50,4 +51,10 @@ Rectangle{
     Keys.onReturnPressed: tile.activated()
     Keys.onEnterPressed: tile.activated()
     Keys.onSpacePressed: tile.activated()
+    Keys.onPressed: (event) => {
+        if (event.key === Qt.Key_Y){
+            tile.yPressed()
+            event.accepted = true
+        }
+    }
 }

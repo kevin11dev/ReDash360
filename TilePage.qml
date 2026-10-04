@@ -5,6 +5,7 @@ FocusScope {
 
     signal tabRequested(int index)
     signal shelfRequested()
+    signal pickGameRequested(var callback)
 
     property alias cellWidth: grid.cellWidth
     property alias cellHeight: grid.cellHeight

@@ -16,7 +16,6 @@ TilePage {
         id: browseGamesTile
         label: "Browse Games"
         column: 0; row: 1
-        focus: true
         onActivated: console.log("Browse Games")
     }
 
@@ -24,51 +23,45 @@ TilePage {
         id: searchGamesTile
         label: "Search Games"
         column: 0; row: 2
-        focus: true
         onActivated: console.log("Search Games")
     }
 
-    Tile{                                       //Game 1
+    GameSlot{                                       //Game 1
         id: game1Tile
-        label: "Blasphemous"
+        label: "Game 1"
         column: 1; row: 0
         columnSpan: 2
-        focus: true
-        onActivated: Launcher.play("Blasphemous", "steam steam://rungameid/774361")
+        onPickRequested: root.pickGameRequested(game => setGame(game))
     }
 
-    Tile{                                       //Game 2
+    GameSlot{                                       //Game 2
         id: game2Tile
-        label: "Game2"
+        label: "Game 2"
         column: 3; row: 0
         columnSpan: 2
-        focus: true
-        onActivated: console.log("Game2")
+        onPickRequested: root.pickGameRequested(game => setGame(game))
     }
 
-    Tile{                                       //Game 3
+    GameSlot{                                       //Game 3
         id: game3Tile
-        label: "Game3"
+        label: "Game 3"
         column: 1; row: 1
         columnSpan: 2
-        focus: true
-        onActivated: console.log("Game3")
+        onPickRequested: root.pickGameRequested(game => setGame(game))
     }
 
-    Tile{                                       //Game 4
+    GameSlot{                                       //Game 4
         id: game4Tile
-        label: "Game4"
+        label: "Game 4"
         column: 3; row: 1
         columnSpan: 2
-        focus: true
-        onActivated: console.log("Game4")
+        onPickRequested: root.pickGameRequested(game => setGame(game))
     }
 
     Tile{                                       //Add-ons
         id: addOnsTile
         label: "Add-ons"
         column: 1; row: 2
-        focus: true
         onActivated: console.log("Add-ons")
     }
 
@@ -76,7 +69,6 @@ TilePage {
         id: demosTile
         label: "Demos"
         column: 2; row: 2
-        focus: true
         onActivated: console.log("Demos")
     }
 
@@ -85,7 +77,6 @@ TilePage {
         label: "Recommended"
         column: 3; row: 2
         columnSpan: 2
-        focus: true
         onActivated: console.log("Recommended")
     }
 }

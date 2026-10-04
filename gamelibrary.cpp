@@ -3,6 +3,9 @@
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QRegularExpression>
 #include <QUrl>
 
@@ -30,6 +33,15 @@ QString vdfValue(const QString &text, const QString &key)
 {
     const QRegularExpression re("\"" + key + "\"\\s+\"([^\"]*)\"");
     return re.match(text).captured(1);
+}
+
+// Parse a JSON file; returns an empty document if it's missing or broken
+QJsonDocument readJson(const QString &path)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+        return {};
+    return QJsonDocument::fromJson(file.readAll());
 }
 
 } // namespace
@@ -74,7 +86,8 @@ QHash<int, QByteArray> GameLibrary::roleNames() const
 void GameLibrary::refresh()
 {
     QList<Game> games = scanSteam();
-    // later: games += scanHeroic(); games += scanFaugus();
+    games += scanHeroic();
+    games += scanFaugus();
 
     std::sort(games.begin(), games.end(), [](const Game &a, const Game &b) {
         return a.name.compare(b.name, Qt::CaseInsensitive) < 0;
@@ -106,11 +119,11 @@ QList<Game> GameLibrary::scanSteam()
         // Every Steam library folder (other drives too), plus the main one
         QStringList libraries = { root };
         const QString folders = readFile(root + "/steamapps/libraryfolders.vdf");
-        const QRegularExpression pathRe("\"path\"\\s+\"([^\"]+)\"");
+        static const QRegularExpression pathRe("\"path\"\\s+\"([^\"]+)\"");
         for (auto it = pathRe.globalMatch(folders); it.hasNext();)
             libraries << it.next().captured(1);
 
-        for (const QString &library : libraries) {
+        for (const QString &library : std::as_const(libraries)) {
             QDir steamapps(library + "/steamapps");
             const QStringList manifests = steamapps.entryList({ "appmanifest_*.acf" }, QDir::Files);
 
@@ -139,6 +152,99 @@ QList<Game> GameLibrary::scanSteam()
 
                 games << game;
             }
+        }
+    }
+    return games;
+}
+
+QList<Game> GameLibrary::scanHeroic()
+{
+    // Normal install and the Flatpak version
+    const QString home = QDir::homePath();
+    const QStringList roots = {
+        home + "/.config/heroic",
+        home + "/.var/app/com.heroicgameslauncher.hgl/config/heroic",
+    };
+
+    // Heroic keeps one cached library per store: file name + the key holding the list
+    struct Store { QString file; QString key; };
+    const QList<Store> stores = {
+        { "/store_cache/legendary_library.json", "library" },   // Epic
+        { "/store_cache/gog_library.json", "games" },           // GOG
+        { "/store_cache/nile_library.json", "library" },        // Amazon
+        { "/sideload_apps/library.json", "games" },             // added by hand
+    };
+
+    QList<Game> games;
+    for (const QString &root : roots) {
+        for (const Store &store : stores) {
+            const QJsonArray list = readJson(root + store.file).object().value(store.key).toArray();
+
+            for (const QJsonValue &value : list) {
+                const QJsonObject info = value.toObject();
+                if (!info.value("is_installed").toBool())
+                    continue;
+                if (info.value("install").toObject().value("is_dlc").toBool())
+                    continue;
+
+                const QString appName = info.value("app_name").toString();
+                const QString runner = info.value("runner").toString();
+
+                Game game;
+                game.name = info.value("title").toString();
+                game.source = "Heroic";
+                // gui=false: start the game without showing Heroic's own window
+                game.command = "xdg-open heroic://launch?appName="
+                               + QString::fromUtf8(QUrl::toPercentEncoding(appName))
+                               + "&runner=" + runner + "&gui=false";
+                game.cover = info.value("art_square").toString().replace("{ext}", "jpg");
+
+                if (!game.name.isEmpty() && !appName.isEmpty())
+                    games << game;
+            }
+        }
+    }
+    return games;
+}
+
+QList<Game> GameLibrary::scanFaugus()
+{
+    // Current location, the older one, and the Flatpak version
+    const QString home = QDir::homePath();
+    struct Install { QString dataDir; QString launch; };
+    const QList<Install> installs = {
+        { home + "/.local/share/faugus-launcher", "faugus-launcher" },
+        { home + "/.config/faugus-launcher", "faugus-launcher" },
+        { home + "/.var/app/io.github.Faugus.faugus-launcher/data/faugus-launcher",
+         "flatpak run io.github.Faugus.faugus-launcher" },
+        };
+
+    QList<Game> games;
+    QStringList seenIds;
+    for (const Install &install : installs) {
+        const QJsonArray list = readJson(install.dataDir + "/games.json").array();
+
+        for (const QJsonValue &value : list) {
+            const QJsonObject info = value.toObject();
+            const QString id = info.value("gameid").toString();
+            // Skip hidden games, and Steam games Faugus only links to (the Steam scan has them)
+            if (id.isEmpty() || seenIds.contains(id) || info.value("hidden").toBool()
+                || info.value("runner").toString() == "Steam")
+                continue;
+            seenIds << id;
+
+            Game game;
+            game.name = info.value("title").toString();
+            if (game.name.isEmpty())
+                game.name = id;
+            game.source = "Faugus";
+            game.command = install.launch + " --game " + id;
+
+            const QString cover = install.dataDir + "/covers/" + id + ".png";
+            if (QFile::exists(cover))
+                game.cover = QUrl::fromLocalFile(cover).toString();
+
+            games << game;
         }
     }
     return games;

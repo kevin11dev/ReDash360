@@ -3,14 +3,18 @@
 #include <QAbstractListModel>
 #include <QtQml/qqmlregistration.h>
 
-struct Game{
+// One installed game, from any launcher
+struct Game
+{
     QString name;
-    QString source;
-    QString command;
-    QString cover;
+    QString source;     // "Steam", "Heroic", "Faugus"
+    QString command;    // what Launcher.play() should run
+    QString cover;      // image URL (file:// or https://), or empty
 };
 
-class GameLibrary : public QAbstractListModel{
+// Every installed game, as a list model QML can show with a ListView/Repeater
+class GameLibrary : public QAbstractListModel
+{
     Q_OBJECT
     QML_ELEMENT
     QML_SINGLETON
@@ -27,12 +31,14 @@ public:
 
     explicit GameLibrary(QObject *parent = nullptr);
 
-    int count() const {return m_games.size();}
+    int count() const { return m_games.size(); }
 
+    // QAbstractListModel: how many rows, what's in each, and the role names QML uses
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
 
+    // Scan the disk again (e.g. after installing a game)
     Q_INVOKABLE void refresh();
 
 signals:
@@ -40,6 +46,8 @@ signals:
 
 private:
     static QList<Game> scanSteam();
+    static QList<Game> scanHeroic();
+    static QList<Game> scanFaugus();
 
     QList<Game> m_games;
 };
