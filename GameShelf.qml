@@ -3,7 +3,7 @@ import QtQuick
 FocusScope{
     id: shelf
 
-    visible: true
+    visible: false
 
     property Item returnFocusTo: null
 
@@ -15,8 +15,8 @@ FocusScope{
 
     function close() {
         visible = false
-        if(returnFOcusTo)
-            returnFocusT.forceActiveFocus()
+        if(returnFocusTo)
+            returnFocusTo.forceActiveFocus()
     }
 
     Rectangle {
@@ -68,7 +68,7 @@ FocusScope{
         y: 230
         height: 640
 
-        orientation: ListView.horizontal
+        orientation: ListView.Horizontal
         spacing: 28
         leftMargin: 120
         rightMargin: 120
@@ -108,7 +108,7 @@ FocusScope{
 
             scale: selected ? 1.06 : 1.0
             z: selected ? 1 : 0
-            Behavior on scale{NumberAnimation {duration: 150; easing.type: Easing,OutCubic}}
+            Behavior on scale{NumberAnimation {duration: 150; easing.type: Easing.OutCubic}}
 
             Rectangle{
                 id: coverArea

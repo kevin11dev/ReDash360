@@ -11,7 +11,7 @@ TilePage {
         focus: true
         onActivated: {
             if(Launcher.lastCommand !== "")
-                Launcher.play(Launcher.lastName, Launcher.lastCOmmand)
+                Launcher.play(Launcher.lastName, Launcher.lastCommand)
         }
     }
 
