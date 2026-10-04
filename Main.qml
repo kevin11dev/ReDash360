@@ -124,5 +124,29 @@ ApplicationWindow {
                         }
                   }
             }
+
+            Row{
+                  id: hintBar
+                  x: 180
+                  y: 990
+                  spacing: 40
+
+                  ButtonHint{button: "A"; label: "Select"}
+
+                  Repeater{
+                        model: window.activeFocusItem && window.activeFocusItem.hints ? window.activeFocusItem.hints : []
+                        delegate: ButtonHint{
+                              required property var modelData
+                              button: modelData.button
+                              label: modelData.label
+                        }
+                  }
+
+                  ButtonHint{
+                        button: "B"
+                        label: "Back"
+                        visible: pages.currentIndex !== 1
+                  }
+            }
       }
 }

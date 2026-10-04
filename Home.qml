@@ -6,6 +6,7 @@ TilePage {
     Tile{                                       //Open Tray
         id: openTrayTile
         label: "Open Tray"
+        hints: [{button: "Y", label: "Eject"}]
         column: 0; row: 0
         focus: true
         onActivated: console.log("Open Tray")

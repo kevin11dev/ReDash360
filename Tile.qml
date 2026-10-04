@@ -8,6 +8,7 @@ Rectangle{
     property int row: 0
     property int columnSpan: 1
     property int rowSpan: 1
+    property var hints: []
 
     signal activated()
 
