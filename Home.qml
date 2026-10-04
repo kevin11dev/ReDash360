@@ -1,4 +1,5 @@
 import QtQuick
+import ReDash360
 
 TilePage {
     id: root
@@ -9,7 +10,7 @@ TilePage {
         hints: [{button: "Y", label: "Eject"}]
         column: 0; row: 0
         focus: true
-        onActivated: console.log("Open Tray")
+        onActivated: Launcher.run("eject -T")
     }
 
     Tile{                                       //Pins
