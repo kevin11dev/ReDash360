@@ -86,14 +86,22 @@ FocusScope{
         preferredHighlightEnd: width - 500
         highlightMoveDuration: 200
 
-        Keys.onReturnPressed: launchCurrent()
-        Keys.onEnterPressed: launchCurrent()
+        Keys.onReturnPressed: activateCurrent()
+        Keys.onEnterPressed: activateCurrent()
         Keys.onEscapePressed: shelf.close()
 
-        function launchCurrent() {
+        function activateCurrent() {
             if(!currentItem)
                 return
-            Launcher.play(currentItem.name, currentItem.command)
+            if (shelf.picking) {
+                shelf.pickCallback({
+                    name: currentItem.name,
+                    command: currentItem.command,
+                    cover: currentItem.cover
+                })
+            } else {
+                Launcher.play(currentItem.name, currentItem.command)
+            }
             shelf.close()
         }
 
@@ -169,7 +177,7 @@ FocusScope{
                 anchors.fill: parent
                 onClicked:{
                     list.currentIndex = card.index
-                    list.launchCurrent()
+                    list.activateCurrent()
                 }
             }
         }
@@ -179,7 +187,7 @@ FocusScope{
         x: 180
         y: 990
         spacing: 40
-        ButtonHint{button: "A"; label: "Launch"}
+        ButtonHint{button: "A"; label: shelf.picking ? "Select" : "Launch"}
         ButtonHint{button: "B"; label: "Back"}
     }
 }

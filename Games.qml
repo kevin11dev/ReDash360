@@ -28,7 +28,7 @@ TilePage {
 
     GameSlot{                                       //Game 1
         id: game1Tile
-        label: "Game 1"
+        slotId: "Game1"
         column: 1; row: 0
         columnSpan: 2
         onPickRequested: root.pickGameRequested(game => setGame(game))
@@ -36,7 +36,7 @@ TilePage {
 
     GameSlot{                                       //Game 2
         id: game2Tile
-        label: "Game 2"
+        slotId: "Game2"
         column: 3; row: 0
         columnSpan: 2
         onPickRequested: root.pickGameRequested(game => setGame(game))
@@ -44,7 +44,7 @@ TilePage {
 
     GameSlot{                                       //Game 3
         id: game3Tile
-        label: "Game 3"
+        slotId: "Game3"
         column: 1; row: 1
         columnSpan: 2
         onPickRequested: root.pickGameRequested(game => setGame(game))
@@ -52,7 +52,7 @@ TilePage {
 
     GameSlot{                                       //Game 4
         id: game4Tile
-        label: "Game 4"
+        slotId: "Game4"
         column: 3; row: 1
         columnSpan: 2
         onPickRequested: root.pickGameRequested(game => setGame(game))

@@ -123,7 +123,9 @@ ApplicationWindow {
                         Connections{
                               target: page.item
                               ignoreUnknownSignals: true
-                              function onTabRequested(index) {pages.currentIndex = index} function onShelfRequested() {shelf.open()}
+                              function onTabRequested(index) {pages.currentIndex = index}
+                              function onShelfRequested() {shelf.open()}
+                              function onPickGameRequested(callback) {shelf.pick(callback)}
                         }
                   }
             }
