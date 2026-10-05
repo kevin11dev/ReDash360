@@ -43,6 +43,12 @@ public:
     // Scan the disk again (e.g. after installing a game)
     Q_INVOKABLE void refresh();
 
+    // Every game as {name, source, command, cover, banner}, for filtering and sorting in QML
+    Q_INVOKABLE QVariantList all() const;
+
+    // The installed game with this launch command, in the same form; empty if it isn't installed
+    Q_INVOKABLE QVariantMap find(const QString &command) const;
+
 signals:
     void countChanged();
 

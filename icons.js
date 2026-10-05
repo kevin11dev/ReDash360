@@ -137,5 +137,9 @@ var shapes = {
         fill: "M5,17 H14 L25,8 V40 L14,31 H5 Z",
         line: "M31,17 A10,10 0 0,1 31,31 M36,11 A18,18 0 0,1 36,37",
         width: 3.5
+    },
+    chevron: {
+        line: "M10,17 L24,31 L38,17",
+        width: 5
     }
 }

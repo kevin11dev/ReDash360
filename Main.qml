@@ -93,6 +93,8 @@ ApplicationWindow {
                   x: 231
                   y: 227                          // the line the tab names sit on (their baseline)
                   spacing: 58
+                  opacity: shelf.visible ? 0 : 1
+                  Behavior on opacity { NumberAnimation { duration: 200 } }
 
                   Repeater{
                         id: tabRepeater
@@ -145,6 +147,9 @@ ApplicationWindow {
                   preferredHighlightEnd: preferredHighlightBegin + window.pageWidth
                   highlightMoveDuration: 300
 
+                  opacity: shelf.visible ? 0 : 1
+                  Behavior on opacity { NumberAnimation { duration: 200 } }
+
                   delegate: Loader{
                         id: page
                         required property int index
@@ -180,6 +185,8 @@ ApplicationWindow {
                   x: 180
                   y: 990
                   spacing: 40
+                  opacity: shelf.visible ? 0 : 1
+                  Behavior on opacity { NumberAnimation { duration: 200 } }
 
                   ButtonHint{button: "A"; label: "Select"}
 

@@ -44,6 +44,16 @@ QJsonDocument readJson(const QString &path)
     return QJsonDocument::fromJson(file.readAll());
 }
 
+QVariantMap toMap(const Game &game){
+    return{
+        {"name", game.name},
+        {"source", game.source},
+        {"command", game.command},
+        {"cover", game.cover},
+        {"banner", game.banner},
+    };
+}
+
 } // namespace
 
 GameLibrary::GameLibrary(QObject *parent)
@@ -83,6 +93,23 @@ QHash<int, QByteArray> GameLibrary::roleNames() const
         { CoverRole, "cover" },
         { BannerRole, "banner" },
         };
+}
+
+QVariantList GameLibrary::all() const
+{
+    QVariantList list;
+    for (const Game &game : m_games)
+        list << toMap(game);
+    return list;
+}
+
+QVariantMap GameLibrary::find(const QString &command) const
+{
+    for (const Game &game : m_games) {
+        if (game.command == command)
+            return toMap(game);
+    }
+    return {};
 }
 
 void GameLibrary::refresh()
