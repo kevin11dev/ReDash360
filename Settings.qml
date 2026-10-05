@@ -7,6 +7,7 @@ TilePage {
     Tile{                                       //System
         id: systemTile
         label: "System"
+        icon: "console"
         column: 0; row: 0
         focus: true
         onActivated: console.log("System")
@@ -15,6 +16,7 @@ TilePage {
     Tile{                                       //Network
         id: networkTile
         label: "Network"
+        icon: "wifi"
         column: 0; row: 1
         focus: true
         onActivated: console.log("Network")
@@ -23,6 +25,7 @@ TilePage {
     Tile{                                       //Profile
         id: profileTile
         label: "Profile"
+        icon: "account"
         column: 1; row: 0
         focus: true
         onActivated: console.log("Profile")
@@ -31,6 +34,7 @@ TilePage {
     Tile{                                       //Display & Sound
         id: displaySoundTile
         label: "Display & Sound"
+        icon: "tv"
         column: 1; row: 1
         focus: true
         onActivated: console.log("Display & Sound")
@@ -39,22 +43,24 @@ TilePage {
     Tile{                                       //Preferences
         id: preferencesTile
         label: "Preferences"
+        icon: "sliders"
         column: 2; row: 0
         focus: true
         onActivated: console.log("Preferences")
     }
 
-    Tile{                                       //Display & Sound
+    Tile{                                       //Storage
         id: storageTile
-        label: "Display & Sound"
+        label: "Storage"
         column: 2; row: 1
         focus: true
-        onActivated: console.log("Display & Sound")
+        onActivated: console.log("Storage")
     }
 
     Tile{                                       //Controllers
         id: controllersTile
         label: "Controllers"
+        icon: "controller"
         column: 3; row: 0
         focus: true
         onActivated: console.log("Controllers")
@@ -63,6 +69,7 @@ TilePage {
     Tile{                                       //Turn Off
         id: turnOffTile
         label: "Turn Off"
+        icon: "power"
         column: 3; row: 1
         focus: true
         onActivated: Qt.quit()

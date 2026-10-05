@@ -7,6 +7,7 @@ TilePage {
     Tile{                                       //My Apps
         id: myAppsTile
         label: "My Apps"
+        icon: "apps"
         column: 0; row: 0
         focus: true
         onActivated: console.log("My Apps")
@@ -15,6 +16,7 @@ TilePage {
     Tile{                                       //Browse Apps
         id: browseAppsTile
         label: "Browse Apps"
+        icon: "bag"
         column: 0; row: 1
         focus: true
         onActivated: console.log("Browse Apps")
@@ -23,6 +25,7 @@ TilePage {
     Tile{                                       //Search Apps
         id: searchAppsTile
         label: "Search Apps"
+        icon: "search"
         column: 0; row: 2
         focus: true
         onActivated: console.log("Search Apps")

@@ -7,6 +7,7 @@ TilePage {
     Tile{                                       //My Video Apps
         id: myVideoAppsTile
         label: "My Video Apps"
+        icon: "play"
         column: 0; row: 0
         focus: true
         onActivated: console.log("My Video Apps")
@@ -15,6 +16,7 @@ TilePage {
     Tile{                                       //Browse Video
         id: browseVideoTile
         label: "Browse TV & Movies"
+        icon: "bag"
         column: 0; row: 1
         focus: true
         onActivated: console.log("My Video Apps")
@@ -23,6 +25,7 @@ TilePage {
     Tile{                                       //Search Video
         id: searchVideoTile
         label: "Search TV & Movies"
+        icon: "search"
         column: 0; row: 2
         focus: true
         onActivated: console.log("My Video Apps")
@@ -39,6 +42,7 @@ TilePage {
     Tile{                                       //Get Your TV App
         id: getTVTile
         label: "Get Your TV App"
+        icon: "tv"
         column: 1; row: 1
         focus: true
         onActivated: console.log("My Video Apps")

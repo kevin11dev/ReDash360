@@ -7,6 +7,7 @@ TilePage {
     Tile{                                       //My Games
         id: myGamesTile
         label: "My Games"
+        icon: "controller"
         column: 0; row: 0
         focus: true
         onActivated: root.shelfRequested()
@@ -15,6 +16,7 @@ TilePage {
     Tile{                                       //Browse Games
         id: browseGamesTile
         label: "Browse Games"
+        icon: "bag"
         column: 0; row: 1
         onActivated: console.log("Browse Games")
     }
@@ -22,6 +24,7 @@ TilePage {
     Tile{                                       //Search Games
         id: searchGamesTile
         label: "Search Games"
+        icon: "search"
         column: 0; row: 2
         onActivated: console.log("Search Games")
     }
@@ -61,6 +64,7 @@ TilePage {
     Tile{                                       //Add-ons
         id: addOnsTile
         label: "Add-ons"
+        icon: "plus"
         column: 1; row: 2
         onActivated: console.log("Add-ons")
     }
@@ -68,6 +72,7 @@ TilePage {
     Tile{                                       //Demos
         id: demosTile
         label: "Demos"
+        icon: "download"
         column: 2; row: 2
         onActivated: console.log("Demos")
     }
@@ -75,6 +80,7 @@ TilePage {
     Tile{                                       //Recommended
         id: recomendedTile
         label: "Recommended"
+        icon: "star"
         column: 3; row: 2
         columnSpan: 2
         onActivated: console.log("Recommended")

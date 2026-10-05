@@ -6,6 +6,7 @@ TilePage {
     Tile{                                       //Friends
         id: friendsTile
         label: "Friends"
+        icon: "person"
         column: 0; row: 0
         focus: true
         onActivated: console.log("Friends")
@@ -14,6 +15,7 @@ TilePage {
     Tile{                                       //Avatar Store
         id: avatarStoreTile
         label: "Avatar Store"
+        icon: "bag"
         column: 0; row: 1
         focus: true
         onActivated: console.log("Avatar Store")
@@ -22,6 +24,7 @@ TilePage {
     Tile{                                       //Sign In or Out
         id: signInOutTile
         label: "Sign In or Out"
+        icon: "signin"
         column: 0; row: 2
         focus: true
         onActivated: console.log("Sign In or Out")
