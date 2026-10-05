@@ -28,6 +28,13 @@ int keyForButton(Uint8 button)
     }
 }
 
+// Send a key press + release to a window, as if typed on a keyboard
+void postKey(QWindow *window, int key)
+{
+    QGuiApplication::postEvent(window, new QKeyEvent(QEvent::KeyPress, key, Qt::NoModifier));
+    QGuiApplication::postEvent(window, new QKeyEvent(QEvent::KeyRelease, key, Qt::NoModifier));
+}
+
 bool isDirection(int key)
 {
     return key == Qt::Key_Up || key == Qt::Key_Down
@@ -144,11 +151,20 @@ void Gamepad::stopHold(int key)
 
 void Gamepad::sendKey(int key)
 {
-    // Only drive the dashboard while it is the active window, not while a
-    // launched game or app is in front
-    if (!m_window || !m_window->isActive())
+    // While the Guide is open over a game, the controller drives the Guide
+    if (m_overlay && m_overlay->isVisible()) {
+        postKey(m_overlay, key);
         return;
+    }
 
-    QGuiApplication::postEvent(m_window, new QKeyEvent(QEvent::KeyPress, key, Qt::NoModifier));
-    QGuiApplication::postEvent(m_window, new QKeyEvent(QEvent::KeyRelease, key, Qt::NoModifier));
+    // The dashboard, while it's the window in front
+    if (m_window && m_window->isActive()) {
+        postKey(m_window, key);
+        return;
+    }
+
+    // Something else is in front (a game): only the Xbox button does
+    // anything, and it opens the Guide over it
+    if (key == Qt::Key_Home && m_overlay)
+        QMetaObject::invokeMethod(m_overlay, "openGuide");
 }

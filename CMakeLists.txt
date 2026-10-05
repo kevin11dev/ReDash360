@@ -11,6 +11,7 @@ if (WIN32)
 endif()
 
 find_package(SDL2 REQUIRED)
+find_package(LayerShellQt QUIET)
 
 qt_standard_project_setup(REQUIRES 6.10)
 
@@ -43,6 +44,7 @@ qt_add_qml_module(appReDash360
         TileIcon.qml
         Guide.qml
         AppShelf.qml
+        GuideOverlay.qml
         icons.js
     SOURCES
         gamepad.h gamepad.cpp
@@ -66,6 +68,12 @@ set_target_properties(appReDash360 PROPERTIES
 target_link_libraries(appReDash360
     PRIVATE Qt6::Quick SDL2::SDL2
 )
+
+if (LayerShellQt_FOUND)
+    target_link_libraries(appReDash360 PRIVATE LayerShellQt::Interface)
+    target_compile_definitions(appReDash360 PRIVATE HAVE_LAYER_SHELL)
+    message(STATUS "Guide overlay: building with layer-shell-qt")
+endif()
 
 install(TARGETS appReDash360
     BUNDLE DESTINATION .

@@ -20,6 +20,7 @@ public:
     ~Gamepad() override;
 
     void setWindow(QWindow *window) { m_window = window; }
+    void setOverlay(QWindow *overlay) { m_overlay = overlay; }
 
 private:
     void poll();
@@ -30,6 +31,7 @@ private:
 
     QTimer m_timer;
     QPointer<QWindow> m_window;
+    QPointer<QWindow> m_overlay;
     SDL_GameController *m_controller = nullptr;
 
     // Holding a direction repeats it, like the real dashboard

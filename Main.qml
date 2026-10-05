@@ -84,6 +84,12 @@ ApplicationWindow {
       readonly property int pageGap: 160
       readonly property bool subScreenOpen: shelf.visible || appShelf.visible
 
+      // Bring the dashboard in front of whatever is running (e.g. a game)
+      function showDashboard() {
+            window.raise()
+            window.requestActivate()
+      }
+
       Item{
             id: canvas
             width: 1920
@@ -231,5 +237,14 @@ ApplicationWindow {
                   onShelfRequested: shelf.open()
                   onQuitRequested: Qt.quit()
             }
+      }
+
+      GuideOverlay{
+            id: overlay
+            gamertag: profile.gamertag
+            gamerpic: profile.gamerpic
+            onTabRequested: (index) => { window.showDashboard(); pages.currentIndex = index }
+            onShelfRequested: { window.showDashboard(); shelf.open() }
+            onQuitRequested: Qt.quit()
       }
 }
