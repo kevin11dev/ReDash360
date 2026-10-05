@@ -74,9 +74,9 @@ ApplicationWindow {
 
             Row{
                   id: tabRow
-                  anchors.horizontalCenter:  parent.horizontalCenter
-                  y: 140
-                  spacing: 48
+                  x: 231
+                  y: 227                          // the line the tab names sit on (their baseline)
+                  spacing: 58
 
                   Repeater{
                         id: tabRepeater
@@ -86,11 +86,12 @@ ApplicationWindow {
                               required property int index
                               required property var modelData
 
+                              anchors.baseline: parent.top
                               text: modelData.name
-                              font.pixelSize: 44
+                              font.pixelSize: 50
                               color: "white"
                               font.weight: Font.Light
-                              opacity: index === pages.currentIndex ? 1.0 : 0.6
+                              opacity: index === pages.currentIndex ? 1.0 : 0.55
                               Behavior on opacity {NumberAnimation{duration: 200}}
 
                               TapHandler{onTapped: pages.currentIndex = index}
@@ -108,8 +109,8 @@ ApplicationWindow {
             ListView {
                   id: pages
 
-                  anchors.top: tabRow.bottom
-                  anchors.topMargin: 70
+                  anchors.top: parent.top
+                  anchors.topMargin: 270
                   anchors.left: parent.left
                   anchors.right: parent.right
                   anchors.bottom: parent.bottom

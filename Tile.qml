@@ -20,9 +20,9 @@ Rectangle{
     width: columnSpan * parent.cellWidth + (columnSpan - 1) * parent.gap
     height: rowSpan * parent.cellHeight + (rowSpan - 1) * parent.gap
 
-    color: "#107C10"
+    color: "#009000"
 
-    scale: activeFocus ? 1.04 : 1.0
+    scale: activeFocus ? 1.07 : 1.0
     z: activeFocus ? 1 : 0
     Behavior on scale {
         NumberAnimation {
@@ -53,12 +53,26 @@ Rectangle{
         elide: Text.ElideRight
     }
 
-    Rectangle{
+    // Soft shadow under the focused tile: a few see-through dark rectangles,
+    // each a bit bigger than the last, so the edge fades out
+    Item{
         anchors.fill: parent
-        z: 3
-        color: "transparent"
-        border.color: "white"
-        border.width: tile.activeFocus ? 4 : 0
+        z: -1                                   // behind the tile, so only the edges show
+        opacity: tile.activeFocus ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: 150 } }
+
+        Repeater{
+            model: 8
+            Rectangle{
+                required property int index
+                x: 4 - index * 2
+                y: 8 - index * 2
+                width: parent.width + index * 4
+                height: parent.height + index * 4
+                radius: index * 2
+                color: Qt.rgba(0, 0, 0, 0.07)
+            }
+        }
     }
 
     MouseArea{
