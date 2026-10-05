@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtCore
 
 ApplicationWindow {
       id: window
@@ -18,6 +19,21 @@ ApplicationWindow {
                   GradientStop{position: 0.88; color: "#acadaf"}
                   GradientStop{position: 1.00; color: "#8a8b8f"}
             }
+
+            Image{
+                  anchors.fill: parent
+                  source: theme.background
+                  visible: status === Image.Ready
+                  fillMode: Image.PreserveAspectCrop
+                  asynchronous: true
+                  sourceSize.width: 1920
+            }
+      }
+
+      Settings{
+            id: theme
+            category: "theme"
+            property string background
       }
 
       Shortcut{

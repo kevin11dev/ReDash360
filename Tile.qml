@@ -50,7 +50,10 @@ Rectangle{
         anchors.left: parent.left
         anchors.bottom: parent.bottom
         anchors.margins: 12
+        wrapMode: Text.WordWrap
+        maximumLineCount: 2
         elide: Text.ElideRight
+        lineHeight: 0.9
     }
 
     // Soft shadow under the focused tile: a few see-through dark rectangles,
