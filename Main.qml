@@ -125,6 +125,8 @@ ApplicationWindow {
                   anchors.right: parent.right
                   anchors.rightMargin: 144
                   y: 63
+                  opacity: window.subScreenOpen ? 0 : 0.88
+                  Behavior on opacity { NumberAnimation { duration: 200 } }
             }
 
             ListView {
@@ -179,7 +181,7 @@ ApplicationWindow {
                               function onTabRequested(index) {pages.currentIndex = index}
                               function onShelfRequested() {shelf.open()}
                               function onPickGameRequested(callback) {shelf.pick(callback)}
-                              function onAppRequested() {appShelf.open()}
+                              function onAppsRequested() {appShelf.open()}
                         }
                   }
             }
