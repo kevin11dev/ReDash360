@@ -6,6 +6,7 @@ TilePage {
     Tile{                                       //Open Tray
         id: openTrayTile
         label: Launcher.lastName !== "" ? Launcher.lastName : "Open Tray"
+        icon: "disc"
         hints: [{button: "Y", label: "Eject"}]
         column: 0; row: 0
         focus: true
@@ -18,6 +19,7 @@ TilePage {
     Tile{                                       //Pins
         id: pinsTile
         label: "My Pins"
+        icon: "pin"
         column: 0; row: 1
         onActivated: console.log("My Pins")
     }
@@ -25,6 +27,7 @@ TilePage {
     Tile{                                       //Recents
         id: recentsTile
         label: "Recents"
+        icon: "clock"
         column: 0; row: 2
         onActivated: console.log("Recents")
     }
@@ -40,6 +43,7 @@ TilePage {
     Tile{                                       //Media
         id: mediaTile
         label: "Media"
+        icon: "play"
         column: 1; row: 2
         onActivated: root.tabRequested(4)
     }
@@ -47,6 +51,7 @@ TilePage {
     Tile{                                       //Apps
         id: appsTile
         label: "Apps"
+        icon: "apps"
         column: 2; row: 2
         onActivated: root.tabRequested(5)
     }
@@ -54,6 +59,7 @@ TilePage {
     Tile{                                       //Search
         id: searchTile
         label: "Search"
+        icon: "search"
         column: 3; row: 0
         onActivated: root.tabRequested(0)
     }
@@ -61,6 +67,7 @@ TilePage {
     Tile{                                       //Settings
         id: settingsTile
         label: "Settings"
+        icon: "gear"
         column: 3; row: 1
         onActivated: root.tabRequested(6)
     }
@@ -68,6 +75,7 @@ TilePage {
     Tile{                                       //Games
         id: gamesTile
         label: "Games"
+        icon: "controller"
         column: 3; row: 2
         onActivated: root.tabRequested(3)
     }

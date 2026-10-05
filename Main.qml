@@ -95,7 +95,7 @@ ApplicationWindow {
                   id: pages
 
                   anchors.top: tabRow.bottom
-                  anchors.topMargin: 90
+                  anchors.topMargin: 70
                   anchors.left: parent.left
                   anchors.right: parent.right
                   anchors.bottom: parent.bottom

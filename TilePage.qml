@@ -17,7 +17,7 @@ FocusScope {
         id: grid
 
         property int cellWidth: 310
-        property int cellHeight: 197
+        property int cellHeight: 220
         property int gap: 4
 
         anchors.left: parent.left

@@ -9,6 +9,8 @@ Rectangle{
     property int columnSpan: 1
     property int rowSpan: 1
     property var hints: []
+    property string icon
+    property int iconSize: 72
 
     signal activated()
     signal yPressed()
@@ -27,6 +29,16 @@ Rectangle{
             duration: 150
             easing.type: Easing.OutCubic
         }
+    }
+
+    TileIcon{
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenterOffset: -20
+        width: tile.iconSize
+        height: tile.iconSize
+        name: tile.icon
+        z: 2
     }
 
     Text{
