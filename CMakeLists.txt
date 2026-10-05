@@ -5,6 +5,11 @@ project(ReDash360 VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Quick)
+
+if (WIN32)
+    list(APPEND CMAKE_PREFIX_PATH "C:/SDL2/x86_64-w64-mingw32")
+endif()
+
 find_package(SDL2 REQUIRED)
 
 qt_standard_project_setup(REQUIRES 6.10)
