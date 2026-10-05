@@ -7,7 +7,7 @@ Window {
     transientParent: null
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
     color: "transparent"
-    visible: "false"
+    visible: false
 
     property alias gamertag: guide.gamertag
     property alias gamerpic: guide.gamerpic

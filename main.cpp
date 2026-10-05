@@ -67,9 +67,13 @@ int main(int argc, char *argv[])
 
     const auto roots = engine.rootObjects();
     QWindow *mainWindow = roots.isEmpty() ? nullptr : qobject_cast<QWindow *>(roots.first());
-    QWindow *overlay = mainWindow ? mainWindow->findChild<QWindow *>("guideOverlay") : nullptr;
+    QWindow *overlay = mainWindow
+        ? qobject_cast<QWindow *>(mainWindow->property("guideOverlay").value<QObject *>())
+        : nullptr;
     if (overlay)
         setUpOverlay(overlay);
+    else
+        qWarning("Guide overlay: window not found");
 
     // Controller buttons become key presses for the dashboard, or the Guide over a game
     Gamepad gamepad;

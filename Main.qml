@@ -83,6 +83,7 @@ ApplicationWindow {
       readonly property int pageWidth: 1252
       readonly property int pageGap: 160
       readonly property bool subScreenOpen: shelf.visible || appShelf.visible
+      readonly property Window guideOverlay: overlay
 
       // Bring the dashboard in front of whatever is running (e.g. a game)
       function showDashboard() {
