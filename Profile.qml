@@ -23,7 +23,9 @@ Item {
         const home = StandardPaths.writableLocation(StandardPaths.HomeLocation).toString()
         return home.substring(home.lastIndexOf("/") + 1)
     }
+
     readonly property string gamertag: saved.gamertag !== "" ? saved.gamertag : userName
+    readonly property string gamerpic: saved.gamerpic
 
     // Which text is showing: 0 = gamertag, 1 = stats, 2 = none (just the picture)
     property int showing: 0

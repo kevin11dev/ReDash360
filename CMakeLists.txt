@@ -41,6 +41,7 @@ qt_add_qml_module(appReDash360
         GameSlot.qml
         Profile.qml
         TileIcon.qml
+        Guide.qml
         icons.js
     SOURCES
         gamepad.h gamepad.cpp

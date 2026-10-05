@@ -23,6 +23,7 @@ int keyForButton(Uint8 button)
     case SDL_CONTROLLER_BUTTON_Y:             return Qt::Key_Y;
     case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:  return Qt::Key_Q;
     case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: return Qt::Key_E;
+    case SDL_CONTROLLER_BUTTON_GUIDE:         return Qt::Key_Home;
     default:                                  return 0;
     }
 }

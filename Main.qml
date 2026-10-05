@@ -21,21 +21,34 @@ ApplicationWindow {
       }
 
       Shortcut{
+            sequence: "Home"
+            onActivated: {
+                  if(guide.visible){
+                        guide.close()
+                  } else {
+                        if(shelf.visible)
+                              shelf.close()
+                        guide.open()
+                  }
+            }
+      }
+
+      Shortcut{
             sequence: "Q"
             onActivated: pages.decrementCurrentIndex()
-            enabled: !shelf.visible
+            enabled: !shelf.visible && !guide.visible
       }
 
       Shortcut{
             sequence: "E"
             onActivated: pages.incrementCurrentIndex()
-            enabled: !shelf.visible
+            enabled: !shelf.visible && !guide.visible
       }
 
       Shortcut{
             sequence: "Esc"
             onActivated: pages.currentIndex = 1
-            enabled: !shelf.visible
+            enabled: !shelf.visible && !guide.visible
       }
 
 
@@ -86,6 +99,7 @@ ApplicationWindow {
             }
 
             Profile{
+                  id: profile
                   anchors.right: parent.right
                   anchors.rightMargin: 144
                   y: 63
@@ -171,6 +185,16 @@ ApplicationWindow {
             GameShelf{
                   id: shelf
                   anchors.fill: parent
+            }
+
+            Guide{
+                  id: guide
+                  anchors.fill: parent
+                  gamertag: profile.gamertag
+                  gamerpic: profile.gamerpic
+                  onTabRequested: (index) => pages.currentIndex = index
+                  onShelfRequested: shelf.open()
+                  onQuitRequested: Qt.quit()
             }
       }
 }
