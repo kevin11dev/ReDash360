@@ -85,6 +85,12 @@ ApplicationWindow {
                   }
             }
 
+            Profile{
+                  anchors.right: parent.right
+                  anchors.rightMargin: 144
+                  y: 63
+            }
+
             ListView {
                   id: pages
 
