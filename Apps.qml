@@ -10,7 +10,7 @@ TilePage {
         icon: "apps"
         column: 0; row: 0
         focus: true
-        onActivated: console.log("My Apps")
+        onActivated: root.appsRequested()
     }
 
     Tile{                                       //Browse Apps

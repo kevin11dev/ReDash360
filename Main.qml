@@ -44,6 +44,8 @@ ApplicationWindow {
                   } else {
                         if(shelf.visible)
                               shelf.close()
+                        if(appShelf.visible)
+                              appShelf.close()
                         guide.open()
                   }
             }
@@ -52,19 +54,19 @@ ApplicationWindow {
       Shortcut{
             sequence: "Q"
             onActivated: pages.decrementCurrentIndex()
-            enabled: !shelf.visible && !guide.visible
+            enabled: !window.subScreenOpen && !guide.visible
       }
 
       Shortcut{
             sequence: "E"
             onActivated: pages.incrementCurrentIndex()
-            enabled: !shelf.visible && !guide.visible
+            enabled: !window.subScreenOpen && !guide.visible
       }
 
       Shortcut{
             sequence: "Esc"
             onActivated: pages.currentIndex = 1
-            enabled: !shelf.visible && !guide.visible
+            enabled: !window.subScreenOpen && !guide.visible
       }
 
 
@@ -80,6 +82,7 @@ ApplicationWindow {
 
       readonly property int pageWidth: 1252
       readonly property int pageGap: 160
+      readonly property bool subScreenOpen: shelf.visible || appShelf.visible
 
       Item{
             id: canvas
@@ -93,7 +96,7 @@ ApplicationWindow {
                   x: 231
                   y: 227                          // the line the tab names sit on (their baseline)
                   spacing: 58
-                  opacity: shelf.visible ? 0 : 1
+                  opacity: window.subScreenOpen ? 0 : 1
                   Behavior on opacity { NumberAnimation { duration: 200 } }
 
                   Repeater{
@@ -147,7 +150,7 @@ ApplicationWindow {
                   preferredHighlightEnd: preferredHighlightBegin + window.pageWidth
                   highlightMoveDuration: 300
 
-                  opacity: shelf.visible ? 0 : 1
+                  opacity: window.subScreenOpen ? 0 : 1
                   Behavior on opacity { NumberAnimation { duration: 200 } }
 
                   delegate: Loader{
@@ -176,6 +179,7 @@ ApplicationWindow {
                               function onTabRequested(index) {pages.currentIndex = index}
                               function onShelfRequested() {shelf.open()}
                               function onPickGameRequested(callback) {shelf.pick(callback)}
+                              function onAppRequested() {appShelf.open()}
                         }
                   }
             }
@@ -185,7 +189,7 @@ ApplicationWindow {
                   x: 180
                   y: 990
                   spacing: 40
-                  opacity: shelf.visible ? 0 : 1
+                  opacity: window.subScreenOpen ? 0 : 1
                   Behavior on opacity { NumberAnimation { duration: 200 } }
 
                   ButtonHint{button: "A"; label: "Select"}
@@ -208,6 +212,11 @@ ApplicationWindow {
 
             GameShelf{
                   id: shelf
+                  anchors.fill: parent
+            }
+
+            AppShelf{
+                  id: appShelf
                   anchors.fill: parent
             }
 

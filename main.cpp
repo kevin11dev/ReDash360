@@ -4,6 +4,9 @@
 
 #include "gamepad.h"
 
+#include <QIcon>
+#include "applibrary.h"
+
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
@@ -19,6 +22,9 @@ int main(int argc, char *argv[])
         &app,
         []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
+    // App icons for QML ("image://appicon/firefox"); some apps keep theirs in /usr/share/pixmaps
+    engine.addImageProvider("appicon", new AppIconProvider);
+    QIcon::setFallbackSearchPaths(QIcon::fallbackSearchPaths() << "/usr/share/pixmaps");
     engine.loadFromModule("ReDash360", "Main");
 
     // Controller buttons become key presses for the main window
