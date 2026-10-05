@@ -108,5 +108,34 @@ var shapes = {
     power: {
         line: "M24,4 V22 M14,10 A17,17 0 1,0 34,10",
         width: 4.5
+    },
+    home: {
+        fill: "M24,5 L45,24 H39 V43 H29 V31 H19 V43 H9 V24 H3 Z"
+    },
+    folder: {
+        fill: "M3,9 H18 L22,14 H45 V41 H3 Z"
+    },
+    // Media buttons
+    playSolid: {
+        fill: "M13,7 L41,24 L13,41 Z"
+    },
+    previous: {
+        fill: "M8,8 H14 V40 H8 Z M41,8 V40 L16,24 Z"
+    },
+    next: {
+        fill: "M40,8 H34 V40 H40 Z M7,8 V40 L32,24 Z"
+    },
+    stop: {
+        fill: "M10,10 H38 V38 H10 Z"
+    },
+    shuffle: {
+        line: "M5,14 H13 C24,14 24,34 35,34 H43 M5,34 H13 C24,34 24,14 35,14 H43 " +
+              "M37,8 L43,14 L37,20 M37,28 L43,34 L37,40",
+        width: 4
+    },
+    volume: {
+        fill: "M5,17 H14 L25,8 V40 L14,31 H5 Z",
+        line: "M31,17 A10,10 0 0,1 31,31 M36,11 A18,18 0 0,1 36,37",
+        width: 3.5
     }
 }

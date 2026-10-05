@@ -7,6 +7,7 @@ Item {
     id: root
 
     property string name                                    // e.g. "disc", "gear"; "" = nothing
+    property color color: "white"
     readonly property var shape: Icons.shapes[name] || null
 
     width: 72
@@ -22,7 +23,7 @@ Item {
         preferredRendererType: Shape.CurveRenderer          // smooth edges at any size
 
         ShapePath {                                         // the filled parts
-            fillColor: "white"
+            fillColor: root.color
             strokeColor: "transparent"
             fillRule: ShapePath.OddEvenFill
             PathSvg { path: root.shape && root.shape.fill ? root.shape.fill : "" }
@@ -30,7 +31,7 @@ Item {
 
         ShapePath {                                         // the line parts
             fillColor: "transparent"
-            strokeColor: "white"
+            strokeColor: root.color
             strokeWidth: root.shape && root.shape.width ? root.shape.width : 4
             capStyle: ShapePath.RoundCap
             joinStyle: ShapePath.RoundJoin

@@ -1,10 +1,15 @@
 import QtQuick
+import QtQuick.Shapes
+import QtCore
 
-// The Xbox Guide: a dark overlay with a row of "blades" (tabs). The current
-// blade is the big middle panel; the two blades on each side peek in as
-// narrow strips with their names written sideways. LB/RB (Q/E) or
-// left/right switch blades, up/down picks a row, A runs it, B closes.
-// Sizes come from DashX360's guide, scaled from 1280x720 to our 1920x1080.
+// The Xbox Guide, laid out like the real Xbox 360 one (measured from a video
+// of the console at 1920x1080, the same size as our canvas).
+//
+// Four blades: Games & Apps | <gamertag> | Media | Settings. The current
+// blade's rows fill the white panel, with its name on a light strip to the
+// left. Every other blade is a dark strip: earlier ones stack to the left,
+// later ones to the right. LB/RB (or left/right) switch blades, up/down pick
+// a row, A runs it, B closes, Y goes to Xbox Home.
 FocusScope {
     id: guide
     visible: false
@@ -18,38 +23,67 @@ FocusScope {
     signal quitRequested()
 
     property Item returnFocusTo: null
-    property int tab: 2                         // start on "Xbox Home"
+    property int tab: 1                         // opens on your gamertag blade
+    property bool inControls: false             // on the media buttons (Media blade)
+    property int control: 0                     // which media button
 
-    // The blades, left to right. A row without "run" does nothing yet.
+    readonly property string homeFolder: StandardPaths.writableLocation(StandardPaths.HomeLocation).toString()
+
+    // Box art of the last played game, for the "Play ..." row
+    readonly property string lastCover: {
+        GameLibrary.count                       // look again after a rescan
+        return GameLibrary.find(Launcher.lastCommand).cover || ""
+    }
+
+    // The blades. Each row: label, and optionally an icon (from icons.js) or
+    // image on the right, and run (what A does). Rows without run do nothing yet.
     readonly property var blades: [
         { title: "Games & Apps", rows: [
-            { label: "My Games", run: () => guide.shelfRequested() },
-            { label: "My Apps", run: () => guide.tabRequested(5) },
-            { label: "Game Marketplace" },
-            { label: "App Marketplace" } ] },
-        { title: guide.gamertag, rows: [
             { label: "Achievements" },
+            { label: "Awards" },
             { label: "Recent" },
-            { label: "My Games", run: () => guide.shelfRequested() } ] },
-        { title: "Xbox Home", rows: [
-            { label: "Xbox Home", run: () => guide.tabRequested(1) },
-            { label: "Friends", run: () => guide.tabRequested(2) },
-            { label: "Party" },
-            { label: "Minimize", run: () => {} } ] },
-        { title: "Media", rows: [
-            { label: "Video Player" },
-            { label: "Music Player" },
+            { label: "My Games", run: () => guide.shelfRequested() },
+            { label: "Active Downloads" },
+            { label: "Redeem Code" },
+            { label: "Activity Feed" } ] },
+        { title: guide.gamertag, rows: [
+            { label: "Xbox Home", icon: "home", run: () => guide.tabRequested(1) },
+            { label: "File Browser", icon: "folder",
+              run: () => Launcher.run(Qt.platform.os === "windows" ? "explorer"
+                                                                    : "xdg-open " + guide.homeFolder) }
+          ].concat(Launcher.lastName === "" ? [] : [
+            { label: "Play " + Launcher.lastName, image: guide.lastCover,
+              run: () => Launcher.play(Launcher.lastName, Launcher.lastCommand) } ]) },
+        { title: "Media", media: true, rows: [
+            { label: "System Video Player" },
+            { label: "System Music Player" },
             { label: "Picture Viewer" } ] },
         { title: "Settings", rows: [
-            { label: "System Settings", run: () => guide.tabRequested(6) },
             { label: "Profile" },
             { label: "Preferences" },
-            { label: "Turn Off", run: () => guide.quitRequested() } ] }
+            { label: "Family Settings" },
+            { label: "System Settings", run: () => guide.tabRequested(6) },
+            { label: "Account Management" },
+            { label: "Turn Off Console", run: () => guide.quitRequested() } ] }
     ]
+
+    // Media buttons along the bottom of the Media blade. They control whatever
+    // is playing (Spotify, a browser, ...) through playerctl on Linux.
+    readonly property var mediaControls: [
+        { icon: "playSolid", command: "playerctl play-pause" },
+        { icon: "previous", command: "playerctl previous" },
+        { icon: "stop", command: "playerctl stop" },
+        { icon: "next", command: "playerctl next" },
+        { icon: "shuffle", command: "playerctl shuffle Toggle" },
+        { icon: "volume", command: "playerctl volume 0.1+" }
+    ]
+
+    readonly property var current: blades[tab]
 
     function open() {
         returnFocusTo = guide.Window.activeFocusItem
-        tab = 2
+        tab = 1
+        inControls = false
         list.currentIndex = 0
         visible = true
         list.forceActiveFocus()
@@ -67,29 +101,41 @@ FocusScope {
         if (next < 0 || next >= blades.length)
             return
         tab = next
+        inControls = false
         list.currentIndex = 0
-        slideIn.from = step * 60                // slide in from the side we moved towards
+        slideIn.from = step * 60                // rows slide in from the side we moved towards
         slideIn.restart()
     }
 
     function activateCurrent() {
-        const row = blades[tab].rows[list.currentIndex]
+        if (inControls) {
+            Launcher.run(mediaControls[control].command)    // the guide stays open
+            return
+        }
+        const row = current.rows[list.currentIndex]
         if (!row.run)
             return                              // not built yet
         close()                                 // close first, so focus is back on the dashboard
         row.run()
     }
 
-    // Name of the blade `offset` steps away from the current one ("" past the ends)
-    function bladeTitle(offset) {
-        const i = tab + offset
-        return i >= 0 && i < blades.length ? blades[i].title : ""
+    function goHome() {
+        close()
+        tabRequested(1)
     }
 
-    // Dark backdrop; also stops the mouse reaching the dashboard underneath
+    // Left edge of blade i's strip, for the current tab
+    function stripX(i) {
+        if (i < tab) return 547 - (tab - i) * 67
+        if (i === tab) return 547
+        return 1370 + (i - tab - 1) * 68
+    }
+
+    // Almost-black backdrop; also stops the mouse reaching the dashboard underneath
     Rectangle {
+        id: backdrop
         anchors.fill: parent
-        color: "#E6000000"
+        color: "#F0000000"
         MouseArea {
             anchors.fill: parent
             hoverEnabled: true
@@ -97,28 +143,38 @@ FocusScope {
         }
     }
 
+    // The white panel the guide grows out of when it opens
+    Rectangle {
+        id: base
+        x: 547; y: 304
+        width: 823; height: 471
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: "#F7FDFD" }
+            GradientStop { position: 1.0; color: "#D2DDDE" }
+        }
+    }
+
     Item {
-        id: content
+        id: details
         anchors.fill: parent
 
         Text {
-            x: 531; y: 247
+            x: 548; y: 236
             text: "Xbox Guide"
-            color: "#E8EAEB"
-            font.pixelSize: 34
-            font.weight: Font.Light
+            color: "#F0F0F0"
+            font.pixelSize: 38
         }
 
         // Gamerpic: the saved picture, or the first letter on a green tile
         Rectangle {
-            x: 910; y: 219
-            width: 72; height: 72
+            x: 928; y: 226
+            width: 64; height: 64
             color: "#107C10"
             Text {
                 anchors.centerIn: parent
                 text: guide.gamertag.charAt(0).toUpperCase()
                 color: "white"
-                font.pixelSize: 40
+                font.pixelSize: 36
             }
             Image {
                 anchors.fill: parent
@@ -129,143 +185,299 @@ FocusScope {
             }
         }
 
+        // Ring of light: which controller you are (player 1 = top-left quarter lit)
+        Shape {
+            x: 1335; y: 222
+            width: 32; height: 32
+            preferredRendererType: Shape.CurveRenderer
+
+            RingQuarter { startAngle: 185; lit: true }      // 0 degrees = 3 o'clock, going clockwise
+            RingQuarter { startAngle: 275 }
+            RingQuarter { startAngle: 5 }
+            RingQuarter { startAngle: 95 }
+        }
+
         Text {
             id: clock
-            x: 1165; y: 268
-            width: 189
-            horizontalAlignment: Text.AlignHCenter
-            color: "#E8EAEB"
-            font.pixelSize: 31
-            font.weight: Font.DemiBold
+            x: 1370 - width                             // right edge lines up with the panel
+            y: 261
+            color: "#F0F0F0"
+            font.pixelSize: 34
 
             Timer {
                 interval: 1000
                 running: guide.visible
                 repeat: true
                 triggeredOnStart: true
-                onTriggered: clock.text = Qt.formatTime(new Date(), "h:mm AP")
+                onTriggered: clock.text = new Date().toLocaleTimeString(Qt.locale(), Locale.ShortFormat)
             }
         }
 
-        // The blades: outer strip, inner strip, main panel, inner strip, outer strip
-        Row {
-            id: bladeRow
-            x: 471; y: 306
-            height: 472
+        // The current blade's rows (and media buttons) in the white panel
+        Item {
+            id: panel
+            x: 642; y: 304
+            width: 728; height: 471
+            clip: true
 
-            SideStrip { width: 72; outer: true; offset: -2 }
-            SideStrip { width: 87; outer: false; offset: -1 }
+            ListView {
+                id: list
+                width: parent.width
+                height: guide.current.media ? 326 : parent.height
+                model: guide.current.rows
+                interactive: false
+                keyNavigationEnabled: true
+                highlightMoveDuration: 0
 
-            Rectangle {
-                width: 735
-                height: parent.height
-                color: "#E5EAEB"
-                clip: true
+                transform: Translate { id: shift }
+                NumberAnimation { id: slideIn; target: shift; property: "x"; to: 0; duration: 180; easing.type: Easing.OutCubic }
 
-                ListView {
-                    id: list
-                    anchors.fill: parent
-                    model: guide.blades[guide.tab].rows
-                    interactive: false
-                    keyNavigationEnabled: true
-                    highlightMoveDuration: 0
-
-                    transform: Translate { id: shift }
-                    NumberAnimation { id: slideIn; target: shift; property: "x"; to: 0; duration: 180; easing.type: Easing.OutCubic }
-
-                    delegate: Rectangle {
-                        id: row
-                        required property int index
-                        required property var modelData
-
-                        width: ListView.view.width
-                        height: 63
-                        color: ListView.isCurrentItem ? "#107C10" : "transparent"
-
-                        Text {
-                            anchors.left: parent.left
-                            anchors.leftMargin: 27
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: row.modelData.label
-                            color: row.ListView.isCurrentItem ? "white" : "#333638"
-                            font.pixelSize: 30
-                            font.weight: Font.DemiBold
-                        }
-
-                        Rectangle {                     // thin line under each row
-                            anchors.bottom: parent.bottom
-                            width: parent.width
-                            height: 2
-                            color: "#C0C8CA"
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: {
-                                list.currentIndex = row.index
-                                guide.activateCurrent()
-                            }
-                        }
+                delegate: GuideRow {
+                    required property int index
+                    required property var modelData
+                    width: ListView.view.width
+                    label: modelData.label
+                    icon: modelData.icon || ""
+                    image: modelData.image || ""
+                    selected: ListView.isCurrentItem && !guide.inControls
+                    onClicked: {
+                        guide.inControls = false
+                        list.currentIndex = index
+                        guide.activateCurrent()
                     }
+                }
 
-                    Keys.onReturnPressed: guide.activateCurrent()
-                    Keys.onEnterPressed: guide.activateCurrent()
-                    Keys.onEscapePressed: guide.close()
-                    Keys.onPressed: (event) => {
-                        if (event.key === Qt.Key_Q || event.key === Qt.Key_Left) {
-                            guide.switchTab(-1)
-                            event.accepted = true
-                        } else if (event.key === Qt.Key_E || event.key === Qt.Key_Right) {
-                            guide.switchTab(1)
-                            event.accepted = true
-                        }
+                Keys.onDownPressed: (event) => {
+                    if (currentIndex < count - 1)
+                        currentIndex++
+                    else if (guide.current.media)
+                        guide.inControls = true     // off the bottom: onto the media buttons
+                }
+                Keys.onUpPressed: (event) => {
+                    if (guide.inControls)
+                        guide.inControls = false
+                    else if (currentIndex > 0)
+                        currentIndex--
+                }
+                Keys.onReturnPressed: guide.activateCurrent()
+                Keys.onEnterPressed: guide.activateCurrent()
+                Keys.onEscapePressed: guide.close()
+                Keys.onPressed: (event) => {
+                    const left = event.key === Qt.Key_Left, right = event.key === Qt.Key_Right
+                    if (guide.inControls && (left || right)) {
+                        // Left/right move between the media buttons
+                        guide.control = Math.max(0, Math.min(guide.mediaControls.length - 1,
+                                                             guide.control + (left ? -1 : 1)))
+                        event.accepted = true
+                    } else if (event.key === Qt.Key_Q || left) {
+                        guide.switchTab(-1)
+                        event.accepted = true
+                    } else if (event.key === Qt.Key_E || right) {
+                        guide.switchTab(1)
+                        event.accepted = true
+                    } else if (event.key === Qt.Key_Y) {
+                        guide.goHome()
+                        event.accepted = true
                     }
                 }
             }
 
-            SideStrip { width: 80; outer: false; offset: 1 }
-            SideStrip { width: 67; outer: true; offset: 2 }
+            // Media blade only: "Select Music" and the playback buttons
+            Column {
+                visible: guide.current.media === true
+                y: 326
+                width: parent.width
+
+                GuideRow {
+                    width: parent.width
+                    label: "Select Music"
+                }
+
+                Row {
+                    x: 14
+                    Repeater {
+                        model: guide.mediaControls
+                        Rectangle {
+                            required property int index
+                            required property var modelData
+                            width: 117; height: 82
+                            color: guide.inControls && guide.control === index ? "#008E00" : "transparent"
+
+                            TileIcon {
+                                anchors.centerIn: parent
+                                width: 40; height: 40
+                                name: modelData.icon
+                                color: guide.inControls && guide.control === index ? "white" : "#3A4246"
+                            }
+                            Rectangle {                     // divider on the right
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 2; height: 62
+                                color: "#C6CDD0"
+                                visible: index < guide.mediaControls.length - 1
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    guide.inControls = true
+                                    guide.control = index
+                                    guide.activateCurrent()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // One strip per blade, sliding into place when the tab changes
+        Repeater {
+            model: guide.blades
+            Rectangle {
+                id: strip
+                required property int index
+                required property var modelData
+                readonly property bool isCurrent: index === guide.tab
+
+                x: guide.stripX(index)
+                y: 304
+                width: isCurrent ? 95 : 67
+                height: 471
+                Behavior on x { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: strip.isCurrent ? "#D6DFE0" : "#465D6D" }
+                    GradientStop { position: 1.0; color: strip.isCurrent ? "#BCC6C9" : "#465D6D" }
+                }
+
+                Rectangle {                             // darker line on the outer edge
+                    width: 2; height: parent.height
+                    x: index < guide.tab ? parent.width - 2 : 0
+                    color: "#2F404C"
+                    visible: !strip.isCurrent
+                }
+
+                // Name written sideways, reading downwards from the top
+                Text {
+                    x: (parent.width + height) / 2
+                    y: 24
+                    rotation: 90
+                    transformOrigin: Item.TopLeft
+                    width: 420
+                    elide: Text.ElideRight
+                    text: strip.modelData.title
+                    color: strip.isCurrent ? "#7C878D" : "#E3E9ED"
+                    font.pixelSize: 34
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: guide.switchTab(strip.index - guide.tab)
+                }
+            }
         }
 
         Row {
-            x: 507; y: 796
-            spacing: 40
+            x: 548; y: 793
+            spacing: 30
             ButtonHint { button: "A"; label: "Select" }
             ButtonHint { button: "B"; label: "Back" }
+            ButtonHint { button: "X"; label: "Sign Out" }
+            ButtonHint { button: "Y"; label: "Xbox Home" }
         }
     }
 
-    // Pop in: fade up and grow slightly
-    ParallelAnimation {
+    // Opening: the screen darkens while the white panel grows out of the
+    // middle, then the rows, strips and header fade in on top of it
+    SequentialAnimation {
         id: openAnimation
-        NumberAnimation { target: guide; property: "opacity"; from: 0; to: 1; duration: 150 }
-        NumberAnimation { target: content; property: "scale"; from: 0.97; to: 1; duration: 150; easing.type: Easing.OutCubic }
+        ParallelAnimation {
+            NumberAnimation { target: backdrop; property: "opacity"; from: 0; to: 1; duration: 200 }
+            NumberAnimation { target: base; property: "scale"; from: 0.45; to: 1; duration: 250; easing.type: Easing.OutCubic }
+            NumberAnimation { target: base; property: "opacity"; from: 0.35; to: 1; duration: 250 }
+            PropertyAction { target: details; property: "opacity"; value: 0 }
+        }
+        NumberAnimation { target: details; property: "opacity"; to: 1; duration: 200 }
     }
 
-    // A neighbouring blade, shown as a strip with its name written sideways
-    component SideStrip: Rectangle {
-        id: strip
-        property bool outer
-        property int offset
+    // A quarter of the ring of light
+    component RingQuarter: ShapePath {
+        id: quarter
+        property real startAngle
+        property bool lit: false
+        fillColor: "transparent"
+        strokeColor: lit ? "#6BD12B" : "#6E767A"
+        strokeWidth: lit ? 4 : 2.5
+        capStyle: ShapePath.FlatCap
+        PathAngleArc {
+            centerX: 16; centerY: 16
+            radiusX: 13; radiusY: 13
+            startAngle: quarter.startAngle
+            sweepAngle: 80
+        }
+    }
 
-        height: parent.height
-        color: outer ? "#BBC6CC" : "#E8EEEE"
+    // One row of a blade
+    component GuideRow: Rectangle {
+        id: row
+        property string label
+        property string icon
+        property string image
+        property bool selected
+        signal clicked()
+
+        height: 63
+        color: selected ? "#008E00" : "#F5FBFD"
+
+        Rectangle {                                 // light line along the top of the selected row
+            width: parent.width; height: 2
+            color: "#15A31A"
+            visible: row.selected
+        }
+        Rectangle {                                 // line under every row
+            anchors.bottom: parent.bottom
+            width: parent.width; height: 2
+            color: "#CED4D6"
+            visible: !row.selected
+        }
 
         Text {
-            anchors.centerIn: parent
-            width: strip.height - 40            // turned sideways, so its width runs down the strip
-            rotation: 90
-            horizontalAlignment: Text.AlignHCenter
+            anchors.left: parent.left
+            anchors.leftMargin: 24
+            anchors.right: parent.right
+            anchors.rightMargin: 72
+            anchors.verticalCenter: parent.verticalCenter
             elide: Text.ElideRight
-            text: guide.bladeTitle(strip.offset)
-            color: strip.outer ? "#4A555D" : "#3C4144"
-            font.pixelSize: 30
-            font.weight: Font.DemiBold
+            text: row.label
+            color: row.selected ? "white" : "#111111"
+            font.pixelSize: 35
+        }
+
+        TileIcon {
+            anchors.right: parent.right
+            anchors.rightMargin: 16
+            anchors.verticalCenter: parent.verticalCenter
+            width: 42; height: 42
+            name: row.icon
+            color: row.selected ? "white" : "#111111"
+        }
+
+        Image {
+            anchors.right: parent.right
+            anchors.rightMargin: 14
+            anchors.verticalCenter: parent.verticalCenter
+            width: 46; height: 46
+            source: row.image
+            visible: row.image !== "" && status === Image.Ready
+            fillMode: Image.PreserveAspectCrop
+            asynchronous: true
+            sourceSize.width: 92
         }
 
         MouseArea {
             anchors.fill: parent
-            onClicked: guide.switchTab(strip.offset)
+            onClicked: row.clicked()
         }
     }
 }
