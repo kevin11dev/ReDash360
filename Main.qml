@@ -120,6 +120,14 @@ ApplicationWindow {
                         opacity: ListView.isCurrentItem ? 1.0 : 0.35
                         Behavior on opacity {NumberAnimation {duration: 200}}
 
+                        MouseArea{
+                              anchors.fill: parent
+                              z: 1
+                              visible: !page.ListView.isCurrentItem
+                              hoverEnabled: true
+                              onClicked: pages.currentIndex = page.index
+                        }
+
                         Connections{
                               target: page.item
                               ignoreUnknownSignals: true

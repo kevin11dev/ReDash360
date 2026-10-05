@@ -53,7 +53,10 @@ Rectangle{
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onEntered: tile.forceActiveFocus()
+        onPositionChanged: {
+            if(Pointer.active && !tile.activeFocus)
+                tile.forceActiveFocus()
+        }
         onClicked: tile.activated()
     }
 
