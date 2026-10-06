@@ -58,7 +58,38 @@ bool readDesktopFile(const QString &path, App &app)
     app.name = keys.value("Name");
     app.command = command;
     app.icon = keys.value("Icon");
+    app.categories = keys.value("Categories").split(';', Qt::SkipEmptyParts);
     return !app.name.isEmpty();
+}
+
+// What QML gets for one app
+QVariantMap toMap(const App &app)
+{
+    return {
+             { "name", app.name },
+             { "command", app.command },
+             { "icon", app.icon },
+             };
+}
+
+// Video players say Player or TV, plus Video (mpv, Jellyfin, Kodi) or at least
+// not Audio (VLC only says AudioVideo;Player). Video editors and webcam apps
+// are in Video too, but aren't players, so they're left out.
+bool isVideoApp(const App &app)
+{
+    const QStringList &c = app.categories;
+    return (c.contains("Player") || c.contains("TV"))
+           && (c.contains("Video") || !c.contains("Audio"));
+}
+
+// Music players say Audio plus Player or Music (Spotify, Elisa, Rhythmbox).
+// Video players that also play music (mpv) stay with the video apps.
+bool isMusicApp(const App &app)
+{
+    const QStringList &c = app.categories;
+    return c.contains("Audio")
+           && (c.contains("Player") || c.contains("Music"))
+           && !c.contains("Video");
 }
 
 } // namespace
@@ -72,12 +103,27 @@ AppLibrary::AppLibrary(QObject *parent)
 QVariantList AppLibrary::all() const
 {
     QVariantList list;
+    for (const App &app : m_apps)
+        list << toMap(app);
+    return list;
+}
+
+QVariantList AppLibrary::videoApps() const
+{
+    QVariantList list;
     for (const App &app : m_apps) {
-        list << QVariantMap{
-            { "name", app.name },
-            { "command", app.command },
-            { "icon", app.icon },
-            };
+        if (isVideoApp(app))
+            list << toMap(app);
+    }
+    return list;
+}
+
+QVariantList AppLibrary::musicApps() const
+{
+    QVariantList list;
+    for (const App &app : m_apps) {
+        if (isMusicApp(app))
+            list << toMap(app);
     }
     return list;
 }

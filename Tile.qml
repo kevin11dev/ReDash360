@@ -10,6 +10,7 @@ Rectangle{
     property int rowSpan: 1
     property var hints: []
     property string icon
+    property string image
     property int iconSize: 72
 
     signal activated()
@@ -37,7 +38,20 @@ Rectangle{
         anchors.verticalCenterOffset: -20
         width: tile.iconSize
         height: tile.iconSize
-        name: tile.icon
+        name: picture.status === Image.Ready ? "" : tile.icon
+        z: 2
+    }
+
+    Image{
+        id: picture
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.veticalCenter
+        anchors.verticalCenterOffset: -20
+        width: tile.iconSize
+        height: tile.iconSize
+        source: tile.image
+        sourceSize: Qt.size(tile.iconSize, tile.iconSize)
+        asynchronous: true
         z: 2
     }
 

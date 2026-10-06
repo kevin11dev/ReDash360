@@ -7,8 +7,15 @@ FocusScope {
     visible: false
 
     property Item returnFocusTo: null
+    property string title: "my apps"
+    property var apps: []
 
-    function open() {
+    // open()                          -> every app, as "my apps"
+    // open("my video apps", someApps) -> just those apps, with that title
+    function open(newTitle, newApps) {
+        title = newTitle || "my apps"
+        apps = newApps || AppLibrary.all()
+        returnFocusTo = Window.activeFocusItem
         returnFocusTo = Window.activeFocusItem
         visible = true
         grid.currentIndex = 0

@@ -7,6 +7,7 @@ FocusScope {
     signal shelfRequested()
     signal pickGameRequested(var callback)
     signal appsRequested()
+    signal appListRequested(string title, var apps)    // "my apps" screen with just these apps
 
     property alias cellWidth: grid.cellWidth
     property alias cellHeight: grid.cellHeight
@@ -50,7 +51,7 @@ FocusScope {
         let best = null
         for (let i = 0; i < grid.children.length; i++) {
             const t = grid.children[i]
-            if (t === from || t.columnSpan === undefined)   // skip non-tiles
+            if (t === from || t.columnSpan === undefined || !t.visible)   // skip non-tiles and hidden tiles
                 continue
 
             // Do the two tiles share any rows / any columns?

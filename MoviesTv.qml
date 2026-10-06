@@ -1,8 +1,9 @@
 import QtQuick
+import QtCore
 
 TilePage {
     id: root
-    cellWidth: 247
+    readonly property vatr videoApps: AppLibrary.videoApps()
 
     Tile{                                       //My Video Apps
         id: myVideoAppsTile
@@ -10,84 +11,56 @@ TilePage {
         icon: "play"
         column: 0; row: 0
         focus: true
-        onActivated: console.log("My Video Apps")
+        onActivated: root.appListRequested("my video apps", root.videoApps)
     }
 
     Tile{                                       //Browse Video
         id: browseVideoTile
-        label: "Browse TV & Movies"
-        icon: "bag"
+        label: "My Videos"
+        icon: "folder"
         column: 0; row: 1
         focus: true
-        onActivated: console.log("My Video Apps")
+        onActivated: Qt.openUrlExternally(StandardPaths.writableLocation(StandardPaths.MoviesLocation))
     }
 
-    Tile{                                       //Search Video
+    Tile{                                       //Music
         id: searchVideoTile
-        label: "Search TV & Movies"
+        label: "Music"
         icon: "search"
         column: 0; row: 2
         focus: true
-        onActivated: console.log("My Video Apps")
+        onActivated: root.appListRequested("my music apps", AppLibrary.musicApps())
     }
 
-    Tile{                                       //Xbox Video
+    Tile{                                       //Continue Watching
         id: xboxVideoTile
-        label: "Xbox Video"
+        label: "Continue Watching"
         column: 1; row: 0
+        columnSpan: 2; rowSpan: 2
         focus: true
-        onActivated: console.log("My Video Apps")
+        onActivated: console.log("Continue Watching: coming soon")
     }
 
-    Tile{                                       //Get Your TV App
+    Tile{                                       //YouTube
         id: getTVTile
-        label: "Get Your TV App"
+        label: "Youtube"
         icon: "tv"
-        column: 1; row: 1
-        focus: true
-        onActivated: console.log("My Video Apps")
-    }
-
-    Tile{                                       //Sales & Specials Video
-        id: salesSpecialsTile
-        label: "Sales & Specials"
         column: 1; row: 2
         columnSpan: 2
         focus: true
-        onActivated: console.log("My Video Apps")
+        onActivated: Qt.openUrlExternally("https://www.youtube.com")
     }
 
-    Tile{                                       //Categories
-        id: categoriesTile
-        label: "Categories"
-        column: 3; row: 2
-        columnSpan: 2
-        focus: true
-        onActivated: console.log("My Video Apps")
-    }
+    VideoAppTile{app: root.videoApps[0]; column: 3; row: 0}
+    VideoAppTile{app: root.videoApps[1]; column: 3; row: 1}
+    VideoAppTile{app: root.videoApps[2]; column: 3; row: 2}
 
-    Tile{                                       //Featured
-        id: featuredTile
-        label: "Featured"
-        column: 2; row: 0
-        columnSpan: 2; rowSpan: 2
-        focus: true
-        onActivated: console.log("My Video Apps")
-    }
-
-    Tile{                                       //New TV
-        id: newTVTile
-        label: "New TV"
-        column: 4; row: 0
-        focus: true
-        onActivated: console.log("My Video Apps")
-    }
-
-    Tile{                                       //Latest Films
-        id: latestFilmsTile
-        label: "Latest Films"
-        column: 4; row: 1
-        focus: true
-        onActivated: console.log("My Video Apps")
+    component VideoAppTile: Tile{
+        property var app
+        visible: app !== undefined
+        label: app ? app.name : ""
+        icon: "play"
+        image: app && app.icon !== "" ? "image://appicon/" + app.icom : ""
+        onActivated: launcher.run(app.command)
     }
 }

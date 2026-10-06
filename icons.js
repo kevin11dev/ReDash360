@@ -115,6 +115,13 @@ var shapes = {
     folder: {
         fill: "M3,9 H18 L22,14 H45 V41 H3 Z"
     },
+    // Two notes joined by a beam
+    music: {
+        fill: "M5,38 A7,5.5 0 1,0 19,38 A7,5.5 0 1,0 5,38 Z" +
+              "M28,34 A7,5.5 0 1,0 42,34 A7,5.5 0 1,0 28,34 Z" +
+              "M15.5,9 L42.5,4 V11 L15.5,16 Z",
+        line: "M17.5,14 V37 M40.5,9 V33"
+    },
     // Media buttons
     playSolid: {
         fill: "M13,7 L41,24 L13,41 Z"

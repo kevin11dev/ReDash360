@@ -11,6 +11,7 @@ struct App
     QString name;
     QString command;    // what Launcher.run() should run
     QString icon;       // icon theme name ("firefox") or a full path to an image
+    QStringList categories;
 };
 
 // Every installed desktop app (the ones in your app menu), like GameLibrary
@@ -30,6 +31,9 @@ public:
 
     // Every app as {name, command, icon}, sorted A-Z
     Q_INVOKABLE QVariantList all() const;
+
+    Q_INVOKABLE QVariantList videoApps() const;
+    Q_INVOKABLE QVariantList musicApps() const;
 
     // Scan again (e.g. after installing an app)
     Q_INVOKABLE void refresh();
