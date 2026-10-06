@@ -9,10 +9,23 @@ FocusScope {
     property Item returnFocusTo: null
     property string title: "my apps"
     property var apps: []
+    property var pickCallback: null             // set while choosing an app for a slot
+    readonly property bool picking: pickCallback !== null
 
     // open()                          -> every app, as "my apps"
     // open("my video apps", someApps) -> just those apps, with that title
     function open(newTitle, newApps) {
+        pickCallback = null
+        show(newTitle, newApps)
+    }
+
+    // Choose an app for a slot: callback(app) gets the one you pick
+    function pick(newTitle, newApps, callback) {
+        pickCallback = callback
+        show(newTitle, newApps)
+    }
+
+    function show(newTitle, newApps) {
         title = newTitle || "my apps"
         apps = newApps || AppLibrary.all()
         returnFocusTo = Window.activeFocusItem
@@ -24,15 +37,19 @@ FocusScope {
 
     function close() {
         visible = false
+        pickCallback = null
         if (returnFocusTo)
             returnFocusTo.forceActiveFocus()
     }
 
-    function launchCurrent() {
+    function activateCurrent() {
         const app = grid.model[grid.currentIndex]
         if (!app)
             return
-        Launcher.run(app.command)
+        if (picking)
+            pickCallback(app)                   // {name, command, icon}
+        else
+            Launcher.run(app.command)
         close()
     }
 
@@ -94,8 +111,8 @@ FocusScope {
         preferredHighlightEnd: width - 500
         highlightMoveDuration: 200
 
-        Keys.onReturnPressed: appShelf.launchCurrent()
-        Keys.onEnterPressed: appShelf.launchCurrent()
+        Keys.onReturnPressed: appShelf.activateCurrent()
+        Keys.onEnterPressed: appShelf.activateCurrent()
 
         delegate: AppTile {
             required property int index
@@ -104,7 +121,7 @@ FocusScope {
             selected: GridView.isCurrentItem && grid.activeFocus
             onClicked: {
                 grid.currentIndex = index
-                appShelf.launchCurrent()
+                appShelf.activateCurrent()
             }
         }
     }
@@ -113,7 +130,7 @@ FocusScope {
         x: 180
         y: 990
         spacing: 40
-        ButtonHint { button: "A"; label: "Launch" }
+        ButtonHint { button: "A"; label: appShelf.picking ? "Choose" : "Launch" }
         ButtonHint { button: "B"; label: "Back" }
     }
 

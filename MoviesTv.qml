@@ -4,16 +4,13 @@ import QtCore
 TilePage {
     id: root
 
-    // Installed video players (VLC, mpv, Jellyfin...); empty on Windows
-    readonly property var videoApps: AppLibrary.videoApps()
-
     Tile{                                       //My Video Apps
         id: myVideoAppsTile
         label: "My Video Apps"
         icon: "play"
         column: 0; row: 0
         focus: true
-        onActivated: root.appListRequested("my video apps", root.videoApps)
+        onActivated: root.appListRequested("my video apps", AppLibrary.videoApps())
     }
 
     Tile{                                       //My Videos
@@ -49,18 +46,27 @@ TilePage {
         onActivated: Qt.openUrlExternally("https://www.youtube.com")
     }
 
-    // Your first three video apps, with their own icons. Fewer installed: the
-    // spare tiles hide themselves.
-    VideoAppTile{ app: root.videoApps[0]; column: 3; row: 0 }
-    VideoAppTile{ app: root.videoApps[1]; column: 3; row: 1 }
-    VideoAppTile{ app: root.videoApps[2]; column: 3; row: 2 }
+    AppSlot{                                    //Video App 1
+        id: videoApp1Tile
+        slotId: "Video1"
+        emptyLabel: "Add Video App"
+        column: 3; row: 0
+        onPickRequested: root.pickAppRequested("choose an app", AppLibrary.all(), app => setApp(app))
+    }
 
-    component VideoAppTile: Tile {
-        property var app                        // {name, command, icon} from AppLibrary
-        visible: app !== undefined
-        label: app ? app.name : ""
-        icon: "play"                            // shown if the app has no icon
-        image: app && app.icon !== "" ? "image://appicon/" + app.icon : ""
-        onActivated: Launcher.run(app.command)
+    AppSlot{                                    //Video App 2
+        id: videoApp2Tile
+        slotId: "Video2"
+        emptyLabel: "Add Video App"
+        column: 3; row: 1
+        onPickRequested: root.pickAppRequested("choose an app", AppLibrary.all(), app => setApp(app))
+    }
+
+    AppSlot{                                    //Video App 3
+        id: videoApp3Tile
+        slotId: "Video3"
+        emptyLabel: "Add Video App"
+        column: 3; row: 2
+        onPickRequested: root.pickAppRequested("choose an app", AppLibrary.all(), app => setApp(app))
     }
 }
