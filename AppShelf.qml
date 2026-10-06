@@ -16,7 +16,6 @@ FocusScope {
         title = newTitle || "my apps"
         apps = newApps || AppLibrary.all()
         returnFocusTo = Window.activeFocusItem
-        returnFocusTo = Window.activeFocusItem
         visible = true
         grid.currentIndex = 0
         grid.forceActiveFocus()
@@ -55,7 +54,7 @@ FocusScope {
 
         Text {
             anchors.right: parent.right
-            text: "my apps"
+            text: appShelf.title
             color: "white"
             font.pixelSize: 52
         }
@@ -87,10 +86,7 @@ FocusScope {
         cellHeight: 293                         // 287 tile + 6 gap
         leftMargin: 195
         rightMargin: 195
-        model: {
-            AppLibrary.count                    // build again after a rescan
-            return AppLibrary.all()
-        }
+        model: appShelf.apps
         keyNavigationEnabled: true
 
         highlightRangeMode: GridView.ApplyRange

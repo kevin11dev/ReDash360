@@ -189,7 +189,7 @@ ApplicationWindow {
                               function onShelfRequested() {shelf.open()}
                               function onPickGameRequested(callback) {shelf.pick(callback)}
                               function onAppsRequested() {appShelf.open()}
-                              function onAppListRequested(title, apps) {appshelf.open(title, apps)}
+                              function onAppListRequested(title, apps) {appShelf.open(title, apps)}
                         }
                   }
             }

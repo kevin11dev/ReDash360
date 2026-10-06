@@ -45,7 +45,7 @@ Rectangle{
     Image{
         id: picture
         anchors.horizontalCenter: parent.horizontalCenter
-        anchors.verticalCenter: parent.veticalCenter
+        anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: -20
         width: tile.iconSize
         height: tile.iconSize

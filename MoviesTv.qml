@@ -3,7 +3,9 @@ import QtCore
 
 TilePage {
     id: root
-    readonly property vatr videoApps: AppLibrary.videoApps()
+
+    // Installed video players (VLC, mpv, Jellyfin...); empty on Windows
+    readonly property var videoApps: AppLibrary.videoApps()
 
     Tile{                                       //My Video Apps
         id: myVideoAppsTile
@@ -14,53 +16,51 @@ TilePage {
         onActivated: root.appListRequested("my video apps", root.videoApps)
     }
 
-    Tile{                                       //Browse Video
-        id: browseVideoTile
+    Tile{                                       //My Videos
+        id: myVideosTile
         label: "My Videos"
         icon: "folder"
         column: 0; row: 1
-        focus: true
         onActivated: Qt.openUrlExternally(StandardPaths.writableLocation(StandardPaths.MoviesLocation))
     }
 
     Tile{                                       //Music
-        id: searchVideoTile
+        id: musicTile
         label: "Music"
-        icon: "search"
+        icon: "music"
         column: 0; row: 2
-        focus: true
         onActivated: root.appListRequested("my music apps", AppLibrary.musicApps())
     }
 
     Tile{                                       //Continue Watching
-        id: xboxVideoTile
+        id: continueWatchingTile
         label: "Continue Watching"
         column: 1; row: 0
         columnSpan: 2; rowSpan: 2
-        focus: true
         onActivated: console.log("Continue Watching: coming soon")
     }
 
     Tile{                                       //YouTube
-        id: getTVTile
-        label: "Youtube"
+        id: youtubeTile
+        label: "YouTube"
         icon: "tv"
         column: 1; row: 2
         columnSpan: 2
-        focus: true
         onActivated: Qt.openUrlExternally("https://www.youtube.com")
     }
 
-    VideoAppTile{app: root.videoApps[0]; column: 3; row: 0}
-    VideoAppTile{app: root.videoApps[1]; column: 3; row: 1}
-    VideoAppTile{app: root.videoApps[2]; column: 3; row: 2}
+    // Your first three video apps, with their own icons. Fewer installed: the
+    // spare tiles hide themselves.
+    VideoAppTile{ app: root.videoApps[0]; column: 3; row: 0 }
+    VideoAppTile{ app: root.videoApps[1]; column: 3; row: 1 }
+    VideoAppTile{ app: root.videoApps[2]; column: 3; row: 2 }
 
-    component VideoAppTile: Tile{
-        property var app
+    component VideoAppTile: Tile {
+        property var app                        // {name, command, icon} from AppLibrary
         visible: app !== undefined
         label: app ? app.name : ""
-        icon: "play"
-        image: app && app.icon !== "" ? "image://appicon/" + app.icom : ""
-        onActivated: launcher.run(app.command)
+        icon: "play"                            // shown if the app has no icon
+        image: app && app.icon !== "" ? "image://appicon/" + app.icon : ""
+        onActivated: Launcher.run(app.command)
     }
 }
