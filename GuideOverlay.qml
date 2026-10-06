@@ -17,7 +17,8 @@ Window {
     signal quitRequested()
 
     function openGuide() {
-        console.info("Guide overlay: opening over the game")
+        Launcher.rememberGame()
+        console.info("Guide overlay: opening over", Launcher.gameTitle)
         showFullScreen()
         requestActivate()
         guide.open()
@@ -41,6 +42,7 @@ Window {
         Guide{
             id: guide
             anchors.fill: parent
+            gameTitle: Launcher.gameTitle
             onVisibleChanged: {
                 if(!visible)
                     Qt.callLater(overlay.hide)

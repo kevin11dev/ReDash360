@@ -1,7 +1,15 @@
 #include "launcher.h"
 
+#include <QCoreApplication>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QProcess>
 #include <QSettings>
+#include <QTimer>
+
+#ifdef Q_OS_UNIX
+#include <signal.h>
+#endif
 
 Launcher::Launcher(QObject *parent)
     : QObject(parent)
@@ -43,4 +51,41 @@ bool Launcher::play(const QString &name, const QString &command)
         emit lastPlayedChanged();   // tells QML bindings to update
     }
     return true;
+}
+
+void Launcher::rememberGame()
+{
+    m_gamePid = 0;
+    m_gameTitle.clear();
+
+    // Hyprland can tell us which window is in front and which program owns it:
+    // hyprctl activewindow -j  ->  {"title": "...", "pid": 12345, ...}
+    QProcess hyprctl;
+    hyprctl.start("hyprctl", { "activewindow", "-j" });
+    if (hyprctl.waitForFinished(1000)) {
+        const QJsonObject window = QJsonDocument::fromJson(hyprctl.readAllStandardOutput()).object();
+        const qint64 pid = window.value("pid").toInteger();
+        if (pid > 0 && pid != QCoreApplication::applicationPid()) {     // not ReDash360 itself
+            m_gamePid = pid;
+            m_gameTitle = window.value("title").toString();
+        }
+    }
+    emit gameChanged();
+}
+
+void Launcher::closeGame()
+{
+#ifdef Q_OS_UNIX
+    if (m_gamePid > 0) {
+        const pid_t pid = pid_t(m_gamePid);
+        ::kill(pid, SIGTERM);                                   // ask it to quit
+        QTimer::singleShot(3000, this, [pid] {                  // still running 3 s later? force it
+            if (::kill(pid, 0) == 0)
+                ::kill(pid, SIGKILL);
+        });
+    }
+#endif
+    m_gamePid = 0;
+    m_gameTitle.clear();
+    emit gameChanged();
 }

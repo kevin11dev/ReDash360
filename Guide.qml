@@ -22,6 +22,9 @@ FocusScope {
     signal shelfRequested()
     signal quitRequested()
 
+    property string gameTitle
+    property bool confirming: false
+    property var afterQuit: null
     property Item returnFocusTo: null
     property int tab: 1                         // opens on your gamertag blade
     property bool inControls: false             // on the media buttons (Media blade)
@@ -42,12 +45,12 @@ FocusScope {
             { label: "Achievements" },
             { label: "Awards" },
             { label: "Recent" },
-            { label: "My Games", run: () => guide.shelfRequested() },
+            { label: "My Games", dashboard: true, run: () => guide.shelfRequested() },
             { label: "Active Downloads" },
             { label: "Redeem Code" },
             { label: "Activity Feed" } ] },
         { title: guide.gamertag, rows: [
-            { label: "Xbox Home", icon: "home", run: () => guide.tabRequested(1) },
+            { label: "Xbox Home", dashboard: true, icon: "home", run: () => guide.tabRequested(1) },
             { label: "File Browser", icon: "folder",
               run: () => Launcher.run(Qt.platform.os === "windows" ? "explorer"
                                                                     : "xdg-open " + guide.homeFolder) }
@@ -62,7 +65,7 @@ FocusScope {
             { label: "Profile" },
             { label: "Preferences" },
             { label: "Family Settings" },
-            { label: "System Settings", run: () => guide.tabRequested(6) },
+            { label: "System Settings", dashboard: true, run: () => guide.tabRequested(6) },
             { label: "Account Management" },
             { label: "Turn Off Console", run: () => guide.quitRequested() } ] }
     ]
@@ -91,6 +94,7 @@ FocusScope {
     }
 
     function close() {
+        confirming = false
         visible = false
         if (returnFocusTo)
             returnFocusTo.forceActiveFocus()
@@ -115,13 +119,41 @@ FocusScope {
         const row = current.rows[list.currentIndex]
         if (!row.run)
             return                              // not built yet
+        if (row.dashboard && gameTitle !== "") {
+            askToQuit(row.run)                  // over a game: quit it first
+            return
+        }
         close()                                 // close first, so focus is back on the dashboard
         row.run()
     }
 
     function goHome() {
+        if (gameTitle !== "") {
+            askToQuit(() => guide.tabRequested(1))
+            return
+        }
         close()
         tabRequested(1)
+    }
+
+    // "Quit <game>?" - then() runs if you say yes
+    function askToQuit(then) {
+        afterQuit = then
+        confirming = true
+        confirmList.currentIndex = 1            // "No" is selected first, to be safe
+        confirmList.forceActiveFocus()
+    }
+
+    function answer(yes) {
+        if (!yes) {
+            confirming = false
+            list.forceActiveFocus()             // back to the Guide
+            return
+        }
+        const then = afterQuit
+        close()
+        Launcher.closeGame()
+        then()
     }
 
     // Left edge of blade i's strip, for the current tab
@@ -375,6 +407,56 @@ FocusScope {
                     anchors.fill: parent
                     onClicked: guide.switchTab(strip.index - guide.tab)
                 }
+            }
+        }
+
+        // "Quit <game>?" covering the blades, with Yes / No rows
+        Rectangle {
+            x: 547; y: 304
+            width: 823; height: 471
+            visible: guide.confirming
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "#F7FDFD" }
+                GradientStop { position: 1.0; color: "#D2DDDE" }
+            }
+
+            Text {
+                x: 32; y: 28
+                width: parent.width - 64
+                text: "Quit " + guide.gameTitle + "?"
+                color: "#111111"
+                font.pixelSize: 40
+                elide: Text.ElideRight
+            }
+            Text {
+                x: 32; y: 90
+                text: "Any unsaved progress will be lost."
+                color: "#555555"
+                font.pixelSize: 30
+            }
+
+            ListView {
+                id: confirmList
+                x: 0; y: 175
+                width: parent.width
+                height: 126
+                interactive: false
+                keyNavigationEnabled: true
+                highlightMoveDuration: 0
+                model: ["Yes, quit and go to Xbox Home", "No, back to the game"]
+
+                delegate: GuideRow {
+                    required property int index
+                    required property string modelData
+                    width: ListView.view.width
+                    label: modelData
+                    selected: ListView.isCurrentItem
+                    onClicked: guide.answer(index === 0)
+                }
+
+                Keys.onReturnPressed: guide.answer(currentIndex === 0)
+                Keys.onEnterPressed: guide.answer(currentIndex === 0)
+                Keys.onEscapePressed: guide.answer(false)
             }
         }
 

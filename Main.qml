@@ -231,7 +231,8 @@ ApplicationWindow {
 
             Guide{
                   id: guide
-                  anchors.fill: parent
+                  anchors.fill: parents
+                  gameTitle: "Test Game"
                   gamertag: profile.gamertag
                   gamerpic: profile.gamerpic
                   onTabRequested: (index) => pages.currentIndex = index
