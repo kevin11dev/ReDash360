@@ -52,6 +52,7 @@ TilePage {
     Tile{                                       //Storage
         id: storageTile
         label: "Storage"
+        icon: "storage"
         column: 2; row: 1
         focus: true
         onActivated: console.log("Storage")
@@ -72,6 +73,6 @@ TilePage {
         icon: "power"
         column: 3; row: 1
         focus: true
-        onActivated: Qt.quit()
+        onActivated: root.powerRequested()
     }
 }

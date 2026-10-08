@@ -31,7 +31,7 @@ void setUpOverlay(QWindow *overlay)
         layer->setAnchors(edges);
 
         layer->setExclusiveZone(-1);                        // cover panels too, don't push anything aside
-        layer->setKeyboardInteractivity(Window::KeyboardInteractivityExclusive);   // take the keyboard while open
+        layer->setKeyboardInteractivity(Window::KeyboardInteractivityOnDemand);   // take the keyboard while open
         layer->setScope("redash360-guide");
         qInfo("Guide overlay: using the Wayland overlay layer");
         return;

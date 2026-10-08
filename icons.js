@@ -92,6 +92,17 @@ var shapes = {
               "M14,37 C14,30 18,26 24,26 C30,26 34,30 34,37 Z",
         line: "M9,5 H39 V43 H9 Z"
     },
+    // Three bullet points, like the 360's Preferences tile
+    list: {
+        fill: "M5,10 H11 V16 H5 Z M5,21 H11 V27 H5 Z M5,32 H11 V38 H5 Z",
+        line: "M17,13 H43 M17,24 H43 M17,35 H43",
+        width: 3.5
+    },
+    // Hard drive: a flat box with a light and a slot
+    storage: {
+        fill: "M35,24 A2.5,2.5 0 1,0 40,24 A2.5,2.5 0 1,0 35,24 Z",
+        line: "M5,14 H43 V34 H5 Z M10,24 H27"
+    },
     sliders: {
         fill: "M26,13 A4.5,4.5 0 1,0 35,13 A4.5,4.5 0 1,0 26,13 Z" +
               "M11,24 A4.5,4.5 0 1,0 20,24 A4.5,4.5 0 1,0 11,24 Z" +

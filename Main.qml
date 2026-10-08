@@ -46,6 +46,8 @@ ApplicationWindow {
                               shelf.close()
                         if(appShelf.visible)
                               appShelf.close()
+                        if(powerMenu.visible)
+                              powerMenu.close()
                         guide.open()
                   }
             }
@@ -54,19 +56,19 @@ ApplicationWindow {
       Shortcut{
             sequence: "Q"
             onActivated: pages.decrementCurrentIndex()
-            enabled: !window.subScreenOpen && !guide.visible
+            enabled: !window.subScreenOpen && !guide.visible && !powerMenu.visible
       }
 
       Shortcut{
             sequence: "E"
             onActivated: pages.incrementCurrentIndex()
-            enabled: !window.subScreenOpen && !guide.visible
+            enabled: !window.subScreenOpen && !guide.visible && !powerMenu.visible
       }
 
       Shortcut{
             sequence: "Esc"
             onActivated: pages.currentIndex = 1
-            enabled: !window.subScreenOpen && !guide.visible
+            enabled: !window.subScreenOpen && !guide.visible && !powerMenu.visible
       }
 
 
@@ -191,6 +193,7 @@ ApplicationWindow {
                               function onAppsRequested() {appShelf.open()}
                               function onAppListRequested(title, apps) {appShelf.open(title, apps)}
                               function onPickAppRequested(title, apps, callback) {appShelf.pick(title, apps, callback)}
+                              function onPowerRequested() {powerMenu.open()}
                         }
                   }
             }
@@ -231,6 +234,11 @@ ApplicationWindow {
                   anchors.fill: parent
             }
 
+            PowerMenu{
+                  id: powerMenu
+                  anchors.fill: parent
+            }
+
             Guide{
                   id: guide
                   anchors.fill: parent
@@ -238,7 +246,7 @@ ApplicationWindow {
                   gamerpic: profile.gamerpic
                   onTabRequested: (index) => pages.currentIndex = index
                   onShelfRequested: shelf.open()
-                  onQuitRequested: Qt.quit()
+                  onQuitRequested: powerMenu.open()
             }
       }
 
