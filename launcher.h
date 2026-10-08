@@ -14,7 +14,7 @@ class Launcher : public QObject
     Q_PROPERTY(QString lastName READ lastName NOTIFY lastPlayedChanged)
     Q_PROPERTY(QString lastCommand READ lastCommand NOTIFY lastPlayedChanged)
     Q_PROPERTY(QString gameTitle READ gameTitle NOTIFY gameChanged)
-    Q_PROPERTY(QVarient recents READ recents NOTIFY recentsChanged)
+    Q_PROPERTY(QVariant recents READ recents NOTIFY recentsChanged)
 
 public:
     explicit Launcher(QObject *parent = nullptr);
@@ -37,7 +37,7 @@ public:
     QString lastName() const { return m_lastName; }
     QString lastCommand() const { return m_lastCommand; }
     QString gameTitle() const {return m_gameTitle;}
-    QVariant recents() const{return m_recents;}
+    QVariantList recents() const{return m_recents;}
 
 signals:
     void lastPlayedChanged();
@@ -54,5 +54,5 @@ private:
     QString m_gameTitle;
     bool m_gamePaused = false;
     int m_savedVrr = 0;
-    QVariant m_recents;
+    QVariantList m_recents;
 };
