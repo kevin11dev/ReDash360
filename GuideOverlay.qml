@@ -22,7 +22,7 @@ Window {
         showFullScreen()
         requestActivate()
         guide.open()
-        //pauseTimer.restart()                    // freeze the game once the Guide is on screen
+        pauseTimer.restart()                    // freeze the game once the Guide is on screen
     }
 
     function closeGuide() {

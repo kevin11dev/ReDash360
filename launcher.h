@@ -42,4 +42,5 @@ private:
     qint64 m_gamePid = 0;
     QString m_gameTitle;
     bool m_gamePaused = false;
+    int m_savedVrr = 0;
 };

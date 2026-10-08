@@ -40,6 +40,33 @@ bool isGame(qint64 pid)
     return false;
 }
 
+#ifdef Q_OS_UNIX
+// Run hyprctl and return what it prints ("" if Hyprland isn't running)
+QString hyprctl(const QStringList &arguments)
+{
+    QProcess process;
+    process.start("hyprctl", arguments);
+    if (!process.waitForFinished(1000))
+        return {};
+    return QString::fromUtf8(process.readAllStandardOutput()).trimmed();
+}
+
+// Hyprland's VRR setting (misc:vrr): 0 = off, 1 to 3 = on in some way
+int vrrSetting()
+{
+    const QByteArray json = hyprctl({ "getoption", "misc:vrr", "-j" }).toUtf8();
+    return QJsonDocument::fromJson(json).object().value("int").toInt();
+}
+
+void setVrrSetting(int value)
+{
+    // Lua configs (Hyprland 0.55+) change options with eval, older configs with keyword
+    const QString lua = QString("hl.config({ misc = { vrr = %1 } })").arg(value);
+    if (hyprctl({ "eval", lua }) != "ok")
+        hyprctl({ "keyword", "misc:vrr", QString::number(value) });
+}
+#endif
+
 } // namespace
 
 Launcher::Launcher(QObject *parent)
@@ -134,10 +161,18 @@ void Launcher::closeGame()
 void Launcher::pauseGame()
 {
 #ifdef Q_OS_UNIX
+    if (m_gamePid <= 0 || m_gamePaused)
+        return;
+
+    // With VRR on, a fullscreen game decides when the screen updates, so once
+    // it's frozen Hyprland stops showing the Guide. VRR goes off while it's open.
+    m_savedVrr = vrrSetting();
+    if (m_savedVrr > 0)
+        setVrrSetting(0);
+
     // SIGSTOP freezes the whole game, like pausing it: it can't see your
     // button presses or keep playing. SIGCONT lets it carry on.
-    if (m_gamePid > 0 && !m_gamePaused)
-        m_gamePaused = ::kill(pid_t(m_gamePid), SIGSTOP) == 0;
+    m_gamePaused = ::kill(pid_t(m_gamePid), SIGSTOP) == 0;
 #endif
 }
 
@@ -146,6 +181,11 @@ void Launcher::resumeGame()
 #ifdef Q_OS_UNIX
     if (m_gamePaused)
         ::kill(pid_t(m_gamePid), SIGCONT);
+
+    if (m_savedVrr > 0) {
+        setVrrSetting(m_savedVrr);      // VRR back to how you had it
+        m_savedVrr = 0;
+    }
 #endif
     m_gamePaused = false;
 }
