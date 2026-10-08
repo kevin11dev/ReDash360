@@ -22,6 +22,7 @@ public:
 
     // Like run(), but for games: also remembers it as the last played game
     Q_INVOKABLE bool play(const QString &name, const QString &command);
+    Q_INVOKABLE void eject();
 
     Q_INVOKABLE void rememberGame();
     Q_INVOKABLE void closeGame();

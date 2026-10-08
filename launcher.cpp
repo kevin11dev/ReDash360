@@ -111,6 +111,16 @@ bool Launcher::play(const QString &name, const QString &command)
     return true;
 }
 
+void Launcher::eject(){
+    m_lastName.clear();
+    m_lastCommand.clear();
+
+    QSettings settings;
+    settings.remove("lastPLayed");
+
+    emit lastPlayedChanged();
+}
+
 Launcher::~Launcher()
 {
     resumeGame();       // never leave a game frozen when ReDash360 quits
