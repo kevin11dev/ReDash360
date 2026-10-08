@@ -116,7 +116,7 @@ void Launcher::eject(){
     m_lastCommand.clear();
 
     QSettings settings;
-    settings.remove("lastPLayed");
+    settings.remove("lastPlayed");
 
     emit lastPlayedChanged();
 }

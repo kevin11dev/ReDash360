@@ -51,6 +51,7 @@ QVariantMap toMap(const Game &game){
         {"command", game.command},
         {"cover", game.cover},
         {"banner", game.banner},
+        {"hero", game.hero}
     };
 }
 
@@ -188,6 +189,17 @@ QList<Game> GameLibrary::scanSteam()
                 else
                     game.banner = "https://cdn.cloudflare.steamstatic.com/steam/apps/"
                                   + id + "/header.jpg";
+
+                // Hero art: the wide picture at the top of the game's library
+                // page, without the logo. Fits the Open Tray tile best.
+                QDirIterator hero(root + "/appcache/librarycache/" + id,
+                                  { "library_hero.jpg" }, QDir::Files,
+                                  QDirIterator::Subdirectories);
+                if (hero.hasNext())
+                    game.hero = QUrl::fromLocalFile(hero.next()).toString();
+                else
+                    game.hero = "https://cdn.cloudflare.steamstatic.com/steam/apps/"
+                                + id + "/library_hero.jpg";
 
                 games << game;
             }

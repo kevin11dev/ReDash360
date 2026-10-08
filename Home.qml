@@ -5,12 +5,12 @@ TilePage {
 
     Tile{                                       //Open Tray
         id: openTrayTile
-        readonly property bool hasGmae: Launcher.lastCommand !== ""
+        readonly property bool hasGame: Launcher.lastCommand !== ""
         readonly property var game: {
             GameLibrary.count
             return hasGame ? GameLibrary.find(Launcher.lastCommand) : {}
         }
-        label: hasGame ? "Play " + Laucnher.lastName : "Open Tray"
+        label: hasGame ? "Play " + Launcher.lastName : "Open Tray"
         icon: art.visible ? "" : "disc"
         hints: hasGame ? [{button: "Y", label: "Eject"}] : []
         column: 0; row: 0
@@ -24,15 +24,18 @@ TilePage {
             id: art
             anchors.fill: parent
             visible: status === Image.Ready
-            property bool bannerFailed: false
-            readonly property string banner: openTrayTile.game.banner || ""
-            readonly property string cover: openTrayTile.game.cover || ""
-            source: banner !== "" && !bannerFailed ? banner : cover
+            readonly property var choices: [
+                openTrayTile.game.hero,
+                openTrayTile.game.cover,
+                openTrayTile.game.banner
+            ].filter(url=>url)
+            property int tried: 0
+            onChoicesChanged: tried = 0
+            source: tried < choices.legth ? choices[tried] : ""
             onStatusChanged:{
-                if(status === Image.Error && source == banner)
-                    bannerFailed = true
+                if(status === Image.Error)
+                    tried++
             }
-            onBannerChanged: bannerFailed = false
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
             sourceSize.width: width
@@ -48,28 +51,13 @@ TilePage {
                 GradientStop{position: 1.0; color: "#b0000000"}
             }
         }
-        Rectangle{
+        TileIcon{
             anchors.top: parent.top
             anchors.right: parent.right
-            anchors.margins: 14
-            width: 46; height: 46
-            radius: 23
-            color: "white"
+            anchors.margins: 10
+            width: 52; height: 52
+            name: "disc"
             visible: art.visible
-
-            Rectangle{
-                anchors.centerIn: parent
-                width: 16; height: 16
-                radius: 8
-                color: "transparent"
-
-                Rectangle{
-                    anchors.centerIn: parent
-                    width: 6; height: 6
-                    radius: 3
-                    color: "white"
-                }
-            }
         }
     }
 

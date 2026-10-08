@@ -11,6 +11,7 @@ struct Game
     QString command;    // what Launcher.play() should run
     QString cover;      // image URL (file:// or https://), or empty
     QString banner;
+    QString hero;
 };
 
 // Every installed game, as a list model QML can show with a ListView/Repeater
