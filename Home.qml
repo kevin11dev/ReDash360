@@ -66,7 +66,7 @@ TilePage {
         label: "My Pins"
         icon: "pin"
         column: 0; row: 1
-        onActivated: console.log("My Pins")
+        onActivated: root.pinsRequested()
     }
 
     Tile{                                       //Recents

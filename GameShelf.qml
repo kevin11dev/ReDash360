@@ -158,6 +158,13 @@ FocusScope {
         Keys.onReturnPressed: shelf.activateCurrent()
         Keys.onEnterPressed: shelf.activateCurrent()
         Keys.onUpPressed: showMe.forceActiveFocus()
+        Keys.onPressed: (event) => {
+            const game = shelf.games[currentIndex]
+            if (event.key === Qt.Key_Y && game && !shelf.picking) {
+                Pins.toggle({ kind: "game", name: game.name, command: game.command })
+                event.accepted = true
+            }
+        }
 
         delegate: GameCard {
             required property int index
@@ -178,6 +185,12 @@ FocusScope {
         ButtonHint { button: "A"; label: menu.visible || !list.activeFocus ? "Select"
                                                           : shelf.picking ? "Choose" : "Launch" }
         ButtonHint { button: "B"; label: "Back" }
+        ButtonHint{
+            readonly property var game: shelf.game[list.currentIndex]
+            button: "Y"
+            label: game && Pins.isPinned(game.command) ? "Unpin" : "Pin"
+            visible: list.activeFocus && !menu.visible && !shelf.picking && game !== undefined
+        }
     }
 
     // The green-tile menu for "show me" and "sort"

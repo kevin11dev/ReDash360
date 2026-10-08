@@ -113,6 +113,13 @@ FocusScope {
 
         Keys.onReturnPressed: appShelf.activateCurrent()
         Keys.onEnterPressed: appShelf.activateCurrent()
+        Keys.onPressed: (event) => {
+            const app = appShelf.apps[currentIndex]
+            if (event.key === Qt.Key_Y && app && !appShelf.picking) {
+                Pins.toggle({ kind: "app", name: app.name, command: app.command, icon: app.icon })
+                event.accepted = true
+            }
+        }
 
         delegate: AppTile {
             required property int index
@@ -132,6 +139,12 @@ FocusScope {
         spacing: 40
         ButtonHint { button: "A"; label: appShelf.picking ? "Choose" : "Launch" }
         ButtonHint { button: "B"; label: "Back" }
+        ButtonHint {
+            readonly property var app: appShelf.apps[grid.currentIndex]
+            button: "Y"
+            label: app && Pins.isPinned(app.command) ? "Unpin" : "Pin"
+            visible: !appShelf.picking && app !== undefined
+        }
     }
 
     // One app: a square green tile with its icon and name

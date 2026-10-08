@@ -48,6 +48,8 @@ qt_add_qml_module(appReDash360
         GuideOverlay.qml
         PowerMenu.qml
         RecentShelf.qml
+        Pins.qml
+        PinShelf.qml
         icons.js
     SOURCES
         gamepad.h gamepad.cpp

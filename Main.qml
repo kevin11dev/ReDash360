@@ -48,6 +48,8 @@ ApplicationWindow {
                               appShelf.close()
                         if(recentShelf.visible)
                               recentShelf.close()
+                        if(pinShelf.visible)
+                              pinShelf.close()
                         if(powerMenu.visible)
                               powerMenu.close()
                         guide.open()
@@ -86,7 +88,7 @@ ApplicationWindow {
 
       readonly property int pageWidth: 1252
       readonly property int pageGap: 160
-      readonly property bool subScreenOpen: shelf.visible || appShelf.visible || recentShelf.visible
+      readonly property bool subScreenOpen: shelf.visible || appShelf.visible || recentShelf.visible || pinShelf.visible
       readonly property Window guideOverlay: overlay
 
       // Bring the dashboard in front of whatever is running (e.g. a game)
@@ -197,6 +199,7 @@ ApplicationWindow {
                               function onPickAppRequested(title, apps, callback) {appShelf.pick(title, apps, callback)}
                               function onPowerRequested() {powerMenu.open()}
                               function onRecentsRequested(){recentShelf.open()}
+                              function onPinsRequested(){pinShelf.open()}
                         }
                   }
             }
@@ -234,6 +237,11 @@ ApplicationWindow {
 
             AppShelf{
                   id: appShelf
+                  anchors.fill: parent
+            }
+
+            PinShelf {
+                  id: pinShelf
                   anchors.fill: parent
             }
 
