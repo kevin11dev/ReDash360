@@ -1,6 +1,7 @@
 #include "launcher.h"
 
 #include <QCoreApplication>
+#include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcess>
@@ -10,6 +11,36 @@
 #ifdef Q_OS_UNIX
 #include <signal.h>
 #endif
+
+namespace {
+
+// Was this program started by a game launcher? Steam starts every game through
+// its "reaper" helper, and Heroic, Faugus (umu-run) and Lutris start theirs
+// too. Discord, Firefox and Steam's own window aren't, so they're left alone.
+// Works by walking up the parents in /proc (Linux only).
+bool isGame(qint64 pid)
+{
+    static const QStringList launchers = { "reaper", "heroic", "faugus-launcher", "umu-run", "lutris" };
+
+    qint64 current = pid;
+    for (int depth = 0; depth < 32 && current > 1; ++depth) {
+        // /proc/<pid>/stat looks like: 1234 (name) S 1200 ...   (1200 = parent)
+        QFile stat(QString("/proc/%1/stat").arg(current));
+        if (!stat.open(QIODevice::ReadOnly))
+            return false;
+        const QString line = QString::fromUtf8(stat.readAll());
+        const int open = line.indexOf('(');
+        const int close = line.lastIndexOf(')');
+        const QString name = line.mid(open + 1, close - open - 1);
+
+        if (current != pid && launchers.contains(name))
+            return true;
+        current = line.mid(close + 2).section(' ', 1, 1).toLongLong();
+    }
+    return false;
+}
+
+} // namespace
 
 Launcher::Launcher(QObject *parent)
     : QObject(parent)
@@ -53,8 +84,14 @@ bool Launcher::play(const QString &name, const QString &command)
     return true;
 }
 
+Launcher::~Launcher()
+{
+    resumeGame();       // never leave a game frozen when ReDash360 quits
+}
+
 void Launcher::rememberGame()
 {
+    resumeGame();
     m_gamePid = 0;
     m_gameTitle.clear();
 
@@ -65,9 +102,12 @@ void Launcher::rememberGame()
     if (hyprctl.waitForFinished(1000)) {
         const QJsonObject window = QJsonDocument::fromJson(hyprctl.readAllStandardOutput()).object();
         const qint64 pid = window.value("pid").toInteger();
-        if (pid > 0 && pid != QCoreApplication::applicationPid()) {     // not ReDash360 itself
+        const QString title = window.value("title").toString();
+        if (pid > 0 && pid != QCoreApplication::applicationPid() && isGame(pid)) {
             m_gamePid = pid;
-            m_gameTitle = window.value("title").toString();
+            m_gameTitle = title;
+        } else if (pid > 0) {
+            qInfo("Guide overlay: \"%s\" isn't a game, leaving it running", qPrintable(title));
         }
     }
     emit gameChanged();
@@ -75,6 +115,7 @@ void Launcher::rememberGame()
 
 void Launcher::closeGame()
 {
+    resumeGame();
 #ifdef Q_OS_UNIX
     if (m_gamePid > 0) {
         const pid_t pid = pid_t(m_gamePid);
@@ -88,4 +129,23 @@ void Launcher::closeGame()
     m_gamePid = 0;
     m_gameTitle.clear();
     emit gameChanged();
+}
+
+void Launcher::pauseGame()
+{
+#ifdef Q_OS_UNIX
+    // SIGSTOP freezes the whole game, like pausing it: it can't see your
+    // button presses or keep playing. SIGCONT lets it carry on.
+    if (m_gamePid > 0 && !m_gamePaused)
+        m_gamePaused = ::kill(pid_t(m_gamePid), SIGSTOP) == 0;
+#endif
+}
+
+void Launcher::resumeGame()
+{
+#ifdef Q_OS_UNIX
+    if (m_gamePaused)
+        ::kill(pid_t(m_gamePid), SIGCONT);
+#endif
+    m_gamePaused = false;
 }

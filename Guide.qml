@@ -16,6 +16,7 @@ FocusScope {
 
     property string gamertag
     property string gamerpic
+    property color backdropColor: "#F0000000"
 
     // What the rows ask the dashboard to do
     signal tabRequested(int index)
@@ -167,7 +168,7 @@ FocusScope {
     Rectangle {
         id: backdrop
         anchors.fill: parent
-        color: "#F0000000"
+        color: guide.backdropColor
         MouseArea {
             anchors.fill: parent
             hoverEnabled: true

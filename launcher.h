@@ -16,6 +16,7 @@ class Launcher : public QObject
 
 public:
     explicit Launcher(QObject *parent = nullptr);
+    ~Launcher() override;
 
     Q_INVOKABLE bool run(const QString &command);
 
@@ -24,6 +25,8 @@ public:
 
     Q_INVOKABLE void rememberGame();
     Q_INVOKABLE void closeGame();
+    Q_INVOKABLE void pauseGame();
+    Q_INVOKABLE void resumeGame();
 
     QString lastName() const { return m_lastName; }
     QString lastCommand() const { return m_lastCommand; }
@@ -38,4 +41,5 @@ private:
     QString m_lastCommand;
     qint64 m_gamePid = 0;
     QString m_gameTitle;
+    bool m_gamePaused = false;
 };

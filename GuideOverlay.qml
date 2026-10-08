@@ -22,10 +22,19 @@ Window {
         showFullScreen()
         requestActivate()
         guide.open()
+        //pauseTimer.restart()                    // freeze the game once the Guide is on screen
     }
 
     function closeGuide() {
         guide.close()
+    }
+
+    // Freezing the game straight away kept the Guide from showing up, so the
+    // game keeps running while the Guide fades in, then freezes behind it
+    Timer{
+        id: pauseTimer
+        interval: 600
+        onTriggered: Launcher.pauseGame()
     }
 
     Shortcut{
@@ -43,9 +52,13 @@ Window {
             id: guide
             anchors.fill: parent
             gameTitle: Launcher.gameTitle
+            backdropColor: "#99000000"          // lighter, so the paused game shows through
             onVisibleChanged: {
-                if(!visible)
+                if(!visible){
+                    pauseTimer.stop()           // closed before it froze? then it never will
+                    Launcher.resumeGame()       // the game carries on
                     Qt.callLater(overlay.hide)
+                }
             }
             onTabRequested: (index) => overlay.tabRequested(index)
             onShelfRequested: overlay.shelfRequested()
