@@ -31,7 +31,7 @@ TilePage {
             ].filter(url=>url)
             property int tried: 0
             onChoicesChanged: tried = 0
-            source: tried < choices.legth ? choices[tried] : ""
+            source: tried < choices.length ? choices[tried] : ""
             onStatusChanged:{
                 if(status === Image.Error)
                     tried++
