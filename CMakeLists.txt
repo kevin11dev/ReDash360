@@ -24,6 +24,9 @@ qt_add_executable(appReDash360
     main.cpp
 )
 
+# Pins.qml is a singleton (one shared object, used as Pins.pin(...) etc.)
+set_source_files_properties(Pins.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+
 qt_add_qml_module(appReDash360
     URI ReDash360
     QML_FILES

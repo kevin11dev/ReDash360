@@ -186,7 +186,7 @@ FocusScope {
                                                           : shelf.picking ? "Choose" : "Launch" }
         ButtonHint { button: "B"; label: "Back" }
         ButtonHint{
-            readonly property var game: shelf.game[list.currentIndex]
+            readonly property var game: shelf.games[list.currentIndex]
             button: "Y"
             label: game && Pins.isPinned(game.command) ? "Unpin" : "Pin"
             visible: list.activeFocus && !menu.visible && !shelf.picking && game !== undefined
