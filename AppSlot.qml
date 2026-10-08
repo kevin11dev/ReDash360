@@ -18,7 +18,7 @@ Tile {
 
     onActivated:{
         if(hasApp)
-            Launcher.run(saved.command)
+            Launcher.openApp(saved.name, saved.command, saved.icon)
         else
             pickRequested()
     }

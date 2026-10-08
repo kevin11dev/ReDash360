@@ -10,6 +10,7 @@ FocusScope {
     signal appListRequested(string title, var apps)    // "my apps" screen with just these apps
     signal pickAppRequested(string title, var apps, var callback)   // same screen, to choose one
     signal powerRequested()
+    signal recentsRequested()
 
     property alias cellWidth: grid.cellWidth
     property alias cellHeight: grid.cellHeight

@@ -74,7 +74,7 @@ TilePage {
         label: "Recents"
         icon: "clock"
         column: 0; row: 2
-        onActivated: console.log("Recents")
+        onActivated: root.recentsRequested()
     }
 
     Tile{                                       //News

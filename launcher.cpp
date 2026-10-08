@@ -2,6 +2,7 @@
 
 #include <QCoreApplication>
 #include <QFile>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcess>
@@ -13,6 +14,8 @@
 #endif
 
 namespace {
+
+constexpr int MaxRecents = 12;
 
 // Was this program started by a game launcher? Steam starts every game through
 // its "reaper" helper, and Heroic, Faugus (umu-run) and Lutris start theirs
@@ -76,6 +79,7 @@ Launcher::Launcher(QObject *parent)
     QSettings settings;
     m_lastName = settings.value("lastPlayed/name").toString();
     m_lastCommand = settings.value("lastPlayed/command").toString();
+    m_recents = QJsonDocument::fromJson(settings.value("recents/list").toByteArray()).array().toVariantList();
 }
 
 bool Launcher::run(const QString &command)
@@ -108,7 +112,55 @@ bool Launcher::play(const QString &name, const QString &command)
 
         emit lastPlayedChanged();   // tells QML bindings to update
     }
+    addRecent("game", name, command, QString());
     return true;
+}
+
+
+bool Launcher::openApp(const QString &name, const QString &command, const QString &icon)
+{
+    if (!run(command))
+        return false;
+    addRecent("app", name, command, icon);
+    return true;
+}
+
+void Launcher::addRecent(const QString &kind, const QString &name, const QString &command, const QString &icon)
+{
+    // Already in the list? Then it moves to the front instead of being there twice
+    for (int i = 0; i < m_recents.size(); ++i) {
+        if (m_recents.at(i).toMap().value("command").toString() == command) {
+            m_recents.removeAt(i);
+            break;
+        }
+    }
+
+    m_recents.prepend(QVariantMap{
+        { "kind", kind },
+        { "name", name },
+        { "command", command },
+        { "icon", icon },
+        });
+    while (m_recents.size() > MaxRecents)
+        m_recents.removeLast();
+
+    saveRecents();
+}
+
+void Launcher::removeRecent(int index)
+{
+    if (index < 0 || index >= m_recents.size())
+        return;
+    m_recents.removeAt(index);
+    saveRecents();
+}
+
+void Launcher::saveRecents()
+{
+    const QJsonDocument json(QJsonArray::fromVariantList(m_recents));
+    QSettings settings;
+    settings.setValue("recents/list", QString::fromUtf8(json.toJson(QJsonDocument::Compact)));
+    emit recentsChanged();
 }
 
 void Launcher::eject(){

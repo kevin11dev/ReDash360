@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QVariantList>
 #include <QtQml/qqmlregistration.h>
 
 class Launcher : public QObject
@@ -13,6 +14,7 @@ class Launcher : public QObject
     Q_PROPERTY(QString lastName READ lastName NOTIFY lastPlayedChanged)
     Q_PROPERTY(QString lastCommand READ lastCommand NOTIFY lastPlayedChanged)
     Q_PROPERTY(QString gameTitle READ gameTitle NOTIFY gameChanged)
+    Q_PROPERTY(QVarient recents READ recents NOTIFY recentsChanged)
 
 public:
     explicit Launcher(QObject *parent = nullptr);
@@ -24,6 +26,9 @@ public:
     Q_INVOKABLE bool play(const QString &name, const QString &command);
     Q_INVOKABLE void eject();
 
+    Q_INVOKABLE bool openApp(const QString &name, const QString &command, const QString &icon);
+    Q_INVOKABLE void removeRecent(int index);
+
     Q_INVOKABLE void rememberGame();
     Q_INVOKABLE void closeGame();
     Q_INVOKABLE void pauseGame();
@@ -32,16 +37,22 @@ public:
     QString lastName() const { return m_lastName; }
     QString lastCommand() const { return m_lastCommand; }
     QString gameTitle() const {return m_gameTitle;}
+    QVariant recents() const{return m_recents;}
 
 signals:
     void lastPlayedChanged();
     void gameChanged();
+    void recentsChanged();
 
 private:
+    void addRecent(const QString &kind, const QString &name, const QString &command, const QString &icon);
+    void saveRecents();
+
     QString m_lastName;
     QString m_lastCommand;
     qint64 m_gamePid = 0;
     QString m_gameTitle;
     bool m_gamePaused = false;
     int m_savedVrr = 0;
+    QVariant m_recents;
 };

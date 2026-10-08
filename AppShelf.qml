@@ -49,7 +49,7 @@ FocusScope {
         if (picking)
             pickCallback(app)                   // {name, command, icon}
         else
-            Launcher.run(app.command)
+            Launcher.openApp(app.name, app.command, app.icon)
         close()
     }
 
