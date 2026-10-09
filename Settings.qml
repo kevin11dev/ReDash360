@@ -18,7 +18,6 @@ TilePage {
         label: "Network"
         icon: "wifi"
         column: 0; row: 1
-        focus: true
         onActivated: console.log("Network")
     }
 
@@ -27,8 +26,7 @@ TilePage {
         label: "Profile"
         icon: "account"
         column: 1; row: 0
-        focus: true
-        onActivated: console.log("Profile")
+        onActivated: root.profileRequested()
     }
 
     Tile{                                       //Display & Sound
@@ -36,7 +34,6 @@ TilePage {
         label: "Display & Sound"
         icon: "tv"
         column: 1; row: 1
-        focus: true
         onActivated: console.log("Display & Sound")
     }
 
@@ -45,7 +42,6 @@ TilePage {
         label: "Preferences"
         icon: "sliders"
         column: 2; row: 0
-        focus: true
         onActivated: console.log("Preferences")
     }
 
@@ -54,7 +50,6 @@ TilePage {
         label: "Storage"
         icon: "storage"
         column: 2; row: 1
-        focus: true
         onActivated: console.log("Storage")
     }
 
@@ -63,7 +58,6 @@ TilePage {
         label: "Controllers"
         icon: "controller"
         column: 3; row: 0
-        focus: true
         onActivated: console.log("Controllers")
     }
 
@@ -72,7 +66,6 @@ TilePage {
         label: "Turn Off"
         icon: "power"
         column: 3; row: 1
-        focus: true
         onActivated: root.powerRequested()
     }
 }

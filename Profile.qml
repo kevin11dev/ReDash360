@@ -10,22 +10,9 @@ Item {
     height: 57
     opacity: 0.88
 
-    // Saved in the settings under [profile]; leave empty to use the defaults
-    Settings {
-        id: saved
-        category: "profile"
-        property string gamertag        // empty = the computer's user name
-        property string gamerpic        // image file/URL, empty = letter tile
-    }
-
-    // "file:///home/kevin" or "file:///C:/Users/kevin" -> "kevin"
-    readonly property string userName: {
-        const home = StandardPaths.writableLocation(StandardPaths.HomeLocation).toString()
-        return home.substring(home.lastIndexOf("/") + 1)
-    }
-
-    readonly property string gamertag: saved.gamertag !== "" ? saved.gamertag : userName
-    readonly property string gamerpic: saved.gamerpic
+    // From the shared profile (UserProfile.qml), so every screen agrees
+    readonly property string gamertag: UserProfile.gamertag
+    readonly property string gamerpic: UserProfile.gamerpic
 
     // Which text is showing: 0 = gamertag, 1 = stats, 2 = none (just the picture)
     property int showing: 0
@@ -51,13 +38,17 @@ Item {
             text: profile.gamertag.charAt(0).toUpperCase()
             color: "white"
             font.pixelSize: 28
+            visible: !picture.visible           // a see-through GIF mustn't show the letter
         }
 
-        Image {
+        AnimatedImage {                         // GIFs play here too
+            id: picture
             anchors.fill: parent
-            source: saved.gamerpic
+            anchors.margins: 3
+            source: profile.gamerpic
             visible: status === Image.Ready
-            fillMode: Image.PreserveAspectCrop
+            fillMode: Image.PreserveAspectFit
+            smooth: implicitWidth * 2 > width   // pixel art stays sharp
             asynchronous: true
         }
     }
