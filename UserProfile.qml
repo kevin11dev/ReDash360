@@ -6,11 +6,11 @@ QtObject{
     id: me
 
     readonly property string userName: {
-        const home = standardPaths.writableLocation(StandardPaths.HomeLocation).toString()
+        const home = StandardPaths.writableLocation(StandardPaths.HomeLocation).toString()
         return home.substring(home.lastIndexOf("/") + 1)
     }
 
-    readonly property string gamertag: saved.gamertag !== "" ? saved.gamertag : username
+    readonly property string gamertag: saved.gamertag !== "" ? saved.gamertag : userName
 
     readonly property string avatar: saved.avatar
 

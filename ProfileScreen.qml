@@ -33,7 +33,7 @@ FocusScope{
     function editGamertag(){
         nameField.text = UserProfile.gamertag
         nameField.visible = true
-        nameFIeld.selectAll()
+        nameField.selectAll()
         nameField.forceActiveFocus()
     }
 
@@ -68,7 +68,7 @@ FocusScope{
 
         Item{
             id: stage
-            x: 200; y: 230
+            x: 200; y: 280
             width: 520; height:600
 
             Rectangle{
@@ -90,13 +90,13 @@ FocusScope{
                 width: 300; height: 300
                 name: "person"
                 opacity: 0.35
-                visible: userProfile.avatar === ""
+                visible: UserProfile.avatar === ""
             }
         }
 
         Text{
             anchors.horizontalCenter: stage.horizontalCenter
-            y: 850
+            y: 190
             text: UserProfile.gamertag
             color: "white"
             font.pixelSize: 48
@@ -106,7 +106,7 @@ FocusScope{
         TextInput{
             id: nameField
             anchors.horizontalCenter: stage.horizontalCenter
-            y: 850
+            y: 190
             width: 520
             horizontalAlignment: TextInput.AlignHCenter
             color: "white"
@@ -155,7 +155,7 @@ FocusScope{
                     id: row
                     required property int index
                     required property var modelData
-                    readonly property bool selected: ListView.isCurrentItem && list.ativeFocus
+                    readonly property bool selected: ListView.isCurrentItem && list.activeFocus
 
                     width: ListView.view.width
                     height: 63
