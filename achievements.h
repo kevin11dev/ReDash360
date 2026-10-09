@@ -1,4 +1,4 @@
-#pragma
+#pragma once
 
 #include <QObject>
 #include <QVariantList>
@@ -9,7 +9,7 @@ class Achievements : public QObject{
     QML_ELEMENT
     QML_SINGLETON
 
-    Q_PROPERTY(QVariant recent READ recent NOTIFY changed)
+    Q_PROPERTY(QVariantList recent READ recent NOTIFY changed)
 
     Q_PROPERTY(int total READ total NOTIFY changed)
 

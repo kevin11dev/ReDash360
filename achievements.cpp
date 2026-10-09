@@ -75,6 +75,32 @@ QString english(const QVariant &value)
     return languages.isEmpty() ? value.toString() : languages.value("english").toString();
 }
 
+// Your installed Steam games: one steamapps/appmanifest_<game>.acf each, in
+// Steam's own folder and every other library listed in libraryfolders.vdf
+QSet<QString> installedGames(const QString &steamRoot)
+{
+    QStringList libraries = { steamRoot };
+    QFile folders(steamRoot + "/steamapps/libraryfolders.vdf");
+    if (folders.open(QIODevice::ReadOnly)) {
+        static const QRegularExpression path("\"path\"\\s+\"([^\"]+)\"");
+        QRegularExpressionMatchIterator it = path.globalMatch(QString::fromUtf8(folders.readAll()));
+        while (it.hasNext())
+            libraries << it.next().captured(1);
+    }
+
+    static const QRegularExpression manifestName("^appmanifest_(\\d+)\\.acf$");
+    QSet<QString> games;
+    for (const QString &library : std::as_const(libraries)) {
+        const QStringList manifests = QDir(library + "/steamapps").entryList({ "appmanifest_*.acf" }, QDir::Files);
+        for (const QString &manifest : manifests) {
+            const QRegularExpressionMatch match = manifestName.match(manifest);
+            if (match.hasMatch())
+                games.insert(match.captured(1));
+        }
+    }
+    return games;
+}
+
 struct Unlock
 {
     qint64 time;
@@ -113,12 +139,18 @@ void Achievements::refresh()
             continue;                           // missing, or the same folder via a symlink
         seenFolders.insert(folder);
 
+        // Only games you have installed, so the count doesn't jump around when
+        // Steam caches files for games you've just looked at
+        const QSet<QString> installed = installedGames(root);
+
         const QStringList files = QDir(folder).entryList({ "UserGameStats_*.bin" }, QDir::Files);
         for (const QString &fileName : files) {
             const QRegularExpressionMatch match = statsName.match(fileName);
             if (!match.hasMatch())
                 continue;
             const QString appId = match.captured(1);
+            if (!installed.contains(appId))
+                continue;
             const QVariantMap cache = readFile(folder + "/" + fileName).value("cache").toMap();
             for (auto stat = cache.cbegin(); stat != cache.cend(); ++stat) {
                 const QVariantMap times = stat.value().toMap().value("AchievementTimes").toMap();
