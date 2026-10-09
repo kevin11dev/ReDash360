@@ -140,7 +140,7 @@ ApplicationWindow {
                   anchors.right: parent.right
                   anchors.rightMargin: 144
                   y: 63
-                  opacity: window.subScreenOpen ? 0 : 0.88
+                  opacity: window.subScreenOpen ? 0 : 1
                   Behavior on opacity { NumberAnimation { duration: 200 } }
             }
 

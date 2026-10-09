@@ -55,6 +55,7 @@ qt_add_qml_module(appReDash360
         Pins.qml
         UserProfile.qml
         ProfileScreen.qml
+        Gamerpic.qml
         PinShelf.qml
         icons.js
     SOURCES
