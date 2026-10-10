@@ -1,16 +1,17 @@
 import QtQuick
 
-// Turn Off: the 360's tall "Turn Off Console" card
+// Turn Off, in the style of the 360's tall message card
 MessageCard{
     id: power
 
     readonly property bool onWindows: Qt.platform.os === "windows"
 
-    title: "Turn Off Console"
-    message: "Turning off the console will also disconnect all controllers."
+    title: "Turn Off"
+    message: "What would you like to do?"
+    defaultIndex: 0
     options: [
-        {label: "Turn Off Console", run: () => Launcher.run(power.onWindows ? "shutdown /s /t 0" : "systemctl poweroff")},
-        {label: "Restart Console", run: () => Launcher.run(power.onWindows ? "shutdown /r /t 0" : "systemctl reboot")},
+        {label: "Turn Off", run: () => Launcher.run(power.onWindows ? "shutdown /s /t 0" : "systemctl poweroff")},
+        {label: "Restart", run: () => Launcher.run(power.onWindows ? "shutdown /r /t 0" : "systemctl reboot")},
         {label: "Exit to Desktop", run: () => Qt.quit()},
         {label: "Cancel", run: () => {}}
     ]

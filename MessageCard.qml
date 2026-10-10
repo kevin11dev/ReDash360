@@ -13,7 +13,7 @@ FocusScope{
     property Item returnFocusTo: null
 
     function open() {
-        returnFocusTO = Window.activeFocusItem
+        returnFocusTo = Window.activeFocusItem
         list.currentIndex = Math.max(0, Math.min(defaultIndex, options.length - 1))
         visible = true
         list.forceActiveFocus()
@@ -72,7 +72,7 @@ FocusScope{
             Rectangle{
                 x: 13
                 anchors.verticalCenter: parent.top
-                anchors.verticalCenterOffset: tileBar.height / 2
+                anchors.verticalCenterOffset: titleBar.height / 2
                 width: 38; height: 38
                 radius: width / 2
                 gradient: Gradient{
@@ -101,7 +101,7 @@ FocusScope{
             }
 
             Text{
-                x: 42; y: 103
+                x: 41; y: 103
                 width: parent.width - 2 * x
                 text: card.message
                 color: "#333333"
@@ -126,15 +126,26 @@ FocusScope{
                     required property var modelData
                     readonly property bool selected: ListView.isCurrentItem
 
-                    width: ListVIew.view.width
+                    width: ListView.view.width
                     height: 63
                     color: selected ? "#008E00" : "#D5DFE0"
 
                     Text{
                         x: 41
                         anchors.verticalCenter: parent.verticalCenter
-                        text: row.selected ? "white" : "#222222"
+                        text: row.modelData.label
+                        color: row.selected ? "white" : "#222222"
                         font.pixelSize: 36
+                    }
+
+                    // A thin grey line between two plain rows, like the 360's lists
+                    Column{
+                        anchors.bottom: parent.bottom
+                        width: parent.width
+                        visible: !row.selected && row.index < list.count - 1
+                                 && list.currentIndex !== row.index + 1
+                        Rectangle{width: parent.width; height: 1; color: "#8E979A"}
+                        Rectangle{width: parent.width; height: 1; color: "#C4CCCF"}
                     }
 
                     MouseArea{
