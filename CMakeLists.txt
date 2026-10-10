@@ -27,6 +27,7 @@ qt_add_executable(appReDash360
 # Pins.qml is a singleton (one shared object, used as Pins.pin(...) etc.)
 set_source_files_properties(Pins.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 set_source_files_properties(UserProfile.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(Sounds.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(appReDash360
     URI ReDash360
@@ -57,6 +58,9 @@ qt_add_qml_module(appReDash360
         ProfileScreen.qml
         Gamerpic.qml
         PinShelf.qml
+        Sounds.qml
+        SoundBank.qml
+        MessageCard.qml
         icons.js
     SOURCES
         gamepad.h gamepad.cpp
