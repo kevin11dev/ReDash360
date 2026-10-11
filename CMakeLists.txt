@@ -61,6 +61,7 @@ qt_add_qml_module(appReDash360
         Sounds.qml
         SoundBank.qml
         MessageCard.qml
+        Keyboard.qml
         icons.js
     SOURCES
         gamepad.h gamepad.cpp

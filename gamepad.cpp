@@ -9,6 +9,7 @@ constexpr int PollIntervalMs = 16;       // check the controller ~60 times a sec
 constexpr int RepeatDelayMs = 400;       // hold a direction this long before it repeats
 constexpr int RepeatIntervalMs = 120;    // then repeat this often
 constexpr int StickDeadzone = 16000;     // ignore small stick movements (range is ±32767)
+constexpr int TriggerPressed = 16000;    // a trigger counts as pressed past halfway (range is 0 to 32767)
 
 // Which key each controller button pretends to be
 int keyForButton(Uint8 button)
@@ -20,10 +21,13 @@ int keyForButton(Uint8 button)
     case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:    return Qt::Key_Right;
     case SDL_CONTROLLER_BUTTON_A:             return Qt::Key_Return;
     case SDL_CONTROLLER_BUTTON_B:             return Qt::Key_Escape;
+    case SDL_CONTROLLER_BUTTON_X:             return Qt::Key_X;
     case SDL_CONTROLLER_BUTTON_Y:             return Qt::Key_Y;
     case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:  return Qt::Key_Q;
     case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: return Qt::Key_E;
     case SDL_CONTROLLER_BUTTON_GUIDE:         return Qt::Key_Home;
+    case SDL_CONTROLLER_BUTTON_START:         return Qt::Key_Menu;       // keyboard: Done
+    case SDL_CONTROLLER_BUTTON_LEFTSTICK:     return Qt::Key_CapsLock;   // keyboard: Caps
     default:                                  return 0;
     }
 }
@@ -107,6 +111,7 @@ void Gamepad::poll()
 
     if (m_controller)
         handleStick();
+        handleTriggers();
 
     // Repeat the held direction
     if (m_heldKey && m_heldFor.elapsed() >= m_nextRepeatAt) {
@@ -134,6 +139,22 @@ void Gamepad::handleStick()
     if (key)
         startHold(key);
 }
+
+// The triggers aren't buttons but how far they're pressed, so they count as
+// pressed once they're past halfway: LT is Page Up, RT is Page Down (the
+// on-screen keyboard's Symbols and Accents)
+void Gamepad::handleTriggers()
+{
+    const bool left = SDL_GameControllerGetAxis(m_controller, SDL_CONTROLLER_AXIS_TRIGGERLEFT) > TriggerPressed;
+    const bool right = SDL_GameControllerGetAxis(m_controller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) > TriggerPressed;
+    if (left && !m_leftTrigger)
+        sendKey(Qt::Key_PageUp);
+    if (right && !m_rightTrigger)
+        sendKey(Qt::Key_PageDown);
+    m_leftTrigger = left;
+    m_rightTrigger = right;
+}
+
 
 void Gamepad::startHold(int key)
 {

@@ -6,6 +6,7 @@ import Qt.labs.folderlistmodel
 // 1920x1080): a white list on the left, your orange gamer card on the right,
 // on black. Each choice opens the next list (Edit Profile, Gamer Picture...),
 // B goes back one. View Games lists your Steam achievements, game by game.
+// Typing (gamertag, motto...) uses the on-screen keyboard.
 // Gamerpics and avatars are GIFs (or pictures) you put in
 // ~/.local/share/ReDash360/gamerpics and .../avatars.
 FocusScope {
@@ -20,14 +21,11 @@ FocusScope {
     readonly property int rowHeight: page.rowHeight || 63
     readonly property var current: page.rows[list.currentIndex] || ({})
 
-    // The field you're typing in ("motto", "gamertag"...), "" = none
-    property string editing: ""
-
     function open() {
         returnFocusTo = Window.activeFocusItem
         Achievements.refresh()
         picker.visible = false
-        editing = ""
+        keyboard.visible = false
         pages = [mainPage()]
         list.currentIndex = 0
         visible = true
@@ -63,13 +61,30 @@ FocusScope {
         if (!row || row.disabled)
             return
         if (row.edit)
-            editing = row.edit
+            type(row.edit)
         else if (row.run)
             row.run()
     }
 
     function valueOf(field) {
         return field === "gamertag" ? UserProfile.gamertag : UserProfile[field]
+    }
+
+    // What the keyboard asks for each thing you can type, like the 360
+    readonly property var fields: ({
+        gamertag: { title: "Change Gamertag", maxLength: 15,
+                    prompt: "Enter your new gamertag. Gamertags can be up to 15 characters long." },
+        motto: { title: "Change Motto", maxLength: 21,
+                 prompt: "Enter your motto. Mottos can be up to 21 characters long." },
+        realName: { title: "Change Name", maxLength: 30, prompt: "Enter your name." },
+        place: { title: "Change Location", maxLength: 40, prompt: "Enter where you're from." },
+        bio: { title: "Change Bio", maxLength: 200, prompt: "Tell people a little about yourself." },
+    })
+
+    function type(field) {
+        const info = fields[field]
+        keyboard.open({ title: info.title, prompt: info.prompt, maxLength: info.maxLength,
+                        text: valueOf(field), done: text => save(field, text) })
     }
 
     function save(field, text) {
@@ -247,7 +262,7 @@ FocusScope {
                     height: Math.floor(parent.height / profileScreen.rowHeight) * profileScreen.rowHeight
                     clip: true
                     focus: true
-                    keyNavigationEnabled: profileScreen.editing === ""
+                    keyNavigationEnabled: true
                     interactive: contentHeight > height
                     highlightMoveDuration: 0
                     model: profileScreen.page.rows
@@ -338,11 +353,11 @@ FocusScope {
             spacing: 30
             ButtonHint {
                 button: "A"
-                label: profileScreen.editing !== "" ? "Save" : "Select"
+                label: "Select"
                 visible: !profileScreen.current.disabled && (profileScreen.current.run !== undefined
                                                              || profileScreen.current.edit !== undefined)
             }
-            ButtonHint { button: "B"; label: profileScreen.editing !== "" ? "Cancel" : "Back" }
+            ButtonHint { button: "B"; label: "Back" }
         }
     }
 
@@ -404,7 +419,6 @@ FocusScope {
 
             Text {
                 width: parent.width
-                visible: !(row.selected && profileScreen.editing !== "")
                 text: row.modelData.label
                 color: row.ink
                 font.pixelSize: 36
@@ -418,40 +432,6 @@ FocusScope {
                 opacity: row.selected ? 1 : 0.85
                 font.pixelSize: 32
                 elide: Text.ElideRight
-            }
-
-            // Typing a new gamertag, motto...: Enter saves, Esc cancels
-            Loader {
-                width: parent.width
-                active: row.selected && profileScreen.editing !== ""
-                visible: active
-                sourceComponent: TextInput {
-                    color: "white"
-                    selectionColor: "#0B5E0B"
-                    font.pixelSize: 36
-                    maximumLength: profileScreen.editing === "gamertag" ? 20 : 100
-                    clip: true
-                    Component.onCompleted: {
-                        text = profileScreen.valueOf(profileScreen.editing)
-                        selectAll()
-                        forceActiveFocus()
-                    }
-                    function finish(keep) {
-                        if (keep)
-                            profileScreen.save(profileScreen.editing, text)
-                        profileScreen.editing = ""
-                        list.forceActiveFocus()
-                    }
-                    Keys.onReturnPressed: finish(true)
-                    Keys.onEnterPressed: finish(true)
-                    Keys.onEscapePressed: finish(false)
-
-                    Rectangle {                 // underline while typing
-                        anchors.top: parent.bottom
-                        width: parent.width; height: 2
-                        color: "white"
-                    }
-                }
             }
         }
 
@@ -486,7 +466,6 @@ FocusScope {
         MouseArea {
             anchors.fill: parent
             hoverEnabled: true
-            enabled: profileScreen.editing === ""
             onEntered: if (Pointer.active) list.currentIndex = row.index   // not with the controller
             onClicked: profileScreen.activate(row.modelData)
         }
@@ -722,5 +701,11 @@ FocusScope {
             ButtonHint { button: "B"; label: "Back" }
             ButtonHint { button: "Y"; label: "Remove" }
         }
+    }
+
+    // For typing your gamertag, motto, name, location and bio
+    Keyboard {
+        id: keyboard
+        anchors.fill: parent
     }
 }

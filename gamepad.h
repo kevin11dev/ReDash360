@@ -25,6 +25,7 @@ public:
 private:
     void poll();
     void handleStick();
+    void handleTriggers();
     void startHold(int key);
     void stopHold(int key);
     void sendKey(int key);
@@ -40,4 +41,7 @@ private:
     qint64 m_nextRepeatAt = 0;
 
     int m_stickKey = 0;     // direction the left stick is pushed, or 0
+
+    bool m_leftTrigger = false;     // LT / RT held down past halfway
+    bool m_rightTrigger = false;
 };
