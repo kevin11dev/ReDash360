@@ -43,6 +43,10 @@ ApplicationWindow {
                   if(guide.visible){
                         guide.close()
                   } else {
+                        if(profileScreen.visible)
+                              profileScreen.close()
+                        if(gameDetails.visible)
+                              gameDetails.close()
                         if(shelf.visible)
                               shelf.close()
                         if(appShelf.visible)
@@ -51,8 +55,6 @@ ApplicationWindow {
                               recentShelf.close()
                         if(pinShelf.visible)
                               pinShelf.close()
-                        if(profileScreen.visible)
-                              profileScreen.close()
                         if(powerMenu.visible)
                               powerMenu.close()
                         guide.open()
@@ -91,7 +93,7 @@ ApplicationWindow {
 
       readonly property int pageWidth: 1252
       readonly property int pageGap: 160
-      readonly property bool subScreenOpen: shelf.visible || appShelf.visible || recentShelf.visible || pinShelf.visible || profileScreen.visible
+      readonly property bool subScreenOpen: shelf.visible || appShelf.visible || recentShelf.visible || pinShelf.visible || profileScreen.visible || gameDetails.visible
       readonly property Window guideOverlay: overlay
 
       // Bring the dashboard in front of whatever is running (e.g. a game)
@@ -245,6 +247,13 @@ ApplicationWindow {
             GameShelf{
                   id: shelf
                   anchors.fill: parent
+                  onDetailsRequested: (game) => gameDetails.open(game)
+            }
+
+            GameDetails{
+                  id: gameDetails
+                  anchors.fill: parent
+                  onAchievementsRequested: (appId) => profileScreen.openGame(appId)
             }
 
             AppShelf{

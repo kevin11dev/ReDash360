@@ -33,6 +33,16 @@ FocusScope {
         openAnimation.restart()
     }
 
+    // Straight to one game's achievements (from Game Details); B goes back there
+    function openGame(appId) {
+        open()
+        const game = Achievements.games.find(g => g.appId === appId)
+        if (game) {
+            pages = [gamePage(game)]
+            list.currentIndex = 0
+        }
+    }
+
     function close() {
         visible = false
         if (returnFocusTo)

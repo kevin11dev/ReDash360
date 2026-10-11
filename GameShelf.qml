@@ -13,6 +13,9 @@ FocusScope {
     property var pickCallback: null
     readonly property bool picking: pickCallback !== null
 
+    // X on a game: its Game Details
+    signal detailsRequested(var game)
+
     // What's shown: a source ("Steam", ...) or "All Games", and the order
     property string filter: "All Games"
     property string sort: "A-Z"
@@ -163,6 +166,9 @@ FocusScope {
             if (event.key === Qt.Key_Y && game && !shelf.picking) {
                 Pins.toggle({ kind: "game", name: game.name, command: game.command })
                 event.accepted = true
+            } else if (event.key === Qt.Key_X && game && !shelf.picking) {
+                shelf.detailsRequested(game)
+                event.accepted = true
             }
         }
 
@@ -190,6 +196,11 @@ FocusScope {
             button: "Y"
             label: game && Pins.isPinned(game.command) ? "Unpin" : "Pin"
             visible: list.activeFocus && !menu.visible && !shelf.picking && game !== undefined
+        }
+        ButtonHint {
+            button: "X"
+            label: "Game Details"
+            visible: list.activeFocus && !menu.visible && !shelf.picking && shelf.games[list.currentIndex] !== undefined
         }
     }
 
