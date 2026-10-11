@@ -151,7 +151,7 @@ FocusScope{
                     MouseArea{
                         anchors.fill: parent
                         hoverEnabled: true
-                        onEntered: list.currentIndex = row.index
+                        onEntered: if (Pointer.active) list.currentIndex = row.index   // not with the controller
                         onClicked: card.choose(row.index)
                     }
                 }

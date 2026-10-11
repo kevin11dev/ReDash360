@@ -4,7 +4,6 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
-#include <QHash>
 #include <QRegularExpression>
 #include <QSet>
 #include <QtEndian>
@@ -68,6 +67,13 @@ QVariantMap readFile(const QString &path)
     return readKeyValues(file.readAll(), pos);
 }
 
+// UserGameStatsSchema_<game>.bin, next to the stats files: every achievement's
+// name, description and icons, under <game> -> stats -> <stat> -> bits -> <bit>
+QVariantMap readSchema(const QString &folder, const QString &appId)
+{
+    return readFile(folder + "/UserGameStatsSchema_" + appId + ".bin").value(appId).toMap();
+}
+
 // A name or description: one text per language, or just one text
 QString english(const QVariant &value)
 {
@@ -75,9 +81,17 @@ QString english(const QVariant &value)
     return languages.isEmpty() ? value.toString() : languages.value("english").toString();
 }
 
-// Your installed Steam games: one steamapps/appmanifest_<game>.acf each, in
-// Steam's own folder and every other library listed in libraryfolders.vdf
-QSet<QString> installedGames(const QString &steamRoot)
+QString iconUrl(const QString &appId, const QString &file)
+{
+    if (file.isEmpty())
+        return {};
+    return "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/"
+           + appId + "/" + file;
+}
+
+// Your installed Steam games, id -> name: one steamapps/appmanifest_<game>.acf
+// each, in Steam's own folder and every other library in libraryfolders.vdf
+QHash<QString, QString> installedGames(const QString &steamRoot)
 {
     QStringList libraries = { steamRoot };
     QFile folders(steamRoot + "/steamapps/libraryfolders.vdf");
@@ -89,13 +103,20 @@ QSet<QString> installedGames(const QString &steamRoot)
     }
 
     static const QRegularExpression manifestName("^appmanifest_(\\d+)\\.acf$");
-    QSet<QString> games;
+    static const QRegularExpression gameName("\"name\"\\s+\"([^\"]*)\"");
+    QHash<QString, QString> games;
     for (const QString &library : std::as_const(libraries)) {
-        const QStringList manifests = QDir(library + "/steamapps").entryList({ "appmanifest_*.acf" }, QDir::Files);
+        const QDir steamapps(library + "/steamapps");
+        const QStringList manifests = steamapps.entryList({ "appmanifest_*.acf" }, QDir::Files);
         for (const QString &manifest : manifests) {
             const QRegularExpressionMatch match = manifestName.match(manifest);
-            if (match.hasMatch())
-                games.insert(match.captured(1));
+            if (!match.hasMatch())
+                continue;
+            QFile file(steamapps.filePath(manifest));
+            QString name;
+            if (file.open(QIODevice::ReadOnly))
+                name = gameName.match(QString::fromUtf8(file.readAll())).captured(1);
+            games.insert(match.captured(1), name);
         }
     }
     return games;
@@ -104,10 +125,17 @@ QSet<QString> installedGames(const QString &steamRoot)
 struct Unlock
 {
     qint64 time;
-    QString folder;                             // the appcache/stats folder it came from
     QString appId;
     QString stat;                               // which stat holds the achievement...
     QString bit;                                // ...and which bit of it
+};
+
+struct Game
+{
+    QString name;
+    QString folder;                             // its appcache/stats folder
+    int unlocked = 0;
+    qint64 last = 0;                            // newest unlock
 };
 
 } // namespace
@@ -132,6 +160,8 @@ void Achievements::refresh()
     // with the time, under cache -> <stat> -> AchievementTimes -> <bit>
     static const QRegularExpression statsName("^UserGameStats_\\d+_(\\d+)\\.bin$");
     QList<Unlock> unlocks;
+    QHash<QString, Game> games;
+    m_statsFiles.clear();
     QSet<QString> seenFolders;
     for (const QString &root : roots) {
         const QString folder = QFileInfo(root + "/appcache/stats").canonicalFilePath();
@@ -141,7 +171,7 @@ void Achievements::refresh()
 
         // Only games you have installed, so the count doesn't jump around when
         // Steam caches files for games you've just looked at
-        const QSet<QString> installed = installedGames(root);
+        const QHash<QString, QString> installed = installedGames(root);
 
         const QStringList files = QDir(folder).entryList({ "UserGameStats_*.bin" }, QDir::Files);
         for (const QString &fileName : files) {
@@ -151,11 +181,21 @@ void Achievements::refresh()
             const QString appId = match.captured(1);
             if (!installed.contains(appId))
                 continue;
+
+            Game &game = games[appId];
+            game.name = installed.value(appId);
+            game.folder = folder;
+            m_statsFiles.insert(appId, folder + "/" + fileName);
+
             const QVariantMap cache = readFile(folder + "/" + fileName).value("cache").toMap();
             for (auto stat = cache.cbegin(); stat != cache.cend(); ++stat) {
                 const QVariantMap times = stat.value().toMap().value("AchievementTimes").toMap();
-                for (auto bit = times.cbegin(); bit != times.cend(); ++bit)
-                    unlocks.append({ bit.value().toLongLong(), folder, appId, stat.key(), bit.key() });
+                for (auto bit = times.cbegin(); bit != times.cend(); ++bit) {
+                    const qint64 time = bit.value().toLongLong();
+                    unlocks.append({ time, appId, stat.key(), bit.key() });
+                    game.unlocked++;
+                    game.last = std::max(game.last, time);
+                }
             }
         }
     }
@@ -164,37 +204,109 @@ void Achievements::refresh()
         return a.time > b.time;                 // newest first
     });
 
-    // UserGameStatsSchema_<game>.bin: every achievement's name, description
-    // and icon, under <game> -> stats -> <stat> -> bits -> <bit> -> display
+    // Each game's list of achievements, for the names, icons and totals
     QHash<QString, QVariantMap> schemas;
+    for (auto game = games.cbegin(); game != games.cend(); ++game)
+        schemas.insert(game.key(), readSchema(game.value().folder, game.key()));
+
+    // The newest 9
     QVariantList recent;
     for (const Unlock &unlock : std::as_const(unlocks)) {
         if (recent.size() == RecentCount)
             break;
-        if (!schemas.contains(unlock.appId)) {
-            const QVariantMap file = readFile(unlock.folder + "/UserGameStatsSchema_" + unlock.appId + ".bin");
-            schemas.insert(unlock.appId, file.value(unlock.appId).toMap());
-        }
-        const QVariantMap schema = schemas.value(unlock.appId);
-        const QVariantMap display = schema.value("stats").toMap().value(unlock.stat).toMap()
-                                        .value("bits").toMap().value(unlock.bit).toMap()
-                                        .value("display").toMap();
+        const QVariantMap display = schemas.value(unlock.appId).value("stats").toMap()
+                                        .value(unlock.stat).toMap().value("bits").toMap()
+                                        .value(unlock.bit).toMap().value("display").toMap();
         if (display.isEmpty())
             continue;                           // not in the schema: skip it
 
-        const QString icon = display.value("icon").toString();
         recent << QVariantMap{
             { "name", english(display.value("name")) },
             { "description", english(display.value("desc")) },
-            { "icon", icon.isEmpty() ? QString()
-                                    : "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/"
-                                          + unlock.appId + "/" + icon },
+            { "icon", iconUrl(unlock.appId, display.value("icon").toString()) },
             { "appId", unlock.appId },
             { "time", QDateTime::fromSecsSinceEpoch(unlock.time) },
             };
     }
 
+    // Every game that has achievements, with how many you've got
+    QList<QVariantMap> list;
+    for (auto game = games.cbegin(); game != games.cend(); ++game) {
+        const QVariantMap schema = schemas.value(game.key());
+        int total = 0;
+        const QVariantMap stats = schema.value("stats").toMap();
+        for (const QVariant &stat : stats)
+            total += stat.toMap().value("bits").toMap().size();
+        if (total == 0)
+            continue;
+
+        QString name = game.value().name;
+        if (name.isEmpty())
+            name = schema.value("gamename").toString();
+        list << QVariantMap{
+            { "appId", game.key() },
+            { "name", name },
+            { "unlocked", game.value().unlocked },
+            { "total", total },
+            { "last", game.value().last ? QDateTime::fromSecsSinceEpoch(game.value().last) : QVariant() },
+            };
+    }
+    std::sort(list.begin(), list.end(), [](const QVariantMap &a, const QVariantMap &b) {
+        const qint64 ta = a.value("last").toDateTime().toSecsSinceEpoch();
+        const qint64 tb = b.value("last").toDateTime().toSecsSinceEpoch();
+        if (ta != tb)
+            return ta > tb;                     // newest first...
+        return a.value("name").toString().compare(b.value("name").toString(), Qt::CaseInsensitive) < 0;
+    });                                         // ...then games with none, A to Z
+
     m_recent = recent;
     m_total = unlocks.size();
+    m_games.clear();
+    for (const QVariantMap &game : std::as_const(list))
+        m_games << game;
     emit changed();
+}
+
+QVariantList Achievements::forGame(const QString &appId) const
+{
+    const QString statsFile = m_statsFiles.value(appId);
+    if (statsFile.isEmpty())
+        return {};
+
+    const QVariantMap cache = readFile(statsFile).value("cache").toMap();
+    const QVariantMap stats = readSchema(QFileInfo(statsFile).path(), appId).value("stats").toMap();
+
+    struct Entry { QVariantMap map; qint64 time; int order; };
+    QList<Entry> entries;
+    for (auto stat = stats.cbegin(); stat != stats.cend(); ++stat) {
+        const QVariantMap times = cache.value(stat.key()).toMap().value("AchievementTimes").toMap();
+        const QVariantMap bits = stat.value().toMap().value("bits").toMap();
+        for (auto bit = bits.cbegin(); bit != bits.cend(); ++bit) {
+            const QVariantMap display = bit.value().toMap().value("display").toMap();
+            const bool unlocked = times.contains(bit.key());
+            const qint64 time = times.value(bit.key()).toLongLong();
+            entries.append({ QVariantMap{
+                                { "name", english(display.value("name")) },
+                                { "description", english(display.value("desc")) },
+                                { "icon", iconUrl(appId, display.value(unlocked ? "icon" : "icon_gray").toString()) },
+                                { "unlocked", unlocked },
+                                { "time", unlocked ? QDateTime::fromSecsSinceEpoch(time) : QVariant() },
+                                { "hidden", display.value("hidden").toInt() == 1 },
+                                },
+                            unlocked ? time : 0,
+                            stat.key().toInt() * 1000 + bit.key().toInt() });
+        }
+    }
+
+    // Unlocked ones newest first, then the locked ones in the game's own order
+    std::sort(entries.begin(), entries.end(), [](const Entry &a, const Entry &b) {
+        if (a.time != b.time)
+            return a.time > b.time;
+        return a.order < b.order;
+    });
+
+    QVariantList result;
+    for (const Entry &entry : std::as_const(entries))
+        result << entry.map;
+    return result;
 }
