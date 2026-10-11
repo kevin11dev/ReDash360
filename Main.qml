@@ -4,6 +4,7 @@ import QtCore
 
 ApplicationWindow {
       id: window
+      readonly property QtObject sounds: Sounds
 
       width: 1280
       height: 720
@@ -158,7 +159,15 @@ ApplicationWindow {
                   orientation: ListView.Horizontal
                   spacing: window.pageGap
                   model: window.tabs
-                  Component.onCompleted: currentIndex = 1
+                  Component.onCompleted: {
+                        currentIndex = 1
+                        started = true
+                  }
+
+                  // A swoosh for every tab change (LB / RB, the mouse, sliding off a
+                  // page's edge, B back to home), but not for opening on home
+                  property bool started: false
+                  onCurrentIndexChanged: if (started) Sounds.play("tab")
                   cacheBuffer: 10000
 
                   snapMode: ListView.SnapOneItem
