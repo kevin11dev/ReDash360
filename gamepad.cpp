@@ -109,9 +109,10 @@ void Gamepad::poll()
         }
     }
 
-    if (m_controller)
+    if (m_controller) {
         handleStick();
         handleTriggers();
+    }
 
     // Repeat the held direction
     if (m_heldKey && m_heldFor.elapsed() >= m_nextRepeatAt) {
