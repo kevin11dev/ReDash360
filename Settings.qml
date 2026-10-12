@@ -50,7 +50,7 @@ TilePage {
         label: "Storage"
         icon: "storage"
         column: 2; row: 1
-        onActivated: console.log("Storage")
+        onActivated: root.storageRequested()
     }
 
     Tile{                                       //Controllers

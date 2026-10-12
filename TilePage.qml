@@ -14,6 +14,7 @@ FocusScope {
     signal pinsRequested()
     signal profileRequested()
     signal networkRequested()
+    signal storageRequested()
 
     property alias cellWidth: grid.cellWidth
     property alias cellHeight: grid.cellHeight

@@ -177,5 +177,10 @@ var shapes = {
     cross: {
         line: "M13,13 L35,35 M35,13 L13,35",
         width: 6
+    },
+    // USB stick: the plug with its two holes, then the body
+    usb: {
+        fill: "M17,3 H31 V14 H17 Z M20.5,6.5 H23 V9 H20.5 Z M25,6.5 H27.5 V9 H25 Z" +
+              "M13,16 H35 V41 Q35,45 31,45 H17 Q13,45 13,41 Z"
     }
 }
