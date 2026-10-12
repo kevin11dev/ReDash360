@@ -179,4 +179,3 @@ var shapes = {
         width: 6
     }
 }
-}
