@@ -18,7 +18,7 @@ TilePage {
         label: "Network"
         icon: "wifi"
         column: 0; row: 1
-        onActivated: console.log("Network")
+        onActivated: root.networkRequested()
     }
 
     Tile{                                       //Profile
