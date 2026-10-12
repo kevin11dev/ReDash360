@@ -219,6 +219,7 @@ ApplicationWindow {
                               function onPinsRequested(){pinShelf.open()}
                               function onProfileRequested() {profileScreen.open()}
                               function onNetworkRequested() {networkScreen.open()}
+                              function onStorageRequested() {storageScreen.open()}
                         }
                   }
             }
