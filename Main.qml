@@ -57,6 +57,8 @@ ApplicationWindow {
                               pinShelf.close()
                         if(networkScreen.visible)
                               networkScreen.close()
+                        if(storageScreen.visible)
+                              storageScreen.close()
                         if(powerMenu.visible)
                               powerMenu.close()
                         guide.open()
@@ -95,7 +97,7 @@ ApplicationWindow {
 
       readonly property int pageWidth: 1252
       readonly property int pageGap: 160
-      readonly property bool subScreenOpen: shelf.visible || appShelf.visible || recentShelf.visible || pinShelf.visible || profileScreen.visible || gameDetails.visible || networkScreen.visible
+      readonly property bool subScreenOpen: shelf.visible || appShelf.visible || recentShelf.visible || pinShelf.visible || profileScreen.visible || gameDetails.visible || networkScreen.visible || storageScreen.visible
       readonly property Window guideOverlay: overlay
 
       // Bring the dashboard in front of whatever is running (e.g. a game)
@@ -271,6 +273,11 @@ ApplicationWindow {
 
             NetworkScreen{
                   id: networkScreen
+                  anchors.fill: parent
+            }
+
+            StorageScreen{
+                  id: storageScreen
                   anchors.fill: parent
             }
 

@@ -64,6 +64,7 @@ qt_add_qml_module(appReDash360
         Keyboard.qml
         GameDetails.qml
         NetworkScreen.qml
+        StorageScreen.qml
         icons.js
     SOURCES
         gamepad.h gamepad.cpp
@@ -73,6 +74,7 @@ qt_add_qml_module(appReDash360
         applibrary.h applibrary.cpp
         achievements.h achievements.cpp
         network.h network.cpp
+        storage.h storage.cpp
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
