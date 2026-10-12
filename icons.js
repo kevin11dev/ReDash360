@@ -159,5 +159,23 @@ var shapes = {
     chevron: {
         line: "M10,17 L24,31 L38,17",
         width: 5
+    },
+    // Network cable plug: the clip with its pins cut out, the body, the cable
+    ethernet: {
+        fill: "M12,2 H36 V19 H12 Z M16.5,2 H20.5 V10 H16.5 Z M22,2 H26 V10 H22 Z M27.5,2 H31.5 V10 H27.5 Z" +
+              "M9,21 H39 L35,34 H13 Z M18.5,36 H29.5 V46 H18.5 Z"
+    },
+    globe: {
+        line: "M24,4 A20,20 0 1,0 24,44 A20,20 0 1,0 24,4 M4,24 H44 M24,4 C13,14 13,34 24,44 " +
+              "M24,4 C35,14 35,34 24,44 M7,14 H41 M7,34 H41",
+        width: 3
+    },
+    check: {
+        line: "M9,25 L19,35 L39,13",
+        width: 6
+    },
+    cross: {
+        line: "M13,13 L35,35 M35,13 L13,35",
+        width: 6
     }
 }
