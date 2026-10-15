@@ -58,7 +58,7 @@ TilePage {
         label: "Controllers"
         icon: "controller"
         column: 3; row: 0
-        onActivated: console.log("Controllers")
+        onActivated: root.controllersRequested()
     }
 
     Tile{                                       //Turn Off

@@ -18,6 +18,7 @@ public:
 
 signals:
     void activeChanged();
+    void keyPressed(QObject *window, int key);
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;

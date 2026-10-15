@@ -2,7 +2,9 @@
 
 #include <QCursor>
 #include <QGuiApplication>
+#include <QKeyEvent>
 #include <QMouseEvent>
+#include <QWindow>
 
 Pointer::Pointer(QObject *parent)
     : QObject(parent)
@@ -30,6 +32,8 @@ bool Pointer::eventFilter(QObject *watched, QEvent *event)
         break;
     case QEvent::KeyPress:
         setActive(false);
+        if (qobject_cast<QWindow *>(watched))     // the window, not each item it passes the key on to
+            emit keyPressed(watched, static_cast<QKeyEvent *>(event)->key());
         break;
     default:
         break;

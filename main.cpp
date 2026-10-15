@@ -51,6 +51,8 @@ int main(int argc, char *argv[])
     app.setOrganizationName("ReDash360");
     app.setApplicationName("ReDash360");
 
+    Gamepad gamepad(nullptr);
+
     QQmlApplicationEngine engine;
     QObject::connect(
         &engine,
@@ -76,7 +78,6 @@ int main(int argc, char *argv[])
         qWarning("Guide overlay: window not found");
 
     // Controller buttons become key presses for the dashboard, or the Guide over a game
-    Gamepad gamepad;
     gamepad.setWindow(mainWindow);
     gamepad.setOverlay(overlay);
 

@@ -30,6 +30,11 @@ FocusScope {
     property int tab: 1                         // opens on your gamertag blade
     property bool inControls: false             // on the media buttons (Media blade)
     property int control: 0                     // which media button
+    // The controller you're using: its quarter of the ring of light and its battery
+    readonly property var pad: Gamepad.controllers.find(c => c.id === Gamepad.lastUsed) || null
+    readonly property int player: pad ? pad.player : 1
+
+
 
     readonly property string homeFolder: StandardPaths.writableLocation(StandardPaths.HomeLocation).toString()
 
@@ -92,9 +97,11 @@ FocusScope {
         visible = true
         list.forceActiveFocus()
         openAnimation.restart()
+        Sounds.play("guide-open")
     }
 
     function close() {
+        Sounds.play("guide-close")
         confirming = false
         visible = false
         if (returnFocusTo)
@@ -224,10 +231,16 @@ FocusScope {
             width: 32; height: 32
             preferredRendererType: Shape.CurveRenderer
 
-            RingQuarter { startAngle: 185; lit: true }      // 0 degrees = 3 o'clock, going clockwise
-            RingQuarter { startAngle: 275 }
-            RingQuarter { startAngle: 5 }
-            RingQuarter { startAngle: 95 }
+            RingQuarter { startAngle: 185; lit: guide.player === 1 }    // 0 degrees = 3 o'clock, going clockwise
+            RingQuarter { startAngle: 275; lit: guide.player === 2 }
+            RingQuarter { startAngle: 5; lit: guide.player === 4 }
+            RingQuarter { startAngle: 95; lit: guide.player === 3 }
+        }
+
+        BatteryIcon {
+            x: 1287; y: 227
+            level: guide.pad ? guide.pad.battery : ""
+            color: "#F0F0F0"
         }
 
         Text {
