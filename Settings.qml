@@ -10,7 +10,7 @@ TilePage {
         icon: "console"
         column: 0; row: 0
         focus: true
-        onActivated: console.log("System")
+        onActivated: root.systemRequested()
     }
 
     Tile{                                       //Network

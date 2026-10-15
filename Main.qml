@@ -61,6 +61,8 @@ ApplicationWindow {
                               storageScreen.close()
                         if(controllersScreen.visible)
                               controllersScreen.close()
+                        if(systemScreen.visible)
+                              systemScreen.close()
                         if(powerMenu.visible)
                               powerMenu.close()
                         guide.open()
@@ -99,7 +101,7 @@ ApplicationWindow {
 
       readonly property int pageWidth: 1252
       readonly property int pageGap: 160
-      readonly property bool subScreenOpen: shelf.visible || appShelf.visible || recentShelf.visible || pinShelf.visible || profileScreen.visible || gameDetails.visible || networkScreen.visible || storageScreen.visible || controllersScreen.visible
+      readonly property bool subScreenOpen: shelf.visible || appShelf.visible || recentShelf.visible || pinShelf.visible || profileScreen.visible || gameDetails.visible || networkScreen.visible || storageScreen.visible || controllersScreen.visible || systemScreen.visible
       readonly property Window guideOverlay: overlay
 
       // Bring the dashboard in front of whatever is running (e.g. a game)
@@ -223,6 +225,7 @@ ApplicationWindow {
                               function onNetworkRequested() {networkScreen.open()}
                               function onStorageRequested() {storageScreen.open()}
                               function onControllersRequested() {controllersScreen.open()}
+                              function onSystemRequested() {systemScreen.open()}
                         }
                   }
             }
@@ -287,6 +290,11 @@ ApplicationWindow {
 
             ControllerScreen{
                   id: controllersScreen
+                  anchors.fill: parent
+            }
+
+            SystemScreen{
+                  id: systemScreen
                   anchors.fill: parent
             }
 

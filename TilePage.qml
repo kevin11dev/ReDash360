@@ -16,6 +16,7 @@ FocusScope {
     signal networkRequested()
     signal storageRequested()
     signal controllersRequested()
+    signal systemRequested()
 
     property alias cellWidth: grid.cellWidth
     property alias cellHeight: grid.cellHeight
