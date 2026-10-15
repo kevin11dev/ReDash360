@@ -337,7 +337,8 @@ FocusScope {
             }
         }
 
-        // Box art, or a grey box with a controller if there is none
+        // Box art (a grey box with a controller if there is none) under a
+        // strip saying which launcher it's from
         Rectangle {
             id: artBox
             x: 14; y: 14
@@ -345,20 +346,28 @@ FocusScope {
             height: 420
             color: "#8A8A8A"
 
+            Image {
+                id: art
+                y: platform.visible ? platform.height : 0
+                width: parent.width
+                height: parent.height - y
+                source: card.game.cover
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                sourceSize.width: width
+            }
+
             TileIcon {
-                anchors.centerIn: parent
+                anchors.centerIn: art
                 width: 150; height: 150
                 name: "controller"
                 visible: art.status !== Image.Ready
             }
 
-            Image {
-                id: art
-                anchors.fill: parent
-                source: card.game.cover
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                sourceSize.width: width
+            PlatformBanner {
+                id: platform
+                width: parent.width
+                source: card.game.source
             }
         }
 

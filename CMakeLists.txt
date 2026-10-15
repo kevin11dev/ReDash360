@@ -69,6 +69,7 @@ qt_add_qml_module(appReDash360
         ControllerScreen.qml
         BatteryIcon.qml
         BatteryNotice.qml
+        PlatformBanner.qml
         icons.js
     SOURCES
         gamepad.h gamepad.cpp

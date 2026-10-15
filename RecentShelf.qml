@@ -176,7 +176,7 @@ FocusScope {
             color: card.isGame ? "#8A8A8A" : "#009000"
 
             TileIcon {
-                anchors.centerIn: parent
+                anchors.centerIn: card.isGame ? art : parent
                 width: 150; height: 150
                 name: card.isGame ? "controller" : "apps"
                 visible: card.isGame ? art.status !== Image.Ready : appIcon.status !== Image.Ready
@@ -184,7 +184,9 @@ FocusScope {
 
             Image {
                 id: art
-                anchors.fill: parent
+                y: platform.visible ? platform.height : 0
+                width: parent.width
+                height: parent.height - y
                 visible: card.isGame
                 source: card.isGame && card.game.cover ? card.game.cover : ""
                 fillMode: Image.PreserveAspectCrop
@@ -200,6 +202,12 @@ FocusScope {
                 source: !card.isGame && card.item.icon ? "image://appicon/" + card.item.icon : ""
                 sourceSize: Qt.size(160, 160)
                 asynchronous: true
+            }
+
+            PlatformBanner {                    // which launcher a game is from
+                id: platform
+                width: parent.width
+                source: card.isGame ? (card.game.source || "") : ""
             }
         }
 

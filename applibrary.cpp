@@ -168,8 +168,22 @@ QPixmap AppIconProvider::requestPixmap(const QString &id, QSize *size, const QSi
 {
     const int side = requestedSize.width() > 0 ? requestedSize.width() : 128;
 
-    // "/usr/share/.../app.png" is a file; "firefox" is looked up in the icon theme
-    QIcon icon = id.startsWith('/') ? QIcon(id) : QIcon::fromTheme(id);
+    // "/usr/share/.../app.png" is a file; "firefox" is looked up in the icon
+    // theme. "steam,com.valvesoftware.Steam" tries each name in turn (an app
+    // can be installed under either), and gives nothing if none of them exist
+    QIcon icon;
+    if (id.startsWith('/')) {
+        icon = QIcon(id);
+    } else {
+        const QStringList names = id.split(',', Qt::SkipEmptyParts);
+        for (const QString &name : names) {
+            icon = QIcon::fromTheme(name);
+            if (!icon.isNull())
+                break;
+        }
+        if (icon.isNull() && names.size() > 1)
+            return {};
+    }
     if (icon.isNull())
         icon = QIcon::fromTheme("application-x-executable");    // generic "program" icon
 
