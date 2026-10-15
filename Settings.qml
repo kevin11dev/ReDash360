@@ -34,7 +34,7 @@ TilePage {
         label: "Display & Sound"
         icon: "tv"
         column: 1; row: 1
-        onActivated: console.log("Display & Sound")
+        onActivated: root.displaySoundRequested()
     }
 
     Tile{                                       //Preferences
