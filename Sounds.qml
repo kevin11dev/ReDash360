@@ -14,13 +14,16 @@ QtObject {
 
     readonly property string folder: UserProfile.dataFolder + "/sounds"
 
+    // Preferences > Sound Effects Volume, squared so each step sounds about as big
+    readonly property real volume: Math.pow(Preferences.soundVolume / 100, 2)
+
     // How many sounds have played; lets a sound played on purpose (like the
     // Guide closing) win over the automatic one for the same key press
     property int played: 0
 
     function play(name) {
         played++
-        if (bank)
+        if (bank && Preferences.soundEffects)
             bank.play(name)
     }
 
@@ -31,7 +34,8 @@ QtObject {
     Component.onCompleted: {
         const component = Qt.createComponent("SoundBank.qml")
         if (component.status === Component.Ready)
-            bank = component.createObject(sounds, { folder: Qt.binding(() => sounds.folder) })
+            bank = component.createObject(sounds, { folder: Qt.binding(() => sounds.folder),
+                                                    volume: Qt.binding(() => sounds.volume) })
         else
             console.warn("Sounds off, Qt Multimedia is missing:", component.errorString())
     }

@@ -8,6 +8,7 @@ QtObject {
     id: bank
 
     property string folder
+    property real volume: 1
 
     property var players: ({})
 
@@ -28,6 +29,7 @@ QtObject {
         delegate: SoundEffect {
             required property string fileBaseName
             required property url fileUrl
+            volume: bank.volume
             source: fileUrl
         }
 

@@ -31,12 +31,6 @@ ApplicationWindow {
             }
       }
 
-      Settings{
-            id: theme
-            category: "theme"
-            property string background
-      }
-
       Shortcut{
             sequence: "Home"
             onActivated: {
@@ -65,6 +59,8 @@ ApplicationWindow {
                               systemScreen.close()
                         if(displaySoundScreen.visible)
                               displaySoundScreen.close()
+                        if(preferencesScreen.visible)
+                              preferencesScreen.close()
                         if(powerMenu.visible)
                               powerMenu.close()
                         guide.open()
@@ -103,7 +99,7 @@ ApplicationWindow {
 
       readonly property int pageWidth: 1252
       readonly property int pageGap: 160
-      readonly property bool subScreenOpen: shelf.visible || appShelf.visible || recentShelf.visible || pinShelf.visible || profileScreen.visible || gameDetails.visible || networkScreen.visible || storageScreen.visible || controllersScreen.visible || systemScreen.visible || displaySoundScreen.visible
+      readonly property bool subScreenOpen: shelf.visible || appShelf.visible || recentShelf.visible || pinShelf.visible || profileScreen.visible || gameDetails.visible || networkScreen.visible || storageScreen.visible || controllersScreen.visible || systemScreen.visible || displaySoundScreen.visible || preferencesScreen.visible
       readonly property Window guideOverlay: overlay
 
       // Bring the dashboard in front of whatever is running (e.g. a game)
@@ -229,6 +225,7 @@ ApplicationWindow {
                               function onControllersRequested() {controllersScreen.open()}
                               function onSystemRequested() {systemScreen.open()}
                               function onDisplaySoundRequested() {displaySoundScreen.open()}
+                              function onPreferencesRequested() {preferencesScreen.open()}
                         }
                   }
             }
@@ -303,6 +300,11 @@ ApplicationWindow {
 
             DisplaySoundScreen{
                   id: displaySoundScreen
+                  anchors.fill: parent
+            }
+
+            PreferencesScreen{
+                  id: preferencesScreen
                   anchors.fill: parent
             }
 

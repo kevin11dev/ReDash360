@@ -245,8 +245,7 @@ FocusScope {
                 running: profileScreen.visible
                 repeat: true
                 triggeredOnStart: true
-                onTriggered: clock.text = Qt.formatTime(new Date(),
-                                                        Qt.locale().timeFormat(Locale.ShortFormat).replace(":ss", ""))
+                onTriggered: clock.text = Preferences.time(new Date())
             }
         }
 

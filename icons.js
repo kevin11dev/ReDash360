@@ -126,6 +126,11 @@ var shapes = {
     folder: {
         fill: "M3,9 H18 L22,14 H45 V41 H3 Z"
     },
+    // A picture in a frame: hills and a sun
+    picture: {
+        fill: "M3,8 H45 V40 H3 Z M7,12 H41 V35 L31,25 L26,30 L18,21 L7,34 Z" +
+              "M29,18 A4,4 0 1,0 37,18 A4,4 0 1,0 29,18 Z"
+    },
     // Two notes joined by a beam
     music: {
         fill: "M5,38 A7,5.5 0 1,0 19,38 A7,5.5 0 1,0 5,38 Z" +

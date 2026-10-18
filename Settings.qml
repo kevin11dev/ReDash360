@@ -42,7 +42,7 @@ TilePage {
         label: "Preferences"
         icon: "sliders"
         column: 2; row: 0
-        onActivated: console.log("Preferences")
+        onActivated: root.preferencesRequested()
     }
 
     Tile{                                       //Storage

@@ -255,7 +255,7 @@ FocusScope {
                 running: guide.visible
                 repeat: true
                 triggeredOnStart: true
-                onTriggered: clock.text = new Date().toLocaleTimeString(Qt.locale(), Locale.ShortFormat)
+                onTriggered: clock.text = Preferences.time(new Date())
             }
         }
 

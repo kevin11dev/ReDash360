@@ -1,6 +1,8 @@
+#include <QDir>
 #include <QGuiApplication>
 #include <QIcon>
 #include <QQmlApplicationEngine>
+#include <QStandardPaths>
 #include <QWindow>
 
 #include "applibrary.h"
@@ -50,6 +52,12 @@ int main(int argc, char *argv[])
     // Used by QSettings to name the config file: ~/.config/ReDash360/ReDash360.conf
     app.setOrganizationName("ReDash360");
     app.setApplicationName("ReDash360");
+
+    // The folders for your own backgrounds, gamerpics, avatars and sounds
+    // (~/.local/share/ReDash360/...), so they're there to fill
+    const QString data = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/ReDash360";
+    for (const char *folder : { "backgrounds", "gamerpics", "avatars", "sounds" })
+        QDir().mkpath(data + "/" + folder);
 
     Gamepad gamepad(nullptr);
 
