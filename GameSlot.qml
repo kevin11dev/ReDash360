@@ -11,6 +11,7 @@ Tile {
     readonly property bool hasGame: saved.command !== ""
 
     label: hasGame ? saved.name : "Choose a Game"
+    color: art.visible ? "transparent" : "#009000"     // no green showing round the picture
     hints: [{button: "Y", label: hasGame ? "Change Game" : "Choose Game"}]
 
     onActivated: {
@@ -34,7 +35,6 @@ Tile {
     Image {
         id: art
         anchors.fill: parent
-        anchors.margins: slot.border.width
         visible: slot.hasGame && status === Image.Ready
         // Wide banner if the game has one, otherwise the tall cover (cropped)
         // (and the cover too if the banner fails to load)
