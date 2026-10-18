@@ -36,6 +36,17 @@ QtObject {
     ]
     readonly property var searchEngine: searchEngines.find(e => e.id === saved.searchEngine) || searchEngines[0]
 
+    // Where Home's News tile gets gaming news (the site's RSS feed), next to
+    // the news about your Steam games
+    readonly property var newsSites: [
+        { id: "gamingonlinux", name: "GamingOnLinux", site: "", url: "https://www.gamingonlinux.com/article_rss.php" },
+        { id: "pcgamer", name: "PC Gamer", site: "", url: "https://www.pcgamer.com/rss/" },
+        { id: "rockpapershotgun", name: "Rock Paper Shotgun", site: "", url: "https://www.rockpapershotgun.com/feed" },
+        { id: "eurogamer", name: "Eurogamer", site: "", url: "https://www.eurogamer.net/feed" },
+        { id: "off", name: "Off", site: "Just your Steam games", url: "" },
+    ]
+    readonly property var newsSite: newsSites.find(s => s.id === saved.newsSite) || newsSites[0]
+
     function setBackground(file) {
         theme.background = file
     }
@@ -54,6 +65,10 @@ QtObject {
 
     function setSearchEngine(id) {
         saved.searchEngine = id
+    }
+
+    function setNewsSite(id) {
+        saved.newsSite = id
     }
 
     // The web page with your search engine's results for text
@@ -81,5 +96,6 @@ QtObject {
         property int soundVolume: 100
         property string clock
         property string searchEngine: "google"
+        property string newsSite: "gamingonlinux"
     }
 }

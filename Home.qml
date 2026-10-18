@@ -77,12 +77,11 @@ TilePage {
         onActivated: root.recentsRequested()
     }
 
-    Tile{                                       //News
+    NewsTile{                                   //News
         id: newsTile
-        label: "News"
         column: 1; row: 0
         columnSpan: 2; rowSpan: 2
-        onActivated: console.log("News")
+        onAllNewsRequested: (cards, index) => root.newsRequested(cards, index)
     }
 
     Tile{                                       //Media

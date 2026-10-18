@@ -4,7 +4,7 @@ project(ReDash360 VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick)
+find_package(Qt6 REQUIRED COMPONENTS Quick Network)
 
 if (WIN32)
     list(APPEND CMAKE_PREFIX_PATH "C:/SDL2/x86_64-w64-mingw32")
@@ -76,6 +76,8 @@ qt_add_qml_module(appReDash360
         DisplaySoundScreen.qml
         PreferencesScreen.qml
         Preferences.qml
+        NewsTile.qml
+        NewsScreen.qml
         icons.js
     SOURCES
         gamepad.h gamepad.cpp
@@ -90,6 +92,7 @@ qt_add_qml_module(appReDash360
         audiosettings.h audiosettings.cpp
         displaysettings.h displaysettings.cpp
         autostart.h autostart.cpp
+        news.h news.cpp
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -104,7 +107,7 @@ set_target_properties(appReDash360 PROPERTIES
 )
 
 target_link_libraries(appReDash360
-    PRIVATE Qt6::Quick SDL2::SDL2
+    PRIVATE Qt6::Quick Qt6::Network SDL2::SDL2
 )
 
 if (LayerShellQt_FOUND)

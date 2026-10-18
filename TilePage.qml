@@ -19,6 +19,7 @@ FocusScope {
     signal systemRequested()
     signal displaySoundRequested()
     signal preferencesRequested()
+    signal newsRequested(var cards, int index)
 
     property alias cellWidth: grid.cellWidth
     property alias cellHeight: grid.cellHeight

@@ -12,10 +12,10 @@ FocusScope {
 
     // "menu"; "choose": one of the choices for a setting; "background": picking a picture
     property string view: "menu"
-    property string choosing: ""                // "clock" or "engine"
+    property string choosing: ""                // "clock", "engine" or "news"
     property var choices: []                    // [{label, detail, value, current}]
 
-    readonly property var rows: ["background", "sounds", "soundVolume", "clock", "engine", "startup"]
+    readonly property var rows: ["background", "sounds", "soundVolume", "clock", "engine", "news", "startup"]
 
     // The time now, for the clock row; ticks while the screen is open
     property date now: new Date()
@@ -52,7 +52,7 @@ FocusScope {
 
     function label(id) {
         return { background: "Background", sounds: "Sound Effects", soundVolume: "Sound Effects Volume",
-                 clock: "Clock", engine: "Search Engine", startup: "Start Automatically" }[id] || ""
+                 clock: "Clock", engine: "Search Engine", news: "News Site", startup: "Start Automatically" }[id] || ""
     }
 
     function usable(id) {
@@ -76,6 +76,7 @@ FocusScope {
         case "soundVolume": return Preferences.soundVolume + "%"
         case "clock": return clockWords(Preferences.clock)
         case "engine": return Preferences.searchEngine.name
+        case "news": return Preferences.newsSite.name
         case "startup": return Autostart.enabled ? "On" : "Off"
         }
         return ""
@@ -91,6 +92,7 @@ FocusScope {
                          + "Press left or right to change it.",
             clock: "How the time shows in the Guide and on your profile.",
             engine: "Where the search tab sends what you type. The results open in your web browser.",
+            news: "Where the News tile on Home gets gaming news, next to the news about your Steam games.",
             startup: "Opens the dashboard as soon as you sign in, so your PC starts like a console. "
                      + "If you move the dashboard to another folder, turn this off and on again.",
         }[id] || ""
@@ -105,16 +107,17 @@ FocusScope {
             Preferences.setSoundEffects(!Preferences.soundEffects)
             if (Preferences.soundEffects)
                 Sounds.play("select")           // so you hear they're back
-        } else if (id === "clock" || id === "engine") {
+        } else if (id === "clock" || id === "engine" || id === "news") {
             now = new Date()
             choosing = id
+            const chosen = id === "engine" ? Preferences.searchEngine : Preferences.newsSite
             choices = id === "clock"
                 ? ["", "12", "24"].map(format => ({
                       label: clockWords(format), detail: Preferences.time(now, format),
                       value: format, current: format === Preferences.clock }))
-                : Preferences.searchEngines.map(engine => ({
-                      label: engine.name, detail: engine.site,
-                      value: engine.id, current: engine.id === Preferences.searchEngine.id }))
+                : (id === "engine" ? Preferences.searchEngines : Preferences.newsSites).map(option => ({
+                      label: option.name, detail: option.site,
+                      value: option.id, current: option.id === chosen.id }))
             view = "choose"
             chooser.currentIndex = Math.max(0, choices.findIndex(c => c.current))
             chooser.forceActiveFocus()
@@ -127,8 +130,10 @@ FocusScope {
         back()
         if (choosing === "clock")
             Preferences.setClock(choice.value)
-        else
+        else if (choosing === "engine")
             Preferences.setSearchEngine(choice.value)
+        else
+            Preferences.setNewsSite(choice.value)
     }
 
     // ---- Choosing a background ---------------------------------------------
@@ -267,7 +272,7 @@ FocusScope {
                 x: 40; y: 40
                 width: 96; height: 96
                 name: ({ background: "picture", sounds: "volume", soundVolume: "volume",
-                         clock: "clock", engine: "globe", startup: "power" })[parent.row] || ""
+                         clock: "clock", engine: "globe", news: "list", startup: "power" })[parent.row] || ""
                 color: "#2E3336"
             }
             Text {
@@ -565,11 +570,14 @@ FocusScope {
         Text {
             x: 90
             anchors.verticalCenter: parent.verticalCenter
+            width: parent.width - x - detail.width - 70
             text: choice.modelData.label
             color: choice.ink
             font.pixelSize: 36
+            elide: Text.ElideRight
         }
         Text {
+            id: detail
             anchors.right: parent.right
             anchors.rightMargin: 45
             anchors.verticalCenter: parent.verticalCenter
