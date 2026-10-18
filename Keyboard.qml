@@ -19,6 +19,7 @@ FocusScope {
     property int maxLength: 100
     property bool password: false               // dots instead of letters (Wi-Fi passwords)
     property var done: null                     // function(text), when you press Done
+    property string doneLabel: "Done"          // what the Done key says
 
     property int cursor: 0                      // where the next letter goes
     property bool caps: false
@@ -39,6 +40,7 @@ FocusScope {
         maxLength = options.maxLength || 100
         password = options.password || false
         done = options.done || null
+        doneLabel = options.doneLabel || "Done"
         cursor = text.length
         caps = false
         keySet = "letters"
@@ -348,7 +350,7 @@ FocusScope {
             BigKey { x: 1197; y: 55; keyId: "cursorRight"; label: "Cursor"; badge: "RB"; arrow: "right" }
             BigKey { x: 1197; y: 195; keyId: "accents"; label: "Accents"; badge: "RT"
                      active: keyboard.keySet === "accents" }
-            BigKey { x: 1197; y: 335; keyId: "done"; label: "Done"; badge: "▶"; round: true;}
+            BigKey { x: 1197; y: 335; keyId: "done"; label: keyboard.doneLabel; badge: "▶"; round: true;}
         }
 
         SequentialAnimation {

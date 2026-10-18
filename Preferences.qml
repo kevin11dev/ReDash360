@@ -26,6 +26,16 @@ QtObject {
     // "" = how your region writes the time, "12" = 3:45 PM, "24" = 15:45
     readonly property string clock: saved.clock
 
+    // Where the search tab looks on the web
+    readonly property var searchEngines: [
+        { id: "google", name: "Google", site: "google.com", url: "https://www.google.com/search?q=" },
+        { id: "duckduckgo", name: "DuckDuckGo", site: "duckduckgo.com", url: "https://duckduckgo.com/?q=" },
+        { id: "brave", name: "Brave Search", site: "search.brave.com", url: "https://search.brave.com/search?q=" },
+        { id: "bing", name: "Bing", site: "bing.com", url: "https://www.bing.com/search?q=" },
+        { id: "ecosia", name: "Ecosia", site: "ecosia.org", url: "https://www.ecosia.org/search?q=" },
+    ]
+    readonly property var searchEngine: searchEngines.find(e => e.id === saved.searchEngine) || searchEngines[0]
+
     function setBackground(file) {
         theme.background = file
     }
@@ -40,6 +50,15 @@ QtObject {
 
     function setClock(format) {
         saved.clock = format
+    }
+
+    function setSearchEngine(id) {
+        saved.searchEngine = id
+    }
+
+    // The web page with your search engine's results for text
+    function webSearch(text) {
+        return searchEngine.url + encodeURIComponent(text)
     }
 
     // The time the way the clock is set to show it (or as `format` would)
@@ -61,5 +80,6 @@ QtObject {
         property bool soundEffects: true
         property int soundVolume: 100
         property string clock
+        property string searchEngine: "google"
     }
 }

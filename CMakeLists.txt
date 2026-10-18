@@ -37,7 +37,8 @@ qt_add_qml_module(appReDash360
         Home.qml
         Social.qml
         Games.qml
-        Bing.qml
+        Search.qml
+        SearchScreen.qml
         MoviesTv.qml
         Apps.qml
         Settings.qml

@@ -10,11 +10,12 @@ FocusScope {
 
     property Item returnFocusTo: null
 
-    // "menu"; "choose": how the clock looks; "background": picking a picture
+    // "menu"; "choose": one of the choices for a setting; "background": picking a picture
     property string view: "menu"
+    property string choosing: ""                // "clock" or "engine"
     property var choices: []                    // [{label, detail, value, current}]
 
-    readonly property var rows: ["background", "sounds", "soundVolume", "clock", "startup"]
+    readonly property var rows: ["background", "sounds", "soundVolume", "clock", "engine", "startup"]
 
     // The time now, for the clock row; ticks while the screen is open
     property date now: new Date()
@@ -51,7 +52,7 @@ FocusScope {
 
     function label(id) {
         return { background: "Background", sounds: "Sound Effects", soundVolume: "Sound Effects Volume",
-                 clock: "Clock", startup: "Start Automatically" }[id] || ""
+                 clock: "Clock", engine: "Search Engine", startup: "Start Automatically" }[id] || ""
     }
 
     function usable(id) {
@@ -74,6 +75,7 @@ FocusScope {
         case "sounds": return Preferences.soundEffects ? "On" : "Off"
         case "soundVolume": return Preferences.soundVolume + "%"
         case "clock": return clockWords(Preferences.clock)
+        case "engine": return Preferences.searchEngine.name
         case "startup": return Autostart.enabled ? "On" : "Off"
         }
         return ""
@@ -88,6 +90,7 @@ FocusScope {
             soundVolume: "How loud the dashboard's sounds are, next to everything else. "
                          + "Press left or right to change it.",
             clock: "How the time shows in the Guide and on your profile.",
+            engine: "Where the search tab sends what you type. The results open in your web browser.",
             startup: "Opens the dashboard as soon as you sign in, so your PC starts like a console. "
                      + "If you move the dashboard to another folder, turn this off and on again.",
         }[id] || ""
@@ -102,11 +105,16 @@ FocusScope {
             Preferences.setSoundEffects(!Preferences.soundEffects)
             if (Preferences.soundEffects)
                 Sounds.play("select")           // so you hear they're back
-        } else if (id === "clock") {
+        } else if (id === "clock" || id === "engine") {
             now = new Date()
-            choices = ["", "12", "24"].map(format => ({
-                label: clockWords(format), detail: Preferences.time(now, format),
-                value: format, current: format === Preferences.clock }))
+            choosing = id
+            choices = id === "clock"
+                ? ["", "12", "24"].map(format => ({
+                      label: clockWords(format), detail: Preferences.time(now, format),
+                      value: format, current: format === Preferences.clock }))
+                : Preferences.searchEngines.map(engine => ({
+                      label: engine.name, detail: engine.site,
+                      value: engine.id, current: engine.id === Preferences.searchEngine.id }))
             view = "choose"
             chooser.currentIndex = Math.max(0, choices.findIndex(c => c.current))
             chooser.forceActiveFocus()
@@ -117,7 +125,10 @@ FocusScope {
 
     function choose(choice) {
         back()
-        Preferences.setClock(choice.value)
+        if (choosing === "clock")
+            Preferences.setClock(choice.value)
+        else
+            Preferences.setSearchEngine(choice.value)
     }
 
     // ---- Choosing a background ---------------------------------------------
@@ -176,7 +187,7 @@ FocusScope {
         x: 142
         anchors.verticalCenter: parent.top
         anchors.verticalCenterOffset: 120
-        text: preferencesScreen.view === "choose" ? "Clock"
+        text: preferencesScreen.view === "choose" ? preferencesScreen.label(preferencesScreen.choosing)
             : preferencesScreen.view === "background" ? "Background" : "Preferences"
         color: "white"
         font.pixelSize: 50
@@ -222,7 +233,7 @@ FocusScope {
                 }
             }
 
-            // ---- How the clock looks ----
+            // ---- The choices for one setting ----
             ListView {
                 id: chooser
                 width: parent.width
@@ -249,14 +260,14 @@ FocusScope {
                 GradientStop { position: 1.0; color: "#9EA6AA" }
             }
 
-            readonly property string row: preferencesScreen.view === "choose" ? "clock"
+            readonly property string row: preferencesScreen.view === "choose" ? preferencesScreen.choosing
                                           : preferencesScreen.rows[menu.currentIndex] || ""
 
             TileIcon {
                 x: 40; y: 40
                 width: 96; height: 96
                 name: ({ background: "picture", sounds: "volume", soundVolume: "volume",
-                         clock: "clock", startup: "power" })[parent.row] || ""
+                         clock: "clock", engine: "globe", startup: "power" })[parent.row] || ""
                 color: "#2E3336"
             }
             Text {
@@ -312,7 +323,7 @@ FocusScope {
                 x: 40; y: 420
                 visible: parent.row === "clock"
                 text: Preferences.time(preferencesScreen.now,
-                                       preferencesScreen.view === "choose"
+                                       preferencesScreen.view === "choose" && preferencesScreen.choosing === "clock"
                                        ? preferencesScreen.choices[chooser.currentIndex].value : undefined)
                 color: "#2E3336"
                 font.pixelSize: 72
