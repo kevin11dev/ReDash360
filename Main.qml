@@ -23,8 +23,8 @@ ApplicationWindow {
 
             Image{
                   anchors.fill: parent
-                  source: theme.background
-                  visible: status === Image.Ready
+                  source: Preferences.shownBackground
+                  retainWhileLoading: true      // no grey flash while switching pictures
                   fillMode: Image.PreserveAspectCrop
                   asynchronous: true
                   sourceSize.width: 1920

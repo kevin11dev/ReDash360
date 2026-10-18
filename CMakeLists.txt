@@ -28,6 +28,7 @@ qt_add_executable(appReDash360
 set_source_files_properties(Pins.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 set_source_files_properties(UserProfile.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 set_source_files_properties(Sounds.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(Preferences.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(appReDash360
     URI ReDash360
