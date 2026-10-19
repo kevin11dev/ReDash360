@@ -71,7 +71,7 @@ FocusScope {
             { label: "Profile" },
             { label: "Preferences" },
             { label: "Family Settings" },
-            { label: "System Settings", dashboard: true, run: () => guide.tabRequested(6) },
+            { label: "System Settings", dashboard: true, run: () => guide.tabRequested(5) },
             { label: "Account Management" },
             { label: "Turn Off Console", run: () => guide.quitRequested() } ] }
     ]

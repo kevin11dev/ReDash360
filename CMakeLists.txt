@@ -39,7 +39,6 @@ qt_add_qml_module(appReDash360
         Games.qml
         Search.qml
         SearchScreen.qml
-        MoviesTv.qml
         Apps.qml
         Settings.qml
         Tile.qml

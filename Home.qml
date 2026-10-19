@@ -84,12 +84,12 @@ TilePage {
         onAllNewsRequested: (cards, index) => root.newsRequested(cards, index)
     }
 
-    Tile{                                       //Media
-        id: mediaTile
-        label: "Media"
-        icon: "play"
+    Tile{                                       //YouTube
+        id: youtubeTile
+        label: "YouTube"
+        icon: "tv"
         column: 1; row: 2
-        onActivated: root.tabRequested(4)
+        onActivated: Qt.openUrlExternally("https://www.youtube.com")
     }
 
     Tile{                                       //Apps
@@ -97,7 +97,7 @@ TilePage {
         label: "Apps"
         icon: "apps"
         column: 2; row: 2
-        onActivated: root.tabRequested(5)
+        onActivated: root.tabRequested(4)
     }
 
     Tile{                                       //Search
@@ -113,7 +113,7 @@ TilePage {
         label: "Settings"
         icon: "gear"
         column: 3; row: 1
-        onActivated: root.tabRequested(6)
+        onActivated: root.tabRequested(5)
     }
 
     Tile{                                       //Games

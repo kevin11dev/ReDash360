@@ -96,7 +96,6 @@ ApplicationWindow {
             {name: "home", file: "Home.qml"},
             {name: "social", file: "Social.qml"},
             {name: "games", file: "Games.qml"},
-            {name: "movies & tv", file: "MoviesTv.qml"},
             {name: "apps", file: "Apps.qml"},
             {name: "settings", file: "Settings.qml"},
       ]
@@ -231,6 +230,7 @@ ApplicationWindow {
                               function onDisplaySoundRequested() {displaySoundScreen.open()}
                               function onPreferencesRequested() {preferencesScreen.open()}
                               function onSearchRequested() {searchScreen.open()}
+                              function onAppSearchRequested() {searchScreen.open("apps")}
                               function onNewsRequested(cards, index) {newsScreen.open(cards, index)}
                         }
                   }
@@ -317,6 +317,7 @@ ApplicationWindow {
             SearchScreen{
                   id: searchScreen
                   anchors.fill: parent
+                  onAppsFound: (title, apps) => appShelf.open(title, apps)
             }
 
             NewsScreen{

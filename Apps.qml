@@ -1,8 +1,27 @@
 import QtQuick
+import QtCore
 
+// apps: every app you have, your PC's app store, a search, YouTube, your
+// music apps and videos, and six slots for the apps you use most (Y on a
+// slot chooses its app)
 TilePage {
     id: root
     cellWidth: 247
+
+    // Your PC's app store: the first one it has (Discover on KDE), the
+    // Microsoft Store on Windows, or Flathub in the browser
+    function openStore() {
+        if (Qt.platform.os === "windows") {
+            Qt.openUrlExternally("ms-windows-store://home")
+            return
+        }
+        const store = AppLibrary.all().find(app =>
+            /plasma-discover|gnome-software|bazaar|pamac-manager|octopi|mintinstall/i.test(app.command))
+        if (store)
+            Launcher.openApp(store.name, store.command, store.icon)
+        else
+            Qt.openUrlExternally("https://flathub.org")
+    }
 
     Tile{                                       //My Apps
         id: myAppsTile
@@ -18,8 +37,7 @@ TilePage {
         label: "Browse Apps"
         icon: "bag"
         column: 0; row: 1
-        focus: true
-        onActivated: console.log("Browse Apps")
+        onActivated: root.openStore()
     }
 
     Tile{                                       //Search Apps
@@ -27,80 +45,45 @@ TilePage {
         label: "Search Apps"
         icon: "search"
         column: 0; row: 2
-        focus: true
-        onActivated: console.log("Search Apps")
+        onActivated: root.appSearchRequested()
     }
 
-    Tile{                                       //Featured Apps
-        id: featuredAppsTile
-        label: "Featured Apps"
+    Tile{                                       //YouTube
+        id: youtubeTile
+        label: "YouTube"
+        icon: "tv"
+        iconSize: 120
         column: 1; row: 0
         columnSpan: 2; rowSpan: 2
-        focus: true
-        onActivated: console.log("Featured Apps")
+        onActivated: Qt.openUrlExternally("https://www.youtube.com")
     }
 
-    Tile{                                       //App 1
-        id: app1Tile
-        label: "App1"
-        column: 3; row: 0
-        focus: true
-        onActivated: console.log("App1")
-    }
-
-    Tile{                                       //App 2
-        id: app2Tile
-        label: "App2"
-        column: 4; row: 0
-        focus: true
-        onActivated: console.log("App2")
-    }
-
-    Tile{                                       //App 3
-        id: app3Tile
-        label: "App3"
-        column: 3; row: 1
-        focus: true
-        onActivated: console.log("App3")
-    }
-
-    Tile{                                       //App 4
-        id: app4Tile
-        label: "App4"
-        column: 4; row: 1
-        focus: true
-        onActivated: console.log("App4")
-    }
-
-    Tile{                                       //App 5
-        id: app5Tile
-        label: "App5"
+    Tile{                                       //Music
+        id: musicTile
+        label: "Music"
+        icon: "music"
         column: 1; row: 2
-        focus: true
-        onActivated: console.log("App5")
+        onActivated: root.appListRequested("my music apps", AppLibrary.musicApps())
     }
 
-    Tile{                                       //App 6
-        id: app6Tile
-        label: "App6"
+    Tile{                                       //My Videos
+        id: myVideosTile
+        label: "My Videos"
+        icon: "folder"
         column: 2; row: 2
-        focus: true
-        onActivated: console.log("App6")
+        onActivated: Qt.openUrlExternally(StandardPaths.writableLocation(StandardPaths.MoviesLocation))
     }
 
-    Tile{                                       //App 7
-        id: app7Tile
-        label: "App7"
-        column: 3; row: 2
-        focus: true
-        onActivated: console.log("App7")
-    }
+    // The six app slots: the two columns on the right
+    Repeater{
+        model: [[3, 0], [4, 0], [3, 1], [4, 1], [3, 2], [4, 2]]
 
-    Tile{                                       //App 8
-        id: app8Tile
-        label: "App8"
-        column: 4; row: 2
-        focus: true
-        onActivated: console.log("App8")
+        delegate: AppSlot{
+            required property int index
+            required property var modelData
+            slotId: "App" + (index + 1)
+            column: modelData[0]; row: modelData[1]
+            onPickRequested: root.pickAppRequested("choose an app", AppLibrary.all(), app => setApp(app))
+        }
     }
 }
