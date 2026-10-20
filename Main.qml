@@ -120,7 +120,7 @@ ApplicationWindow {
 
             Row{
                   id: tabRow
-                  x: 231
+                  anchors.horizontalCenter: parent.horizontalCenter
                   y: 227                          // the line the tab names sit on (their baseline)
                   spacing: 58
                   opacity: window.subScreenOpen ? 0 : 1
