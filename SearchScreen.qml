@@ -3,6 +3,7 @@ import QtQuick
 // The keyboard for searching. open(): what you type opens in your web browser,
 // on your search engine (Settings > Preferences > Search Engine).
 // open("apps"): the apps whose names match, in the my apps list.
+// open("games"): the games whose names match, in My Games.
 FocusScope {
     id: searchScreen
     visible: false
@@ -11,6 +12,9 @@ FocusScope {
 
     // Search Apps found these (maybe none): show them
     signal appsFound(string title, var apps)
+
+    // Search Games found these (maybe none): show them
+    signal gamesFound(string title, var games)
 
     function open(what) {
         returnFocusTo = Window.activeFocusItem
@@ -23,6 +27,16 @@ FocusScope {
                 done: text => {
                     if (text.trim() !== "")
                         appsFound("apps matching “" + text.trim() + "”", matching(AppLibrary.all(), text))
+                }
+            })
+        } else if (what === "games") {
+            keyboard.open({
+                title: "Search Games",
+                prompt: "Enter the name of a game.",
+                doneLabel: "Search",
+                done: text => {
+                    if (text.trim() !== "")
+                        gamesFound("games matching “" + text.trim() + "”", matching(GameLibrary.all(), text))
                 }
             })
         } else {
@@ -47,7 +61,7 @@ FocusScope {
             returnFocusTo.forceActiveFocus()
     }
 
-    // ---- Finding apps --------------------------------------------------------
+    // ---- Finding apps and games ----------------------------------------------
 
     // "Pokémon™ Legends: Arceus" -> "pokemon legends arceus", so you can type it
     // without the accents and symbols

@@ -21,6 +21,8 @@ FocusScope {
     signal preferencesRequested()
     signal newsRequested(var cards, int index)
     signal appSearchRequested()
+    signal gameSearchRequested()
+    signal addOnsRequested()
 
     property alias cellWidth: grid.cellWidth
     property alias cellHeight: grid.cellHeight

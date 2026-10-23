@@ -77,6 +77,7 @@ qt_add_qml_module(appReDash360
         Preferences.qml
         NewsTile.qml
         NewsScreen.qml
+        AddOnsScreen.qml
         icons.js
     SOURCES
         gamepad.h gamepad.cpp

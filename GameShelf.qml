@@ -16,6 +16,10 @@ FocusScope {
     // X on a game: its Game Details
     signal detailsRequested(var game)
 
+    // Search Games: just these games, best match first, with this title
+    property string title: "My Games"
+    property var found: null
+
     // What's shown: a source ("Steam", ...) or "All Games", and the order
     property string filter: "All Games"
     property string sort: "A-Z"
@@ -31,9 +35,11 @@ FocusScope {
         { label: "Source", icon: "apps" }
     ]
 
-    // The games to show: every game, filtered and sorted
+    // The games to show: what Search Games found, or every game, filtered and sorted
     readonly property var games: {
         GameLibrary.count                       // build the list again after a rescan
+        if (found)
+            return found
         let list = GameLibrary.all()            // already sorted A-Z
         if (filter !== "All Games")
             list = list.filter(game => game.source === filter)
@@ -42,13 +48,19 @@ FocusScope {
         return list
     }
 
-    function open() {
+    // open()                            -> every game, as "My Games"
+    // open("games matching …", someGames) -> just those games, with that title
+    function open(newTitle, newGames) {
         pickCallback = null
+        title = newTitle || "My Games"
+        found = newGames || null
         show()
     }
 
     function pick(callback) {
         pickCallback = callback
+        title = "My Games"
+        found = null
         show()
     }
 
@@ -95,6 +107,7 @@ FocusScope {
         id: showMe
         x: 153; y: 152
         caption: "show me"
+        visible: !shelf.found
         value: shelf.filter.toLowerCase()
         KeyNavigation.right: sortBy
         KeyNavigation.down: list
@@ -105,6 +118,7 @@ FocusScope {
         id: sortBy
         x: 541; y: 152
         caption: "sort"
+        visible: !shelf.found
         value: shelf.sort.toLowerCase()
         KeyNavigation.left: showMe
         KeyNavigation.down: list
@@ -119,7 +133,7 @@ FocusScope {
 
         Text {
             anchors.right: parent.right
-            text: shelf.picking ? "Choose a Game" : "My Games"
+            text: shelf.picking ? "Choose a Game" : shelf.title
             color: "white"
             font.pixelSize: 52
         }
@@ -160,7 +174,7 @@ FocusScope {
 
         Keys.onReturnPressed: shelf.activateCurrent()
         Keys.onEnterPressed: shelf.activateCurrent()
-        Keys.onUpPressed: showMe.forceActiveFocus()
+        Keys.onUpPressed: if (showMe.visible) showMe.forceActiveFocus()
         Keys.onPressed: (event) => {
             const game = shelf.games[currentIndex]
             if (event.key === Qt.Key_Y && game && !shelf.picking) {

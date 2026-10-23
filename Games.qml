@@ -1,8 +1,18 @@
 import QtQuick
 
+// games: every game you have, the Steam store, a search, four slots for the
+// games you play most (Y on a slot chooses its game), add-ons (emulators and
+// other apps for gaming) and what Steam recommends for you
 TilePage {
     id: root
     cellWidth: 247
+
+    // A page of the Steam store: in Steam if you have it, otherwise in your browser
+    function openSteamStore(page) {
+        const url = "https://store.steampowered.com/" + page
+        const hasSteam = GameLibrary.all().some(game => game.source === "Steam")
+        Qt.openUrlExternally(hasSteam ? "steam://openurl/" + url : url)
+    }
 
     Tile{                                       //My Games
         id: myGamesTile
@@ -18,7 +28,7 @@ TilePage {
         label: "Browse Games"
         icon: "bag"
         column: 0; row: 1
-        onActivated: console.log("Browse Games")
+        onActivated: root.openSteamStore("")
     }
 
     Tile{                                       //Search Games
@@ -26,7 +36,7 @@ TilePage {
         label: "Search Games"
         icon: "search"
         column: 0; row: 2
-        onActivated: console.log("Search Games")
+        onActivated: root.gameSearchRequested()
     }
 
     GameSlot{                                       //Game 1
@@ -64,17 +74,10 @@ TilePage {
     Tile{                                       //Add-ons
         id: addOnsTile
         label: "Add-ons"
-        icon: "plus"
-        column: 1; row: 2
-        onActivated: console.log("Add-ons")
-    }
-
-    Tile{                                       //Demos
-        id: demosTile
-        label: "Demos"
         icon: "download"
-        column: 2; row: 2
-        onActivated: console.log("Demos")
+        column: 1; row: 2
+        columnSpan: 2
+        onActivated: root.addOnsRequested()
     }
 
     Tile{                                       //Recommended
@@ -83,6 +86,6 @@ TilePage {
         icon: "star"
         column: 3; row: 2
         columnSpan: 2
-        onActivated: console.log("Recommended")
+        onActivated: root.openSteamStore("explore/")    // your Discovery Queue
     }
 }
