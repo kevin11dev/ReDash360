@@ -1,0 +1,12 @@
+[SddmGreeterTheme]
+Name=ReDash360
+Description=Pick your profile like on the Xbox 360, then sign in to ReDash360
+Author=Kevin Koortzen
+Website=https://github.com/KevinKoortzen/ReDash360
+Type=sddm-theme
+Version=0.1
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=redash360
+Theme-API=2.0
+QtVersion=6

@@ -44,6 +44,14 @@ QtObject {
         saved.avatar = file
     }
 
+    // The login screen shows your gamerpic and avatar too (loginscreen.cpp)
+    function shareWithLogin() {
+        LoginScreen.share(gamerpic, avatar)
+    }
+    onGamerpicChanged: Qt.callLater(shareWithLogin)
+    onAvatarChanged: Qt.callLater(shareWithLogin)
+    Component.onCompleted: Qt.callLater(shareWithLogin)
+
     // "motto", "realName", "place", "bio" or "zone"
     function setDetail(field, value) {
         saved[field] = value.trim()
