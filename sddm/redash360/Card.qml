@@ -1,8 +1,7 @@
 import QtQuick
 
 // A tall message card like the dashboard's (MessageCard.qml): a title bar,
-// a message and a list of choices. With asksPassword it also has a box to
-// type a password in, and Enter in the box picks the first choice.
+// a message and a list of choices.
 FocusScope {
     id: card
     visible: false
@@ -12,21 +11,14 @@ FocusScope {
     property string icon: "?"
     property var options: [{label: "OK", run: () => {}}]
     property int defaultIndex: options.length - 1
-    property bool asksPassword: false
-    property alias password: field.text
-    property string problem                     // under the box: a wrong password, Caps Lock
 
     property Item returnFocusTo: null
 
     function open() {
         returnFocusTo = Window.activeFocusItem
         list.currentIndex = Math.max(0, Math.min(defaultIndex, options.length - 1))
-        field.text = ""
         visible = true
-        if (asksPassword)
-            field.forceActiveFocus()
-        else
-            list.forceActiveFocus()
+        list.forceActiveFocus()
         openAnimation.restart()
     }
 
@@ -110,60 +102,14 @@ FocusScope {
                 elide: Text.ElideRight
             }
 
-            Column {
+            Text {
                 x: 41; y: 103
                 width: parent.width - 2 * x
-                spacing: 30
-
-                Text {
-                    width: parent.width
-                    text: card.message
-                    color: "#333333"
-                    font.pixelSize: 34
-                    lineHeight: 1.1
-                    wrapMode: Text.WordWrap
-                }
-
-                // The password box
-                Rectangle {
-                    width: parent.width; height: 72
-                    visible: card.asksPassword
-                    color: "white"
-                    border.color: field.activeFocus ? "#008E00" : "#8E979A"
-                    border.width: field.activeFocus ? 3 : 2
-
-                    TextInput {
-                        id: field
-                        anchors.fill: parent
-                        anchors.leftMargin: 20
-                        anchors.rightMargin: 20
-                        verticalAlignment: TextInput.AlignVCenter
-                        echoMode: TextInput.Password
-                        passwordCharacter: "●"
-                        color: "#222222"
-                        font.pixelSize: 34
-                        clip: true
-
-                        Keys.onReturnPressed: card.choose(0)
-                        Keys.onEnterPressed: card.choose(0)
-                        Keys.onEscapePressed: card.close()
-                        Keys.onDownPressed: list.forceActiveFocus()
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: field.forceActiveFocus()
-                    }
-                }
-
-                Text {
-                    width: parent.width
-                    visible: card.asksPassword && text !== ""
-                    text: card.problem
-                    color: "#B3261E"
-                    font.pixelSize: 30
-                    wrapMode: Text.WordWrap
-                }
+                text: card.message
+                color: "#333333"
+                font.pixelSize: 34
+                lineHeight: 1.1
+                wrapMode: Text.WordWrap
             }
 
             ListView {
@@ -180,7 +126,7 @@ FocusScope {
                     id: row
                     required property int index
                     required property var modelData
-                    readonly property bool selected: ListView.isCurrentItem && ListView.view.activeFocus
+                    readonly property bool selected: ListView.isCurrentItem
 
                     width: ListView.view.width
                     height: 63
@@ -199,7 +145,7 @@ FocusScope {
                         anchors.bottom: parent.bottom
                         width: parent.width
                         visible: !row.selected && row.index < list.count - 1
-                                 && !(list.activeFocus && list.currentIndex === row.index + 1)
+                                 && list.currentIndex !== row.index + 1
                         Rectangle { width: parent.width; height: 1; color: "#8E979A" }
                         Rectangle { width: parent.width; height: 1; color: "#C4CCCF" }
                     }
@@ -215,12 +161,6 @@ FocusScope {
                 Keys.onReturnPressed: card.choose(currentIndex)
                 Keys.onEnterPressed: card.choose(currentIndex)
                 Keys.onEscapePressed: card.close()
-                Keys.onUpPressed: (event) => {
-                    if (currentIndex > 0)
-                        currentIndex--
-                    else if (card.asksPassword)
-                        field.forceActiveFocus()        // up from the top: back to the box
-                }
             }
         }
     }

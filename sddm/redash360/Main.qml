@@ -3,8 +3,10 @@ import QtQuick
 // ReDash360's login screen (an SDDM theme), laid out like the Xbox 360's
 // Sign In screen (measured from a video of the console at 1920x1080): each
 // profile stands next to its gamer picture and name. Left/right pick a
-// profile and A (Enter) signs in, asking for the password if it has one.
-// X changes which desktop starts, Y turns the PC off or restarts it.
+// profile and A (Enter) signs in, with the on-screen keyboard for the
+// password if it has one. X changes which desktop starts, Y turns the PC off
+// or restarts it. The controller works once ReDash360's login helper is
+// installed (sddm/loginpad); the keyboard and mouse always do.
 //
 // SDDM gives the theme sddm (signing in, turning off), userModel (who can
 // sign in), sessionModel (the desktops), keyboard, config (theme.conf) and
@@ -27,7 +29,6 @@ Rectangle {
     property int session: Math.max(0, sessionModel.lastIndex)    // which desktop starts
     property string signingInAs: ""                             // set while SDDM checks the password
     property string who: ""                                     // the profile asking for a password
-    property string wrongPassword: ""
 
     readonly property string sessionName: {
         sessionNames.count                      // look again once the names are in
@@ -39,13 +40,25 @@ Rectangle {
     function choose(profile) {
         if (!profile || signingInAs !== "")
             return
-        wrongPassword = ""
         if (profile.needsPassword) {
             who = profile.name
-            passwordCard.open()
+            askPassword("")
         } else {
             signIn(profile.name, "")
         }
+    }
+
+    // The on-screen keyboard, which also takes typing on a real keyboard
+    function askPassword(problem) {
+        onScreenKeyboard.open({
+            title: "Sign In",
+            prompt: (problem !== "" ? problem + " " : "") + "Enter the password for " + who + "."
+                    + (keyboard && keyboard.capsLock ? " Caps Lock is on." : ""),
+            password: true,
+            maxLength: 256,
+            doneLabel: "Sign In",
+            done: text => signIn(who, text)
+        })
     }
 
     function signIn(name, password) {
@@ -62,11 +75,9 @@ Rectangle {
     Connections {
         target: sddm
         function onLoginFailed() {
-            const name = root.signingInAs
+            root.who = root.signingInAs
             root.signingInAs = ""
-            root.who = name
-            root.wrongPassword = "That password didn't work. Try again."
-            passwordCard.open()
+            root.askPassword("That password didn't work.")
         }
         function onInformationMessage(message) {
             info.text = message
@@ -120,7 +131,8 @@ Rectangle {
             }
         }
 
-        // The profiles, side by side in the middle, three at a time; more scroll
+        // The profiles, side by side from the left (the first one stands over
+        // the hints), three at a time; more scroll
         ListView {
             id: profiles
             y: 318
@@ -167,7 +179,7 @@ Rectangle {
         Row {
             x: 138; y: 973
             spacing: 30
-            visible: root.signingInAs === ""
+            visible: root.signingInAs === "" && !onScreenKeyboard.visible && !powerCard.visible
 
             ButtonHint { button: "A"; label: "Select" }
             Hint {
@@ -184,22 +196,6 @@ Rectangle {
             }
         }
 
-        // "Enter the password for ..."
-        Card {
-            id: passwordCard
-            anchors.fill: parent
-            title: "Sign In"
-            message: "Enter the password for " + root.who + "."
-            asksPassword: true
-            problem: root.wrongPassword !== "" ? root.wrongPassword
-                   : keyboard.capsLock ? "Caps Lock is on." : ""
-            defaultIndex: 0
-            options: [
-                { label: "Sign In", run: () => root.signIn(root.who, passwordCard.password) },
-                { label: "Cancel", run: () => {} }
-            ]
-        }
-
         Card {
             id: powerCard
             anchors.fill: parent
@@ -210,6 +206,19 @@ Rectangle {
                      .concat(sddm.canReboot ? [{ label: "Restart", run: () => sddm.reboot() }] : [])
                      .concat([{ label: "Cancel", run: () => {} }])
         }
+
+        // "Enter the password for ..."
+        Keyboard {
+            id: onScreenKeyboard
+            anchors.fill: parent
+        }
+    }
+
+    // The controller, when the login helper is installed. Just one: the
+    // other screens get their own copy of this file too.
+    Loader {
+        active: primaryScreen
+        source: "Controller.qml"
     }
 
     // One profile: the figure, and beside it the gamer picture, name and
