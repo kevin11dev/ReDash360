@@ -69,6 +69,10 @@ ApplicationWindow {
                               addOnsScreen.close()
                         if(powerMenu.visible)
                               powerMenu.close()
+                        if(signOutCard.visible)
+                              signOutCard.close()
+                        if(getAppCard.visible)
+                              getAppCard.close()
                         guide.open()
                   }
             }
@@ -77,19 +81,19 @@ ApplicationWindow {
       Shortcut{
             sequence: "Q"
             onActivated: pages.decrementCurrentIndex()
-            enabled: !window.subScreenOpen && !guide.visible && !powerMenu.visible
+            enabled: !window.subScreenOpen && !guide.visible && !window.cardOpen
       }
 
       Shortcut{
             sequence: "E"
             onActivated: pages.incrementCurrentIndex()
-            enabled: !window.subScreenOpen && !guide.visible && !powerMenu.visible
+            enabled: !window.subScreenOpen && !guide.visible && !window.cardOpen
       }
 
       Shortcut{
             sequence: "Esc"
             onActivated: pages.currentIndex = 1
-            enabled: !window.subScreenOpen && !guide.visible && !powerMenu.visible
+            enabled: !window.subScreenOpen && !guide.visible && !window.cardOpen
       }
 
 
@@ -105,6 +109,7 @@ ApplicationWindow {
       readonly property int pageWidth: 1252
       readonly property int pageGap: 160
       readonly property bool subScreenOpen: shelf.visible || appShelf.visible || recentShelf.visible || pinShelf.visible || profileScreen.visible || gameDetails.visible || networkScreen.visible || storageScreen.visible || controllersScreen.visible || systemScreen.visible || displaySoundScreen.visible || preferencesScreen.visible || searchScreen.visible || newsScreen.visible || addOnsScreen.visible
+      readonly property bool cardOpen: powerMenu.visible || signOutCard.visible || getAppCard.visible
       readonly property Window guideOverlay: overlay
 
       // Bring the dashboard in front of whatever is running (e.g. a game)
@@ -235,6 +240,8 @@ ApplicationWindow {
                               function onAppSearchRequested() {searchScreen.open("apps")}
                               function onGameSearchRequested() {searchScreen.open("games")}
                               function onAddOnsRequested() {addOnsScreen.open()}
+                              function onInstallRequested(name) {getAppCard.app = name; getAppCard.open()}
+                              function onSignOutRequested() {signOutCard.open()}
                               function onNewsRequested(cards, index) {newsScreen.open(cards, index)}
                         }
                   }
@@ -350,6 +357,34 @@ ApplicationWindow {
                   anchors.fill: parent
             }
 
+            // Sign Out (social tab, or X in the Guide): back to the login screen
+            MessageCard{
+                  id: signOutCard
+                  anchors.fill: parent
+                  title: "Sign Out"
+                  message: "Sign out of " + profile.gamertag + "? Everything you have open will close, so save anything you're working on first."
+                  defaultIndex: 1
+                  options: [
+                        {label: "Sign Out", run: () => Launcher.signOut()},
+                        {label: "Cancel", run: () => {}}
+                  ]
+            }
+
+            // An app a tile needs isn't installed (Discord on the social tab)
+            MessageCard{
+                  id: getAppCard
+                  anchors.fill: parent
+                  property string app
+                  icon: "!"
+                  title: app + " Isn't Installed"
+                  message: "You need " + app + " for this. Get it, then come back here and it opens."
+                  defaultIndex: 0
+                  options: [
+                        {label: "Get " + getAppCard.app, run: () => addOnsScreen.getNamed(getAppCard.app)},
+                        {label: "Back", run: () => {}}
+                  ]
+            }
+
             Guide{
                   id: guide
                   anchors.fill: parent
@@ -362,6 +397,7 @@ ApplicationWindow {
                   onRecentsRequested: recentShelf.open()
                   onProfileRequested: profileScreen.open()
                   onPreferencesRequested: preferencesScreen.open()
+                  onSignOutRequested: signOutCard.open()
             }
 
             BatteryNotice{
@@ -380,5 +416,6 @@ ApplicationWindow {
             onRecentsRequested: { window.showDashboard(); recentShelf.open() }
             onProfileRequested: { window.showDashboard(); profileScreen.open() }
             onPreferencesRequested: { window.showDashboard(); preferencesScreen.open() }
+            onSignOutRequested: { window.showDashboard(); signOutCard.open() }
       }
 }

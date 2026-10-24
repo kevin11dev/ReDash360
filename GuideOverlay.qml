@@ -19,6 +19,7 @@ Window {
     signal recentsRequested()
     signal profileRequested()
     signal preferencesRequested()
+    signal signOutRequested()
 
     function openGuide() {
         Launcher.rememberGame()
@@ -71,6 +72,7 @@ Window {
             onRecentsRequested: overlay.recentsRequested()
             onProfileRequested: overlay.profileRequested()
             onPreferencesRequested: overlay.preferencesRequested()
+            onSignOutRequested: overlay.signOutRequested()
         }
     }
 }

@@ -29,6 +29,9 @@ public:
     Q_INVOKABLE bool openApp(const QString &name, const QString &command, const QString &icon);
     Q_INVOKABLE void removeRecent(int index);
 
+    // Sign out of the desktop, back to the login screen
+    Q_INVOKABLE bool signOut();
+
     Q_INVOKABLE void rememberGame();
     Q_INVOKABLE void closeGame();
     Q_INVOKABLE void pauseGame();

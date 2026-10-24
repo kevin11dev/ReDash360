@@ -27,6 +27,7 @@ FocusScope {
     signal recentsRequested()
     signal profileRequested()
     signal preferencesRequested()
+    signal signOutRequested()
 
     property string gameTitle
     property bool confirming: false
@@ -404,6 +405,10 @@ FocusScope {
                             event.accepted = true
                         } else if (event.key === Qt.Key_Y) {
                             guide.goHome()
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_X) {
+                            guide.close()
+                            guide.signOutRequested()
                             event.accepted = true
                         }
                     }

@@ -173,6 +173,25 @@ void Launcher::eject(){
     emit lastPlayedChanged();
 }
 
+// Each desktop signs out its own way: KDE Plasma, GNOME and Hyprland have
+// their own command, anything else ends the login session. Either way you're
+// back at the login screen (SDDM).
+bool Launcher::signOut()
+{
+#ifdef Q_OS_WIN
+    return run("shutdown /l");
+#else
+    const QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP");
+    if (desktop.contains("KDE"))
+        return run("dbus-send --session --type=method_call --dest=org.kde.Shutdown /Shutdown org.kde.Shutdown.logout");
+    if (desktop.contains("GNOME"))
+        return run("gnome-session-quit --logout --no-prompt");
+    if (desktop.contains("Hyprland"))
+        return run("hyprctl dispatch exit");
+    return run("loginctl terminate-session " + qEnvironmentVariable("XDG_SESSION_ID", "self"));
+#endif
+}
+
 Launcher::~Launcher()
 {
     resumeGame();       // never leave a game frozen when ReDash360 quits

@@ -23,6 +23,8 @@ FocusScope {
     signal appSearchRequested()
     signal gameSearchRequested()
     signal addOnsRequested()
+    signal installRequested(string name)                // an app the tile needs isn't installed
+    signal signOutRequested()
 
     property alias cellWidth: grid.cellWidth
     property alias cellHeight: grid.cellHeight

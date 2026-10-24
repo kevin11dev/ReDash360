@@ -9,13 +9,41 @@ TilePage {
     // so achievements you just unlocked show up
     onActiveFocusChanged: if (activeFocus) Achievements.refresh()
 
-    Tile{                                       //Friends
-        id: friendsTile
-        label: "Friends"
-        icon: "person"
+    // Your Discord app (Vesktop is Discord too), if you have it. Windows has
+    // no list of apps, so there Discord's own link is tried instead.
+    readonly property var discord: {
+        AppLibrary.count                        // look again after a rescan
+        const apps = AppLibrary.all().filter(app => /discord|vesktop/i.test(app.command + " " + app.icon))
+        return apps.find(app => /^discord/i.test(app.name)) || apps[0] || null
+    }
+
+    // Discord, or when it isn't installed, a card offering to get it
+    function openDiscord() {
+        AppLibrary.refresh()                    // installed it just now?
+        if (discord)
+            Launcher.openApp(discord.name, discord.command, discord.icon)
+        else if (Qt.platform.os !== "windows" || !Qt.openUrlExternally("discord://-/channels/@me"))
+            root.installRequested("Discord")
+    }
+
+    Tile{                                       //Discord
+        id: discordTile
+        label: "Discord"
+        icon: discordMark.found ? "" : "person"
         column: 0; row: 0
         focus: true
-        onActivated: console.log("Friends")
+        onActivated: root.openDiscord()
+
+        // Discord's face from its icon, bigger than an app icon, like the
+        // dashboard's own icons
+        WhiteParts {
+            id: discordMark
+            anchors.centerIn: parent
+            anchors.verticalCenterOffset: -20
+            width: 120; height: 120
+            z: 2
+            source: root.discord && root.discord.icon ? "image://appicon/" + root.discord.icon : ""
+        }
     }
 
     Tile{                                       //My Profile
@@ -26,12 +54,12 @@ TilePage {
         onActivated: root.profileRequested()
     }
 
-    Tile{                                       //Sign In or Out
-        id: signInOutTile
-        label: "Sign In or Out"
+    Tile{                                       //Sign Out
+        id: signOutTile
+        label: "Sign Out"
         icon: "signin"
         column: 0; row: 2
-        onActivated: console.log("Sign In or Out")
+        onActivated: root.signOutRequested()
     }
 
     Column {
@@ -185,5 +213,46 @@ TilePage {
         name: "person"
         opacity: 0.3
         visible: UserProfile.avatar === ""
+    }
+
+    // An app's icon (from your icon theme) with only its white parts kept, in
+    // white: Discord's face without its blue circle, so it sits on the green
+    // like the dashboard's own icons. found: there was something white in it.
+    component WhiteParts: Canvas {
+        id: mark
+        property string source
+        property bool found: false
+
+        onSourceChanged: {
+            found = false
+            if (source !== "")
+                loadImage(source)
+            requestPaint()
+        }
+        onImageLoaded: requestPaint()
+
+        onPaint: {
+            const ctx = getContext("2d")
+            ctx.reset()
+            if (source === "" || !isImageLoaded(source))
+                return
+            ctx.drawImage(source, 0, 0, width, height)
+            const picture = ctx.getImageData(0, 0, width, height)
+            const pixels = picture.data
+            let white = 0
+            for (let i = 0; i < pixels.length; i += 4) {
+                // How white a pixel is: its darkest colour. Discord's blue is
+                // far from white, its face all the way there
+                const darkest = Math.min(pixels[i], pixels[i + 1], pixels[i + 2])
+                const whiteness = Math.max(0, Math.min(1, (darkest - 120) / 135))
+                pixels[i + 3] = Math.round(pixels[i + 3] * whiteness)
+                pixels[i] = pixels[i + 1] = pixels[i + 2] = 255
+                if (pixels[i + 3] > 128)
+                    white++
+            }
+            ctx.clearRect(0, 0, width, height)
+            ctx.putImageData(picture, 0, 0, 0, 0, width, height)   // with just (picture, 0, 0) Qt draws nothing
+            found = white > 0
+        }
     }
 }

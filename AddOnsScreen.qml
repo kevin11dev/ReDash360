@@ -178,6 +178,13 @@ FocusScope {
             Qt.openUrlExternally("https://flathub.org/apps/" + addOn.flatpak)
     }
 
+    // Get one by name, from elsewhere on the dashboard (Discord on the social tab)
+    function getNamed(name) {
+        const addOn = addOns.find(addOn => addOn.name === name)
+        if (addOn)
+            get(addOn)
+    }
+
     // A: open it, or get it. Getting it keeps this screen open, so it says
     // Installed when you come back.
     function activate(addOn) {
