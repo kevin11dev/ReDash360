@@ -43,6 +43,13 @@ FocusScope {
         }
     }
 
+    // Straight to your games' achievements (from the Guide)
+    function openAchievements() {
+        open()
+        pages = [gamesPage()]
+        list.currentIndex = 0
+    }
+
     function close() {
         visible = false
         if (returnFocusTo)

@@ -9,7 +9,8 @@ import QtCore
 // blade's rows fill the white panel, with its name on a light strip to the
 // left. Every other blade is a dark strip: earlier ones stack to the left,
 // later ones to the right. LB/RB (or left/right) switch blades, up/down pick
-// a row, A runs it, B closes, Y goes to Xbox Home.
+// a row, A runs it, B closes, Y goes to Xbox Home. Switching blades slides
+// the new one in a little while the old one fades, like the 360 does.
 FocusScope {
     id: guide
     visible: false
@@ -22,6 +23,10 @@ FocusScope {
     signal tabRequested(int index)
     signal shelfRequested()
     signal quitRequested()
+    signal achievementsRequested()
+    signal recentsRequested()
+    signal profileRequested()
+    signal preferencesRequested()
 
     property string gameTitle
     property bool confirming: false
@@ -29,7 +34,11 @@ FocusScope {
     property Item returnFocusTo: null
     property int tab: 1                         // opens on your gamertag blade
     property bool inControls: false             // on the media buttons (Media blade)
+    property bool atSelectMusic: false          // on Select Music, above them
     property int control: 0                     // which media button
+    property int targetTab: 1                   // the blade it's switching to
+    property bool switching: false              // until the picture of the old blade is taken
+    property var oldBlade: null                 // that picture, while it fades away
     // The controller you're using: its quarter of the ring of light and its battery
     readonly property var pad: Gamepad.controllers.find(c => c.id === Gamepad.lastUsed) || null
     readonly property int player: pad ? pad.player : 1
@@ -44,17 +53,22 @@ FocusScope {
         return GameLibrary.find(Launcher.lastCommand).cover || ""
     }
 
+    // Active Downloads is Steam's
+    readonly property bool hasSteam: {
+        GameLibrary.count
+        return GameLibrary.all().some(game => game.source === "Steam")
+    }
+
     // The blades. Each row: label, and optionally an icon (from icons.js) or
-    // image on the right, and run (what A does). Rows without run do nothing yet.
+    // image on the right, and run (what A does). dashboard: it opens something
+    // on the dashboard, so over a game you're asked to quit the game first.
     readonly property var blades: [
         { title: "Games & Apps", rows: [
-            { label: "Achievements" },
-            { label: "Awards" },
-            { label: "Recent" },
-            { label: "My Games", dashboard: true, run: () => guide.shelfRequested() },
-            { label: "Active Downloads" },
-            { label: "Redeem Code" },
-            { label: "Activity Feed" } ] },
+            { label: "Achievements", dashboard: true, run: () => guide.achievementsRequested() },
+            { label: "Recent", dashboard: true, run: () => guide.recentsRequested() },
+            { label: "My Games", dashboard: true, run: () => guide.shelfRequested() }
+          ].concat(!guide.hasSteam ? [] : [
+            { label: "Active Downloads", run: () => Qt.openUrlExternally("steam://open/downloads") } ]) },
         { title: guide.gamertag, rows: [
             { label: "Xbox Home", dashboard: true, icon: "home", run: () => guide.tabRequested(1) },
             { label: "File Browser", icon: "folder",
@@ -64,17 +78,17 @@ FocusScope {
             { label: "Play " + Launcher.lastName, image: guide.lastCover,
               run: () => Launcher.play(Launcher.lastName, Launcher.lastCommand) } ]) },
         { title: "Media", media: true, rows: [
-            { label: "System Video Player" },
-            { label: "System Music Player" },
-            { label: "Picture Viewer" } ] },
+            { label: "System Video Player", run: () => guide.openPlayer(AppLibrary.videoApps(), StandardPaths.MoviesLocation) },
+            { label: "System Music Player", run: () => guide.openPlayer(AppLibrary.musicApps(), StandardPaths.MusicLocation) },
+            { label: "Picture Viewer", run: () => guide.openFolder(StandardPaths.PicturesLocation) } ] },
         { title: "Settings", rows: [
-            { label: "Profile" },
-            { label: "Preferences" },
-            { label: "Family Settings" },
-            { label: "System Settings", dashboard: true, run: () => guide.tabRequested(5) },
-            { label: "Account Management" },
+            { label: "Profile", dashboard: true, run: () => guide.profileRequested() },
+            { label: "Preferences", dashboard: true, run: () => guide.preferencesRequested() },
             { label: "Turn Off Console", run: () => guide.quitRequested() } ] }
     ]
+
+    // The Media blade's row above its buttons: your music, to pick from
+    readonly property var selectMusic: ({ label: "Select Music", run: () => guide.openFolder(StandardPaths.MusicLocation) })
 
     // Media buttons along the bottom of the Media blade. They control whatever
     // is playing (Spotify, a browser, ...) through playerctl on Linux.
@@ -92,7 +106,13 @@ FocusScope {
     function open() {
         returnFocusTo = guide.Window.activeFocusItem
         tab = 1
+        targetTab = 1
+        switching = false
+        crossFade.stop()
+        oldBlade = null
+        slideIn.complete()
         inControls = false
+        atSelectMusic = false
         list.currentIndex = 0
         visible = true
         list.forceActiveFocus()
@@ -109,14 +129,51 @@ FocusScope {
     }
 
     function switchTab(step) {
-        const next = tab + step
-        if (next < 0 || next >= blades.length)
+        goToBlade((switching ? targetTab : tab) + step)
+    }
+
+    // Like the 360: the highlight goes, then the new blade (strips and all)
+    // slides in a little from the side you're going towards while the old one
+    // fades away. The old one is a picture of it, fading on top.
+    function goToBlade(index) {
+        if (index < 0 || index >= blades.length || index === (switching ? targetTab : tab))
             return
-        tab = next
+        targetTab = index
+        if (switching)
+            return                              // already on its way: it goes on to this one
+        switching = true                        // no highlight in the picture
+        slideIn.complete()                      // the picture is of it where it belongs
+        if (!bladeArea.grabToImage(picture => showBlade(picture)))
+            showBlade(null)                     // not on screen: no picture to fade
+    }
+
+    function showBlade(picture) {
+        const step = targetTab > tab ? 1 : -1
+        oldBlade = picture                      // keeps the picture while it's shown
+        tab = targetTab
         inControls = false
+        atSelectMusic = false
         list.currentIndex = 0
-        slideIn.from = step * 60                // rows slide in from the side we moved towards
+        switching = false
+        if (picture)
+            crossFade.restart()
+        slideIn.from = step * 50
         slideIn.restart()
+    }
+
+    // The app you opened last of these (or the first one), or the folder when
+    // you have none
+    function openPlayer(apps, folder) {
+        const recent = Launcher.recents.find(r => r.kind === "app" && apps.some(app => app.command === r.command))
+        const app = recent ? apps.find(app => app.command === recent.command) : apps[0]
+        if (app)
+            Launcher.openApp(app.name, app.command, app.icon)
+        else
+            openFolder(folder)
+    }
+
+    function openFolder(location) {
+        Qt.openUrlExternally(StandardPaths.writableLocation(location))
     }
 
     function activateCurrent() {
@@ -124,7 +181,7 @@ FocusScope {
             Launcher.run(mediaControls[control].command)    // the guide stays open
             return
         }
-        const row = current.rows[list.currentIndex]
+        const row = atSelectMusic ? selectMusic : current.rows[list.currentIndex]
         if (!row.run)
             return                              // not built yet
         if (row.dashboard && gameTitle !== "") {
@@ -259,168 +316,215 @@ FocusScope {
             }
         }
 
-        // The current blade's rows (and media buttons) in the white panel
+        // The blades: the current one's rows (and media buttons) in the white
+        // panel, and a strip for each
         Item {
-            id: panel
-            x: 642; y: 304
-            width: 728; height: 471
-            clip: true
+            id: bladeArea
+            x: 300; y: 304
+            width: 1320; height: 471
 
-            ListView {
-                id: list
-                width: parent.width
-                height: guide.current.media ? 326 : parent.height
-                model: guide.current.rows
-                interactive: false
-                keyNavigationEnabled: true
-                highlightMoveDuration: 0
+            transform: Translate { id: bladeShift }
+            NumberAnimation { id: slideIn; target: bladeShift; property: "x"; to: 0; duration: 200; easing.type: Easing.OutCubic }
 
-                transform: Translate { id: shift }
-                NumberAnimation { id: slideIn; target: shift; property: "x"; to: 0; duration: 180; easing.type: Easing.OutCubic }
-
-                delegate: GuideRow {
-                    required property int index
-                    required property var modelData
-                    width: ListView.view.width
-                    label: modelData.label
-                    icon: modelData.icon || ""
-                    image: modelData.image || ""
-                    selected: ListView.isCurrentItem && !guide.inControls
-                    onClicked: {
-                        guide.inControls = false
-                        list.currentIndex = index
-                        guide.activateCurrent()
-                    }
-                }
-
-                Keys.onDownPressed: (event) => {
-                    if (currentIndex < count - 1)
-                        currentIndex++
-                    else if (guide.current.media)
-                        guide.inControls = true     // off the bottom: onto the media buttons
-                }
-                Keys.onUpPressed: (event) => {
-                    if (guide.inControls)
-                        guide.inControls = false
-                    else if (currentIndex > 0)
-                        currentIndex--
-                }
-                Keys.onReturnPressed: guide.activateCurrent()
-                Keys.onEnterPressed: guide.activateCurrent()
-                Keys.onEscapePressed: guide.close()
-                Keys.onPressed: (event) => {
-                    const left = event.key === Qt.Key_Left, right = event.key === Qt.Key_Right
-                    if (guide.inControls && (left || right)) {
-                        // Left/right move between the media buttons
-                        guide.control = Math.max(0, Math.min(guide.mediaControls.length - 1,
-                                                             guide.control + (left ? -1 : 1)))
-                        event.accepted = true
-                    } else if (event.key === Qt.Key_Q || left) {
-                        guide.switchTab(-1)
-                        event.accepted = true
-                    } else if (event.key === Qt.Key_E || right) {
-                        guide.switchTab(1)
-                        event.accepted = true
-                    } else if (event.key === Qt.Key_Y) {
-                        guide.goHome()
-                        event.accepted = true
-                    }
-                }
+            Rectangle {                             // the white panel again, so the picture of the blade is solid
+                x: base.x - bladeArea.x
+                width: base.width; height: base.height
+                gradient: base.gradient
             }
 
-            // Media blade only: "Select Music" and the playback buttons
-            Column {
-                visible: guide.current.media === true
-                y: 326
-                width: parent.width
+            Item {
+                id: panel
+                x: 342
+                width: 728; height: 471
+                clip: true
 
-                GuideRow {
+                ListView {
+                    id: list
                     width: parent.width
-                    label: "Select Music"
+                    height: guide.current.media ? 326 : parent.height
+                    model: guide.current.rows
+                    interactive: false
+                    keyNavigationEnabled: true
+                    highlightMoveDuration: 0
+
+                    delegate: GuideRow {
+                        required property int index
+                        required property var modelData
+                        width: ListView.view.width
+                        label: modelData.label
+                        icon: modelData.icon || ""
+                        image: modelData.image || ""
+                        selected: ListView.isCurrentItem && !guide.inControls && !guide.atSelectMusic && !guide.switching
+                        onClicked: {
+                            guide.inControls = false
+                            guide.atSelectMusic = false
+                            list.currentIndex = index
+                            guide.activateCurrent()
+                        }
+                    }
+
+                    // Off the bottom of the Media blade's rows: Select Music, then the buttons
+                    Keys.onDownPressed: (event) => {
+                        if (guide.atSelectMusic) {
+                            guide.atSelectMusic = false
+                            guide.inControls = true
+                        } else if (guide.inControls) {
+                            return
+                        } else if (currentIndex < count - 1) {
+                            currentIndex++
+                        } else if (guide.current.media) {
+                            guide.atSelectMusic = true
+                        }
+                    }
+                    Keys.onUpPressed: (event) => {
+                        if (guide.inControls) {
+                            guide.inControls = false
+                            guide.atSelectMusic = true
+                        } else if (guide.atSelectMusic) {
+                            guide.atSelectMusic = false
+                        } else if (currentIndex > 0) {
+                            currentIndex--
+                        }
+                    }
+                    Keys.onReturnPressed: guide.activateCurrent()
+                    Keys.onEnterPressed: guide.activateCurrent()
+                    Keys.onEscapePressed: guide.close()
+                    Keys.onPressed: (event) => {
+                        const left = event.key === Qt.Key_Left, right = event.key === Qt.Key_Right
+                        if (guide.inControls && (left || right)) {
+                            // Left/right move between the media buttons
+                            guide.control = Math.max(0, Math.min(guide.mediaControls.length - 1,
+                                                                 guide.control + (left ? -1 : 1)))
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_Q || left) {
+                            guide.switchTab(-1)
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_E || right) {
+                            guide.switchTab(1)
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_Y) {
+                            guide.goHome()
+                            event.accepted = true
+                        }
+                    }
                 }
 
-                Row {
-                    x: 14
-                    Repeater {
-                        model: guide.mediaControls
-                        Rectangle {
-                            required property int index
-                            required property var modelData
-                            width: 117; height: 82
-                            color: guide.inControls && guide.control === index ? "#008E00" : "transparent"
+                // Media blade only: "Select Music" and the playback buttons
+                Column {
+                    visible: guide.current.media === true
+                    y: 326
+                    width: parent.width
 
-                            TileIcon {
-                                anchors.centerIn: parent
-                                width: 40; height: 40
-                                name: modelData.icon
-                                color: guide.inControls && guide.control === index ? "white" : "#3A4246"
-                            }
-                            Rectangle {                     // divider on the right
-                                anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 2; height: 62
-                                color: "#C6CDD0"
-                                visible: index < guide.mediaControls.length - 1
-                            }
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    guide.inControls = true
-                                    guide.control = index
-                                    guide.activateCurrent()
+                    GuideRow {
+                        width: parent.width
+                        label: guide.selectMusic.label
+                        selected: guide.atSelectMusic && !guide.switching
+                        onClicked: {
+                            guide.inControls = false
+                            guide.atSelectMusic = true
+                            guide.activateCurrent()
+                        }
+                    }
+
+                    Row {
+                        x: 14
+                        Repeater {
+                            model: guide.mediaControls
+                            Rectangle {
+                                required property int index
+                                required property var modelData
+                                width: 117; height: 82
+                                readonly property bool selected: guide.inControls && guide.control === index && !guide.switching
+                                color: selected ? "#008E00" : "transparent"
+
+                                TileIcon {
+                                    anchors.centerIn: parent
+                                    width: 40; height: 40
+                                    name: modelData.icon
+                                    color: parent.selected ? "white" : "#3A4246"
+                                }
+                                Rectangle {                     // divider on the right
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 2; height: 62
+                                    color: "#C6CDD0"
+                                    visible: index < guide.mediaControls.length - 1
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        guide.inControls = true
+                                        guide.atSelectMusic = false
+                                        guide.control = index
+                                        guide.activateCurrent()
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+
+            // One strip per blade
+            Repeater {
+                model: guide.blades
+                Rectangle {
+                    id: strip
+                    required property int index
+                    required property var modelData
+                    readonly property bool isCurrent: index === guide.tab
+
+                    x: guide.stripX(index) - bladeArea.x
+                    width: isCurrent ? 95 : 67
+                    height: 471
+
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: strip.isCurrent ? "#D6DFE0" : "#465D6D" }
+                        GradientStop { position: 1.0; color: strip.isCurrent ? "#BCC6C9" : "#465D6D" }
+                    }
+
+                    Rectangle {                             // darker line on the outer edge
+                        width: 2; height: parent.height
+                        x: index < guide.tab ? parent.width - 2 : 0
+                        color: "#2F404C"
+                        visible: !strip.isCurrent
+                    }
+
+                    // Name written sideways, reading downwards from the top
+                    Text {
+                        x: (parent.width + height) / 2
+                        y: 24
+                        rotation: 90
+                        transformOrigin: Item.TopLeft
+                        width: 420
+                        elide: Text.ElideRight
+                        text: strip.modelData.title
+                        color: strip.isCurrent ? "#7C878D" : "#E3E9ED"
+                        font.pixelSize: 34
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: guide.goToBlade(strip.index)
+                    }
+                }
+            }
         }
 
-        // One strip per blade, sliding into place when the tab changes
-        Repeater {
-            model: guide.blades
-            Rectangle {
-                id: strip
-                required property int index
-                required property var modelData
-                readonly property bool isCurrent: index === guide.tab
+        // The old blade, fading away over the new one
+        Image {
+            id: before
+            x: bladeArea.x; y: bladeArea.y
+            width: bladeArea.width; height: bladeArea.height
+            source: guide.oldBlade ? guide.oldBlade.url : ""
+            visible: guide.oldBlade !== null
 
-                x: guide.stripX(index)
-                y: 304
-                width: isCurrent ? 95 : 67
-                height: 471
-                Behavior on x { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: strip.isCurrent ? "#D6DFE0" : "#465D6D" }
-                    GradientStop { position: 1.0; color: strip.isCurrent ? "#BCC6C9" : "#465D6D" }
-                }
-
-                Rectangle {                             // darker line on the outer edge
-                    width: 2; height: parent.height
-                    x: index < guide.tab ? parent.width - 2 : 0
-                    color: "#2F404C"
-                    visible: !strip.isCurrent
-                }
-
-                // Name written sideways, reading downwards from the top
-                Text {
-                    x: (parent.width + height) / 2
-                    y: 24
-                    rotation: 90
-                    transformOrigin: Item.TopLeft
-                    width: 420
-                    elide: Text.ElideRight
-                    text: strip.modelData.title
-                    color: strip.isCurrent ? "#7C878D" : "#E3E9ED"
-                    font.pixelSize: 34
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: guide.switchTab(strip.index - guide.tab)
-                }
+            NumberAnimation on opacity {
+                id: crossFade
+                running: false
+                from: 1; to: 0
+                duration: 25
+                onFinished: guide.oldBlade = null
             }
         }
 

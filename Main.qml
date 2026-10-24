@@ -358,6 +358,10 @@ ApplicationWindow {
                   onTabRequested: (index) => pages.currentIndex = index
                   onShelfRequested: shelf.open()
                   onQuitRequested: powerMenu.open()
+                  onAchievementsRequested: profileScreen.openAchievements()
+                  onRecentsRequested: recentShelf.open()
+                  onProfileRequested: profileScreen.open()
+                  onPreferencesRequested: preferencesScreen.open()
             }
 
             BatteryNotice{
@@ -372,5 +376,9 @@ ApplicationWindow {
             onTabRequested: (index) => { window.showDashboard(); pages.currentIndex = index }
             onShelfRequested: { window.showDashboard(); shelf.open() }
             onQuitRequested: Qt.quit()
+            onAchievementsRequested: { window.showDashboard(); profileScreen.openAchievements() }
+            onRecentsRequested: { window.showDashboard(); recentShelf.open() }
+            onProfileRequested: { window.showDashboard(); profileScreen.open() }
+            onPreferencesRequested: { window.showDashboard(); preferencesScreen.open() }
       }
 }

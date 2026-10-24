@@ -15,6 +15,10 @@ Window {
     signal tabRequested(int index)
     signal shelfRequested()
     signal quitRequested()
+    signal achievementsRequested()
+    signal recentsRequested()
+    signal profileRequested()
+    signal preferencesRequested()
 
     function openGuide() {
         Launcher.rememberGame()
@@ -63,6 +67,10 @@ Window {
             onTabRequested: (index) => overlay.tabRequested(index)
             onShelfRequested: overlay.shelfRequested()
             onQuitRequested: overlay.quitRequested()
+            onAchievementsRequested: overlay.achievementsRequested()
+            onRecentsRequested: overlay.recentsRequested()
+            onProfileRequested: overlay.profileRequested()
+            onPreferencesRequested: overlay.preferencesRequested()
         }
     }
 }
