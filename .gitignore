@@ -3,3 +3,4 @@ build/
 *.user
 *.dll
 desktop.ini
+*.autosave

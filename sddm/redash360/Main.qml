@@ -12,6 +12,11 @@ import QtQuick
 // sign in), sessionModel (the desktops), keyboard, config (theme.conf) and
 // primaryScreen. Each person's gamerpic and avatar come from ReDash360,
 // which copies them to ~/.redash360 for this screen (loginscreen.cpp).
+//
+// Signing in, the screen fades to black before SDDM checks the password:
+// SDDM closes this screen the moment it's right, too soon for a fade. The
+// session starts on black, and in the ReDash360 session the dashboard
+// fades in from it.
 Rectangle {
     id: root
 
@@ -29,6 +34,7 @@ Rectangle {
     property int session: Math.max(0, sessionModel.lastIndex)    // which desktop starts
     property string signingInAs: ""                             // set while SDDM checks the password
     property string who: ""                                     // the profile asking for a password
+    property var pending: null                                  // who to sign in as once it's dark
 
     readonly property string sessionName: {
         sessionNames.count                      // look again once the names are in
@@ -63,7 +69,8 @@ Rectangle {
 
     function signIn(name, password) {
         signingInAs = name
-        sddm.login(name, password, session)
+        pending = { name: name, password: password }
+        goingDark.restart()
     }
 
     // X: the next desktop, round and round
@@ -77,6 +84,7 @@ Rectangle {
         function onLoginFailed() {
             root.who = root.signingInAs
             root.signingInAs = ""
+            lightsUp.restart()
             root.askPassword("That password didn't work.")
         }
         function onInformationMessage(message) {
@@ -156,6 +164,8 @@ Rectangle {
             Keys.onReturnPressed: root.choose(currentItem)
             Keys.onEnterPressed: root.choose(currentItem)
             Keys.onPressed: (event) => {
+                if (root.signingInAs !== "")
+                    return
                 if (event.key === Qt.Key_X) {
                     root.nextSession()
                     event.accepted = true
@@ -212,6 +222,40 @@ Rectangle {
             id: onScreenKeyboard
             anchors.fill: parent
         }
+    }
+
+    // Black, signing in
+    Rectangle {
+        id: curtain
+        anchors.fill: parent
+        color: "black"
+        opacity: 0
+        visible: opacity > 0
+        MouseArea { anchors.fill: parent }
+    }
+
+    // "SIGNING IN..." and the other profiles go, then the screen goes dark
+    // and SDDM checks the password
+    SequentialAnimation {
+        id: goingDark
+        PauseAnimation { duration: 700 }
+        NumberAnimation { target: curtain; property: "opacity"; to: 1; duration: 500; easing.type: Easing.InQuad }
+        ScriptAction {
+            script: {
+                const account = root.pending
+                root.pending = null
+                sddm.login(account.name, account.password, root.session)
+            }
+        }
+    }
+
+    // The wrong password: back to the profiles
+    NumberAnimation {
+        id: lightsUp
+        target: curtain
+        property: "opacity"
+        to: 0
+        duration: 300
     }
 
     // The controller, when the login helper is installed. Just one: the

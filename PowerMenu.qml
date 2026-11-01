@@ -12,7 +12,7 @@ MessageCard{
     options: [
         {label: "Turn Off", run: () => Launcher.run(power.onWindows ? "shutdown /s /t 0" : "systemctl poweroff")},
         {label: "Restart", run: () => Launcher.run(power.onWindows ? "shutdown /r /t 0" : "systemctl reboot")},
-        {label: "Exit to Desktop", run: () => Qt.quit()},
+        {label: "Exit to Desktop", run: () => Launcher.exitToDesktop()},
         {label: "Cancel", run: () => {}}
     ]
 }

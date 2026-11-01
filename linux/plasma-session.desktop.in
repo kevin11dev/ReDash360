@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=ReDash360 (Plasma)
+Comment=The Xbox 360-style dashboard as your desktop, on KDE Plasma
+Exec=@PLASMA_EXEC@
+TryExec=@STARTPLASMA_WAYLAND@
+DesktopNames=KDE

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=ReDash360
+GenericName=Dashboard
+Comment=Xbox 360-style dashboard
+Icon=input-gaming
+Exec=@CMAKE_INSTALL_FULL_BINDIR@/appReDash360
+Categories=Game;

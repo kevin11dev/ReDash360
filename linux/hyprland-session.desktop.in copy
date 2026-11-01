@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=ReDash360 (Hyprland)
+Comment=The Xbox 360-style dashboard as your desktop, on your Hyprland
+Exec=uwsm start -e -D Hyprland hyprland.desktop
+TryExec=uwsm
+DesktopNames=Hyprland

@@ -1,0 +1,20 @@
+# The dashboard, as the desktop of the ReDash360 sessions (the login screen
+# names them in DESKTOP_SESSION). Every graphical session asks for it
+# (start-redash360.conf), but it only runs in those two, and it comes back if
+# it crashes.
+[Unit]
+Description=ReDash360 dashboard
+PartOf=graphical-session.target
+After=graphical-session.target plasma-core.target plasma-ksmserver.service
+ConditionEnvironment=|DESKTOP_SESSION=redash360-plasma
+ConditionEnvironment=|DESKTOP_SESSION=redash360-hyprland
+StartLimitIntervalSec=60s
+StartLimitBurst=3
+
+[Service]
+ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/appReDash360
+Restart=on-failure
+Slice=session.slice
+# Stopping it stops just the dashboard: the games and apps it started keep
+# running, and so does Plasma's desktop after Exit to Desktop
+KillMode=process

@@ -122,3 +122,8 @@ install(TARGETS appReDash360
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+# The app menu entry and the ReDash360 session (linux/CMakeLists.txt)
+if (UNIX AND NOT APPLE)
+    add_subdirectory(linux)
+endif()

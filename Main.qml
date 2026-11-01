@@ -22,6 +22,7 @@ ApplicationWindow {
             }
 
             Image{
+                  id: backgroundPicture
                   anchors.fill: parent
                   source: Preferences.shownBackground
                   retainWhileLoading: true      // no grey flash while switching pictures
@@ -405,13 +406,40 @@ ApplicationWindow {
             }
       }
 
+      // The dashboard fades in from black when it starts, as it does after
+      // signing in to the ReDash360 session: once it's had a moment to come
+      // up on screen and its background picture is in (or if that's slow,
+      // after a few seconds)
+      Rectangle{
+            id: curtain
+            anchors.fill: parent
+            z: 100
+            color: "black"
+            visible: opacity > 0
+
+            property bool shown: false
+            property bool waited: false
+            readonly property bool ready: shown && (backgroundPicture.status !== Image.Loading || waited)
+            onReadyChanged: if (ready) lift.start()
+
+            NumberAnimation on opacity{
+                  id: lift
+                  running: false
+                  to: 0
+                  duration: 800
+                  easing.type: Easing.InOutQuad
+            }
+            Timer{ interval: 400; running: true; onTriggered: curtain.shown = true }
+            Timer{ interval: 3000; running: true; onTriggered: curtain.waited = true }
+      }
+
       GuideOverlay{
             id: overlay
             gamertag: profile.gamertag
             gamerpic: profile.gamerpic
             onTabRequested: (index) => { window.showDashboard(); pages.currentIndex = index }
             onShelfRequested: { window.showDashboard(); shelf.open() }
-            onQuitRequested: Qt.quit()
+            onQuitRequested: Launcher.exitToDesktop()
             onAchievementsRequested: { window.showDashboard(); profileScreen.openAchievements() }
             onRecentsRequested: { window.showDashboard(); recentShelf.open() }
             onProfileRequested: { window.showDashboard(); profileScreen.open() }

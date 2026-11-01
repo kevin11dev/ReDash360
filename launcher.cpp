@@ -173,9 +173,6 @@ void Launcher::eject(){
     emit lastPlayedChanged();
 }
 
-// Each desktop signs out its own way: KDE Plasma, GNOME and Hyprland have
-// their own command, anything else ends the login session. Either way you're
-// back at the login screen (SDDM).
 bool Launcher::signOut()
 {
 #ifdef Q_OS_WIN
@@ -186,10 +183,27 @@ bool Launcher::signOut()
         return run("dbus-send --session --type=method_call --dest=org.kde.Shutdown /Shutdown org.kde.Shutdown.logout");
     if (desktop.contains("GNOME"))
         return run("gnome-session-quit --logout --no-prompt");
-    if (desktop.contains("Hyprland"))
-        return run("hyprctl dispatch exit");
+    if (desktop.contains("Hyprland")) {
+        // When uwsm started Hyprland it ends the session, so everything stops
+        // in order; otherwise Hyprland's own exit, in Lua for Lua configs
+        // (Hyprland 0.55+) or by name for older ones
+        if (QProcess::execute("uwsm", { "check", "is-active", "compositor-only" }) == 0)
+            return run("uwsm stop");
+        return hyprctl({ "dispatch", "hl.dsp.exit()" }) == "ok" || hyprctl({ "dispatch", "exit" }) == "ok";
+    }
     return run("loginctl terminate-session " + qEnvironmentVariable("XDG_SESSION_ID", "self"));
 #endif
+}
+
+void Launcher::exitToDesktop()
+{
+#ifndef Q_OS_WIN
+    // The login screen names the session in DESKTOP_SESSION. In the Hyprland
+    // one, your Hyprland desktop is already there.
+    if (qEnvironmentVariable("DESKTOP_SESSION") == "redash360-plasma")
+        run("plasmashell");
+#endif
+    QCoreApplication::quit();
 }
 
 Launcher::~Launcher()
