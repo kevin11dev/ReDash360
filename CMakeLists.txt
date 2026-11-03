@@ -21,79 +21,92 @@ if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/importedcontent/CMakeLists.txt")
 endif()
 
 qt_add_executable(appReDash360
-    main.cpp
+    src/main.cpp
 )
 
-# Pins.qml is a singleton (one shared object, used as Pins.pin(...) etc.)
-set_source_files_properties(Pins.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
-set_source_files_properties(UserProfile.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
-set_source_files_properties(Sounds.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
-set_source_files_properties(Preferences.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+# The dashboard's QML, in qml/
+set(qml_files
+    qml/Main.qml
+    qml/Home.qml
+    qml/Social.qml
+    qml/Games.qml
+    qml/Search.qml
+    qml/SearchScreen.qml
+    qml/Apps.qml
+    qml/Settings.qml
+    qml/Tile.qml
+    qml/TilePage.qml
+    qml/ButtonHint.qml
+    qml/GameShelf.qml
+    qml/GameSlot.qml
+    qml/AppSlot.qml
+    qml/Profile.qml
+    qml/TileIcon.qml
+    qml/Guide.qml
+    qml/AppShelf.qml
+    qml/GuideOverlay.qml
+    qml/PowerMenu.qml
+    qml/RecentShelf.qml
+    qml/Pins.qml
+    qml/UserProfile.qml
+    qml/ProfileScreen.qml
+    qml/Gamerpic.qml
+    qml/PinShelf.qml
+    qml/Sounds.qml
+    qml/SoundBank.qml
+    qml/MessageCard.qml
+    qml/Keyboard.qml
+    qml/GameDetails.qml
+    qml/NetworkScreen.qml
+    qml/StorageScreen.qml
+    qml/ControllerPicture.qml
+    qml/ControllerScreen.qml
+    qml/BatteryIcon.qml
+    qml/BatteryNotice.qml
+    qml/PlatformBanner.qml
+    qml/SystemScreen.qml
+    qml/DisplaySoundScreen.qml
+    qml/PreferencesScreen.qml
+    qml/Preferences.qml
+    qml/NewsTile.qml
+    qml/NewsScreen.qml
+    qml/AddOnsScreen.qml
+    qml/icons.js
+)
 
+# Inside the module each file keeps its plain name (Main.qml, not
+# qml/Main.qml), so they all sit together and find each other, the
+# singletons and icons.js
+foreach (file IN LISTS qml_files)
+    get_filename_component(name "${file}" NAME)
+    set_source_files_properties("${file}" PROPERTIES QT_RESOURCE_ALIAS "${name}")
+endforeach()
+
+# Pins.qml is a singleton (one shared object, used as Pins.pin(...) etc.)
+set_source_files_properties(qml/Pins.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(qml/UserProfile.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(qml/Sounds.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(qml/Preferences.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+
+# The module: that QML, and the C++ in src/
 qt_add_qml_module(appReDash360
     URI ReDash360
-    QML_FILES
-        Main.qml
-        Home.qml
-        Social.qml
-        Games.qml
-        Search.qml
-        SearchScreen.qml
-        Apps.qml
-        Settings.qml
-        Tile.qml
-        TilePage.qml
-        ButtonHint.qml
-        GameShelf.qml
-        GameSlot.qml
-        AppSlot.qml
-        Profile.qml
-        TileIcon.qml
-        Guide.qml
-        AppShelf.qml
-        GuideOverlay.qml
-        PowerMenu.qml
-        RecentShelf.qml
-        Pins.qml
-        UserProfile.qml
-        ProfileScreen.qml
-        Gamerpic.qml
-        PinShelf.qml
-        Sounds.qml
-        SoundBank.qml
-        MessageCard.qml
-        Keyboard.qml
-        GameDetails.qml
-        NetworkScreen.qml
-        StorageScreen.qml
-        ControllerPicture.qml
-        ControllerScreen.qml
-        BatteryIcon.qml
-        BatteryNotice.qml
-        PlatformBanner.qml
-        SystemScreen.qml
-        DisplaySoundScreen.qml
-        PreferencesScreen.qml
-        Preferences.qml
-        NewsTile.qml
-        NewsScreen.qml
-        AddOnsScreen.qml
-        icons.js
+    QML_FILES ${qml_files}
     SOURCES
-        gamepad.h gamepad.cpp
-        launcher.h launcher.cpp
-        gamelibrary.h gamelibrary.cpp
-        pointer.h pointer.cpp
-        applibrary.h applibrary.cpp
-        achievements.h achievements.cpp
-        network.h network.cpp
-        storage.h storage.cpp
-        systeminfo.h systeminfo.cpp
-        audiosettings.h audiosettings.cpp
-        displaysettings.h displaysettings.cpp
-        autostart.h autostart.cpp
-        news.h news.cpp
-        loginscreen.h loginscreen.cpp
+        src/gamepad.h src/gamepad.cpp
+        src/launcher.h src/launcher.cpp
+        src/gamelibrary.h src/gamelibrary.cpp
+        src/pointer.h src/pointer.cpp
+        src/applibrary.h src/applibrary.cpp
+        src/achievements.h src/achievements.cpp
+        src/network.h src/network.cpp
+        src/storage.h src/storage.cpp
+        src/systeminfo.h src/systeminfo.cpp
+        src/audiosettings.h src/audiosettings.cpp
+        src/displaysettings.h src/displaysettings.cpp
+        src/autostart.h src/autostart.cpp
+        src/news.h src/news.cpp
+        src/loginscreen.h src/loginscreen.cpp
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -111,6 +124,9 @@ target_link_libraries(appReDash360
     PRIVATE Qt6::Quick Qt6::Network SDL2::SDL2
 )
 
+# For the code Qt generates, which includes the C++ headers by their plain names
+target_include_directories(appReDash360 PRIVATE src)
+
 if (LayerShellQt_FOUND)
     target_link_libraries(appReDash360 PRIVATE LayerShellQt::Interface)
     target_compile_definitions(appReDash360 PRIVATE HAVE_LAYER_SHELL)
@@ -123,7 +139,8 @@ install(TARGETS appReDash360
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-# The app menu entry and the ReDash360 session (linux/CMakeLists.txt)
+# The app menu entry, the ReDash360 sessions (linux/CMakeLists.txt) and the
+# login screen (sddm/CMakeLists.txt)
 if (UNIX AND NOT APPLE)
     add_subdirectory(linux)
     add_subdirectory(sddm)
