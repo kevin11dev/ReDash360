@@ -126,4 +126,5 @@ install(TARGETS appReDash360
 # The app menu entry and the ReDash360 session (linux/CMakeLists.txt)
 if (UNIX AND NOT APPLE)
     add_subdirectory(linux)
+    add_subdirectory(sddm)
 endif()

@@ -1,0 +1,5 @@
+*/src/
+*/pkg/
+*/ReDash360/
+*.pkg.tar.*
+*.log

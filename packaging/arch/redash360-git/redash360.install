@@ -1,0 +1,21 @@
+# What pacman says after installing or updating ReDash360
+
+post_install() {
+    echo ":: Sign out for ReDash360's login screen. Press X there until it says"
+    echo "   ReDash360 (Hyprland) or ReDash360 (Plasma), and that's remembered."
+    _check_sddm_conf
+}
+
+post_upgrade() {
+    _check_sddm_conf
+}
+
+# SDDM reads /etc/sddm.conf after /etc/sddm.conf.d, so a login screen picked
+# there wins over ReDash360's
+_check_sddm_conf() {
+    if grep -qs '^[[:space:]]*Current=' /etc/sddm.conf \
+            && ! grep -qs '^[[:space:]]*Current=redash360[[:space:]]*$' /etc/sddm.conf; then
+        echo ":: /etc/sddm.conf picks another login screen, which wins over ReDash360's."
+        echo "   For ReDash360's, change the Current= line there to: Current=redash360"
+    fi
+}

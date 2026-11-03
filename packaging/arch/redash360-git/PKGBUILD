@@ -1,0 +1,57 @@
+# ReDash360 from the latest commit on GitHub: the dashboard, the ReDash360
+# sessions, and the login screen, which becomes SDDM's. Build and install it
+# from this folder, and again later to update:
+#   makepkg -si
+
+pkgname=redash360-git
+pkgver=r0
+pkgrel=1
+pkgdesc="Xbox 360-style desktop shell: a login screen like the 360's Sign In, then the dashboard as your desktop"
+arch=('x86_64' 'aarch64')
+url="https://github.com/KevinKoortzen/ReDash360"
+license=('unknown')
+depends=('qt6-base' 'qt6-declarative' 'qt6-multimedia' 'qt6-svg' 'sdl2' 'layer-shell-qt' 'sddm')
+makedepends=('git' 'cmake')
+optdepends=('hyprland: pausing and closing games from the Guide'
+            'uwsm: the ReDash360 (Hyprland) session'
+            'plasma-workspace: the ReDash360 (Plasma) session'
+            'steam: Steam games, the store and achievements'
+            'playerctl: the media controls in the Guide'
+            'networkmanager: the network settings'
+            'libpulse: the sound settings'
+            'libkscreen: the display settings'
+            'bluez-utils: turning off Bluetooth controllers'
+            'udisks2: removing drives'
+            'discover: installing apps that are missing'
+            'gnome-software: installing apps that are missing')
+provides=('redash360')
+conflicts=('redash360')
+backup=('etc/sddm.conf.d/zz-redash360.conf'
+        'usr/share/sddm/themes/redash360/theme.conf')
+install=redash360.install
+source=("git+$url.git#branch=main")
+sha256sums=('SKIP')
+
+pkgver() {
+    cd ReDash360
+    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+build() {
+    # Both sessions go in, whether or not Plasma, Hyprland and uwsm are
+    # installed where this is built: the login screen only lists the ones
+    # you have
+    cmake -B build -S ReDash360 \
+        -DCMAKE_BUILD_TYPE=None \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DSTARTPLASMA_WAYLAND=/usr/bin/startplasma-wayland \
+        -DPLASMA_DBUS_RUN_SESSION=/usr/lib/plasma-dbus-run-session-if-needed \
+        -DUWSM=/usr/bin/uwsm \
+        -DHYPRLAND_SESSION=/usr/share/wayland-sessions/hyprland.desktop \
+        -Wno-dev
+    cmake --build build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
