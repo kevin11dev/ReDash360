@@ -24,7 +24,6 @@ QtObject {
     // The rest of the gamer card, all optional, like on the 360
     readonly property string motto: saved.motto
     readonly property string realName: saved.realName
-    readonly property string place: saved.place           // "Location" on the 360
     readonly property string bio: saved.bio
     readonly property string zone: saved.zone !== "" ? saved.zone : "Recreation"
 
@@ -52,7 +51,7 @@ QtObject {
     onAvatarChanged: Qt.callLater(shareWithLogin)
     Component.onCompleted: Qt.callLater(shareWithLogin)
 
-    // "motto", "realName", "place", "bio" or "zone"
+    // "motto", "realName", "bio" or "zone"
     function setDetail(field, value) {
         saved[field] = value.trim()
     }
@@ -64,7 +63,6 @@ QtObject {
         property string avatar                  // image file/URL, empty = none
         property string motto
         property string realName
-        property string place                   // not "location": Settings has one of its own
         property string bio
         property string zone                    // empty = Recreation
     }

@@ -266,7 +266,6 @@ FocusScope {
                 transformOrigin: Item.TopLeft
                 input: controllersScreen.input
                 player: controllersScreen.pad ? controllersScreen.pad.player : 0
-                family: controllersScreen.family
             }
 
             Column {
@@ -334,7 +333,6 @@ FocusScope {
             x: 105; y: 185
             input: controllersScreen.input
             player: controllersScreen.pad ? controllersScreen.pad.player : 0
-            family: controllersScreen.family
         }
 
         // The numbers: where each stick is, and how far the triggers are pulled

@@ -94,7 +94,6 @@ FocusScope {
         motto: { title: "Change Motto", maxLength: 21,
                  prompt: "Enter your motto. Mottos can be up to 21 characters long." },
         realName: { title: "Change Name", maxLength: 30, prompt: "Enter your name." },
-        place: { title: "Change Location", maxLength: 40, prompt: "Enter where you're from." },
         bio: { title: "Change Bio", maxLength: 200, prompt: "Tell people a little about yourself." },
     })
 
@@ -128,7 +127,6 @@ FocusScope {
             { label: "Motto", edit: "motto" },
             { label: "Avatar", run: () => push(avatarPage()) },
             { label: "Name", edit: "realName" },
-            { label: "Location", edit: "place" },
             { label: "Bio", edit: "bio" },
         ] }
     }
@@ -345,9 +343,7 @@ FocusScope {
                     visible: !profileScreen.current.description
 
                     Detail { text: UserProfile.motto }
-                    Detail {
-                        text: [UserProfile.realName, UserProfile.place].filter(t => t !== "").join("\n")
-                    }
+                    Detail { text: UserProfile.realName }
                     Detail { text: UserProfile.bio !== "" ? UserProfile.bio : "(No bio)" }
                 }
             }
@@ -719,7 +715,7 @@ FocusScope {
         }
     }
 
-    // For typing your gamertag, motto, name, location and bio
+    // For typing your gamertag, motto, name and bio
     Keyboard {
         id: keyboard
         anchors.fill: parent

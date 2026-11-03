@@ -1,11 +1,11 @@
 import QtQuick
 import QtQuick.Shapes
-import QtQuick.Effects
 
-// Test Controller picture: a black Xbox One style controller that shows
-// what yours is doing. Buttons light up while held, the sticks move, the
-// triggers fill as you squeeze them and the squares show the player number.
-// Drawn at 800 x 670; scale it to fit.
+// Test Controller picture: a plain line drawing of a controller, of any make,
+// that shows what yours is doing. Buttons light up while held, the sticks
+// move, the triggers fill as you squeeze them, and a quarter of the ring
+// round the Guide button lights up for the player number, like the 360's
+// Ring of Light. Drawn at 800 x 670; scale it to fit.
 Item {
     id: pad
     width: 800; height: 670
@@ -13,328 +13,249 @@ Item {
     // Gamepad.state() of the controller to show (empty: nothing pressed)
     property var input: ({})
     property int player: 1
-    property string family: "xbox"          // "xbox", "playstation" or "nintendo": face button labels
 
     readonly property var buttons: input.buttons || ({})
-    readonly property color lit: "#6BD12B"
-
-    readonly property color shell: "#050505"
-    readonly property color bumperRim: "#0D0D0D"
-    readonly property color bumperFace: "#1A1A1A"
-    readonly property color triggerLight: "#1A1A1A"
-    readonly property color triggerDark: "#141414"
-    readonly property color ring: "#080808"            // flat ring round the sticks
-    readonly property color ringEdge: "#1E1515"
-    readonly property color hole: "#000000"            // the opening a stick sits in
-    readonly property color knurl: "#383838"
-    readonly property color knurlTick: "#5E5E5E"
-    readonly property color capEdge: "#1A1A1A"
-    readonly property color capTop: "#212121"
-    readonly property color cross: "#141414"
-    readonly property color crossEdge: "#2A2A2A"
-    readonly property color buttonTop: "#141414"
-    readonly property color buttonLip: "#0A0A0A"
-    readonly property color buttonEdge: "#1E1E1E"
-    readonly property color icon: "#6D6B6C"
-    readonly property color square: "#9A9A9A"
-
     readonly property real lt: input.lt || 0
     readonly property real rt: input.rt || 0
 
-    // ---- The controller itself, with a soft shadow under it ----
-    Item {
-        anchors.fill: parent
-        layer.enabled: true
-        layer.samples: 4
-        layer.effect: MultiEffect {
-            shadowEnabled: true
-            shadowColor: "#A0000000"
-            shadowBlur: 0.9
-            shadowVerticalOffset: 14
-        }
+    readonly property color lit: "#6BD12B"
+    readonly property color line: "#1A1A1A"             // every outline
+    readonly property color face: "#55595D"
+    readonly property color underside: "#2E3134"        // seen below the body
+    readonly property color grip: "#4D5155"             // the lines where the grips start
+    readonly property real stroke: 4
 
-        Shape {
-            anchors.fill: parent
-            preferredRendererType: Shape.CurveRenderer
+    readonly property string bodyPath: "M 408.7,178.0 C 397.3,178.0 385.9,178.0 374.5,178.0 "
+                                     + "C 363.1,178.0 351.7,178.0 340.3,178.0 C 329.0,178.0 317.6,178.0 306.2,178.0 "
+                                     + "C 294.8,178.0 283.3,177.5 272.0,178.0 C 260.6,178.4 249.1,178.2 238.1,180.6 "
+                                     + "C 227.1,183.0 216.1,187.2 206.2,192.5 C 196.2,197.7 186.5,204.4 178.5,212.3 "
+                                     + "C 170.6,220.1 164.0,229.8 158.4,239.6 C 152.7,249.3 149.0,260.3 144.7,270.9 "
+                                     + "C 140.5,281.4 136.6,292.1 132.7,302.8 C 128.8,313.5 124.9,324.2 121.2,335.0 "
+                                     + "C 117.5,345.8 114.0,356.6 110.6,367.5 C 107.1,378.3 103.7,389.2 100.5,400.1 "
+                                     + "C 97.3,411.0 94.2,422.0 91.3,433.0 C 88.4,444.0 85.6,455.1 83.3,466.2 "
+                                     + "C 80.9,477.4 78.7,488.6 77.4,499.9 C 76.1,511.2 75.3,522.6 75.6,533.9 "
+                                     + "C 75.8,545.2 76.3,556.9 79.1,567.8 C 81.8,578.7 85.1,590.9 92.0,599.1 "
+                                     + "C 98.9,607.3 110.1,613.7 120.5,616.9 C 130.8,620.1 143.8,621.0 154.1,618.2 "
+                                     + "C 164.5,615.3 174.1,607.2 182.4,599.7 C 190.7,592.2 196.8,582.0 203.8,573.1 "
+                                     + "C 210.8,564.1 217.2,554.6 224.4,545.8 C 231.5,536.9 238.6,527.8 246.7,520.0 "
+                                     + "C 254.8,512.1 263.2,503.5 273.2,498.6 C 283.1,493.7 295.0,492.0 306.2,490.7 "
+                                     + "C 317.4,489.3 329.0,490.6 340.3,490.6 C 351.7,490.6 363.1,490.6 374.5,490.6 "
+                                     + "C 385.9,490.6 397.3,490.6 408.7,490.6 C 420.1,490.6 431.5,490.6 442.9,490.6 "
+                                     + "C 454.3,490.6 465.7,490.6 477.0,490.6 C 488.4,490.6 500.0,489.3 511.2,490.7 "
+                                     + "C 522.4,492.0 534.3,493.7 544.2,498.6 C 554.2,503.5 562.5,512.1 570.7,520.0 "
+                                     + "C 578.8,527.8 585.9,536.9 593.0,545.8 C 600.2,554.6 606.6,564.1 613.6,573.1 "
+                                     + "C 620.6,582.0 626.7,592.2 635.0,599.7 C 643.3,607.2 652.9,615.3 663.3,618.2 "
+                                     + "C 673.6,621.0 686.5,620.1 696.9,616.9 C 707.3,613.7 718.5,607.3 725.4,599.1 "
+                                     + "C 732.3,590.9 735.6,578.7 738.3,567.8 C 741.1,556.9 741.6,545.2 741.8,533.9 "
+                                     + "C 742.1,522.6 741.3,511.2 740.0,499.9 C 738.7,488.6 736.4,477.4 734.1,466.2 "
+                                     + "C 731.8,455.1 729.0,444.0 726.1,433.0 C 723.2,422.0 720.1,411.0 716.9,400.1 "
+                                     + "C 713.7,389.2 710.2,378.3 706.8,367.5 C 703.3,356.6 699.9,345.8 696.2,335.0 "
+                                     + "C 692.5,324.2 688.6,313.5 684.7,302.8 C 680.8,292.1 676.9,281.4 672.7,270.9 "
+                                     + "C 668.4,260.3 664.6,249.3 659.0,239.6 C 653.4,229.8 646.8,220.1 638.9,212.3 "
+                                     + "C 630.9,204.4 621.2,197.7 611.2,192.5 C 601.3,187.2 590.3,183.0 579.3,180.6 "
+                                     + "C 568.3,178.2 556.7,178.4 545.4,178.0 C 534.1,177.5 522.6,178.0 511.2,178.0 "
+                                     + "C 499.8,178.0 488.4,178.0 477.0,178.0 C 465.7,178.0 454.3,178.0 442.9,178.0 "
+                                     + "C 431.5,178.0 420.1,178.0 408.7,178.0 Z"
 
-            // Triggers: the inner half a shade darker, like the real thing
-            ShapePath {
-                strokeColor: "transparent"
-                fillGradient: LinearGradient {
-                    x1: 177; y1: 0; x2: 265; y2: 0
-                    GradientStop { position: 0.52; color: pad.triggerLight }
-                    GradientStop { position: 0.53; color: pad.triggerDark }
-                }
-                PathSvg { path: "M 264.8,30 L 264.8,128 Q 264.8,131.5 261,132 L 181.5,141.6 Q 177.2,142 177.4,137.5 C 178,112 183,86 192,62 C 200,41 220,21 250,20 C 259,19.7 264.8,22 264.8,30 Z" }
-            }
-            ShapePath {
-                strokeColor: "transparent"
-                fillGradient: LinearGradient {
-                    x1: 623; y1: 0; x2: 535; y2: 0
-                    GradientStop { position: 0.52; color: pad.triggerLight }
-                    GradientStop { position: 0.53; color: pad.triggerDark }
-                }
-                PathSvg { path: "M 535.2,30 L 535.2,128 Q 535.2,131.5 539,132 L 618.5,141.6 Q 622.8,142 622.6,137.5 C 622,112 617,86 608,62 C 600,41 580,21 550,20 C 541,19.7 535.2,22 535.2,30 Z" }
-            }
-        }
-        TriggerFill { path: "M 264.8,30 L 264.8,128 Q 264.8,131.5 261,132 L 181.5,141.6 Q 177.2,142 177.4,137.5 C 178,112 183,86 192,62 C 200,41 220,21 250,20 C 259,19.7 264.8,22 264.8,30 Z"; amount: pad.lt }
-        TriggerFill { path: "M 535.2,30 L 535.2,128 Q 535.2,131.5 539,132 L 618.5,141.6 Q 622.8,142 622.6,137.5 C 622,112 617,86 608,62 C 600,41 580,21 550,20 C 541,19.7 535.2,22 535.2,30 Z"; amount: pad.rt }
-        Shape {
-            anchors.fill: parent
-            preferredRendererType: Shape.CurveRenderer
-
-            // The body, one solid colour
-            ShapePath {
-                strokeColor: "transparent"
-                fillColor: pad.shell
-                PathSvg { path: "M 400,167 L 304,167 C 298,166.5 293,163 285,158.5 C 278,154.5 271,150 262,149 C 250,148 232,150 216,154.2 C 196,159.6 166,173 151,181.2 C 145,184.6 142,188 140.5,193 L 137.8,204.5 C 136.8,207.6 133,210.5 128,213.6 C 121,218 114,223 111,231.2 C 101,256 72,333 55.2,385.2 C 40,433 25,490 25,535 C 25,580 37,614 62,633 C 75,645 92,651 103.5,649.8 C 112,649 122,639 132.5,629.5 C 160,602 190,570 210,552 C 228,535.5 248,524 268,520.8 L 400,520.8 L 532,520.8 C 552,524 572,535.5 590,552 C 610,570 640,602 667.5,629.5 C 678,639 688,649 696.5,649.8 C 708,651 725,645 738,633 C 763,614 775,580 775,535 C 775,490 760,433 744.8,385.2 C 728,333 699,256 689,231.2 C 686,223 679,218 672,213.6 C 667,210.5 663.2,207.6 662.2,204.5 L 659.5,193 C 658,188 655,184.6 649,181.2 C 634,173 604,159.6 584,154.2 C 568,150 550,148 538,149 C 529,150 522,154.5 515,158.5 C 507,163 502,166.5 496,167 L 400,167 Z" }
-            }
-
-            // Bumpers: a darker rim along the top edge, then the face
-            ShapePath {
-                strokeColor: "transparent"
-                fillColor: pad.buttons.lb ? Qt.darker(pad.lit, 1.4) : pad.bumperRim
-                PathSvg { path: "M 298.5,166.5 C 290,161 280,155 270,151 C 262,148.5 250,148.5 242,149.2 C 222,151 196,160 170,171.5 C 156,178 146,184 142.5,190 L 137.3,206.8 C 160,198 190,187 212,181.8 C 228,178 244,175.5 252,177 C 262,179 272,190 281.5,200 L 296.8,172 Q 298.5,168.5 298.5,166.5 Z" }
-            }
-            ShapePath {
-                strokeColor: "transparent"
-                fillColor: pad.buttons.rb ? Qt.darker(pad.lit, 1.4) : pad.bumperRim
-                PathSvg { path: "M 501.5,166.5 C 510,161 520,155 530,151 C 538,148.5 550,148.5 558,149.2 C 578,151 604,160 630,171.5 C 644,178 654,184 657.5,190 L 662.7,206.8 C 640,198 610,187 588,181.8 C 572,178 556,175.5 548,177 C 538,179 528,190 518.5,200 L 503.2,172 Q 501.5,168.5 501.5,166.5 Z" }
-            }
-            ShapePath {
-                strokeColor: "transparent"
-                fillColor: pad.buttons.lb ? pad.lit : pad.bumperFace
-                PathSvg { path: "M 296.5,172.8 C 290,168 283,163 276.8,159.5 C 270,156 258,153.6 250.5,154 C 240,154.5 215,162 189,171 C 170,178 154,184 148,187.5 C 144,189.5 142.5,191 142,193 L 137.3,206.8 C 160,198 190,187 212,181.8 C 228,178 244,175.5 252,177 C 262,179 272,190 281.5,200 L 296.5,172.8 Z" }
-            }
-            ShapePath {
-                strokeColor: "transparent"
-                fillColor: pad.buttons.rb ? pad.lit : pad.bumperFace
-                PathSvg { path: "M 503.5,172.8 C 510,168 517,163 523.2,159.5 C 530,156 542,153.6 549.5,154 C 560,154.5 585,162 611,171 C 630,178 646,184 652,187.5 C 656,189.5 657.5,191 658,193 L 662.7,206.8 C 640,198 610,187 588,181.8 C 572,178 556,175.5 548,177 C 538,179 528,190 518.5,200 L 503.5,172.8 Z" }
-            }
-        }
-    }
-
-    // ---- Guide: no logo, just a glow where it is while it's held ----
-    Glow { x: 400; y: 216; r: 46; visible: !!pad.buttons.guide }
-
-    // ---- Sticks and d-pad ----
-    Stick { x: 211.3; y: 300.8; dx: pad.input.leftX || 0; dy: pad.input.leftY || 0; pressed: !!pad.buttons.leftStick }
-    Stick { x: 498.8; y: 413.8; dx: pad.input.rightX || 0; dy: pad.input.rightY || 0; pressed: !!pad.buttons.rightStick }
-    DPad { x: 303; y: 420.5 }
-
-    // ---- View, the player squares, Menu ----
-    SmallButton { x: 346.9; y: 299.6; kind: pad.family === "playstation" ? "create" : pad.family === "nintendo" ? "minus" : "view"; pressed: !!pad.buttons.back }
-    SmallButton { x: 453.1; y: 299.6; kind: pad.family === "playstation" ? "options" : pad.family === "nintendo" ? "plus" : "menu"; pressed: !!pad.buttons.start }
-    Item {
-        x: 400; y: 301
-        Repeater {
-            model: 4                            // 1 top left, 2 top right, 3 bottom left, 4 bottom right
-            Item {
-                x: index % 2 ? 9.5 : -9.5
-                y: index < 2 ? -9.5 : 9.5
-                readonly property bool on: index + 1 === pad.player
-                Glow { r: 16; tint: "white"; visible: parent.on }
-                Rectangle {
-                    x: -4.5; y: -4.5; width: 9; height: 9
-                    color: parent.on ? "white" : "transparent"
-                    border.color: parent.on ? "white" : pad.square
-                    border.width: 1.5
-                    antialiasing: true
-                }
-            }
-        }
-    }
-
-    // ---- Face buttons. SDL names them by position (a = bottom, b = right,
-    // x = left, y = top), so only the labels change with the family ----
-    Face { x: 591.4; y: 245.8; which: "top"; pressed: !!pad.buttons.y }
-    Face { x: 540.9; y: 296.3; which: "left"; pressed: !!pad.buttons.x }
-    Face { x: 641.9; y: 296.3; which: "right"; pressed: !!pad.buttons.b }
-    Face { x: 591.4; y: 346.8; which: "bottom"; pressed: !!pad.buttons.a }
-
-    // ---- Pieces ----
-
-    // A trigger's fill: rises from the bottom as it's squeezed. (A solid
-    // shape cut off at the right height, not a gradient: Qt shares one
-    // gradient between shapes whose gradients have the same colours, so
-    // both triggers would show the same amount.)
-    component TriggerFill: Item {
-        id: fill
-        property string path
-        property real amount
-        anchors.fill: parent
-        visible: amount > 0.02
-        Item {
-            y: 142 - 122 * Math.min(fill.amount, 1)
-            width: parent.width
-            height: 143 - y
-            clip: true
-            Shape {
-                y: -parent.y
-                width: fill.width; height: fill.height
-                preferredRendererType: Shape.CurveRenderer
-                ShapePath {
-                    strokeColor: "transparent"
-                    fillColor: pad.lit
-                    PathSvg { path: fill.path }
-                }
-            }
-        }
-    }
-
-    // A soft round glow around (0, 0)
-    component Glow: Shape {
-        id: glow
-        property real r: 40
-        property color tint: pad.lit
-        x: -r; y: -r; width: 2 * r; height: 2 * r
+    // ---- The body: its underside showing below it, then the top, with the
+    // lines where the grips start ----
+    Shape {
+        y: 27
+        width: pad.width; height: pad.height
         preferredRendererType: Shape.CurveRenderer
         ShapePath {
             strokeColor: "transparent"
-            fillGradient: RadialGradient {
-                centerX: glow.r; centerY: glow.r; centerRadius: glow.r
-                focalX: glow.r; focalY: glow.r
-                GradientStop { position: 0; color: Qt.rgba(glow.tint.r, glow.tint.g, glow.tint.b, 0.7) }
-                GradientStop { position: 0.45; color: Qt.rgba(glow.tint.r, glow.tint.g, glow.tint.b, 0.28) }
-                GradientStop { position: 1; color: Qt.rgba(glow.tint.r, glow.tint.g, glow.tint.b, 0) }
-            }
-            PathAngleArc { centerX: glow.r; centerY: glow.r; radiusX: glow.r; radiusY: glow.r; startAngle: 0; sweepAngle: 360 }
+            fillColor: pad.underside
+            PathSvg { path: pad.bodyPath }
+        }
+    }
+    Shape {
+        anchors.fill: parent
+        preferredRendererType: Shape.CurveRenderer
+        ShapePath {
+            strokeColor: "transparent"
+            fillColor: pad.face
+            PathSvg { path: pad.bodyPath }
+        }
+        ShapePath {
+            strokeColor: pad.grip
+            strokeWidth: 3.5
+            fillColor: "transparent"
+            capStyle: ShapePath.RoundCap
+            PathSvg { path: "M 113.9,357.2 L 272.1,499.6 M 703.5,357.2 L 545.3,499.6" }
+        }
+        ShapePath {
+            strokeColor: pad.line
+            strokeWidth: pad.stroke
+            fillColor: "transparent"
+            joinStyle: ShapePath.RoundJoin
+            PathSvg { path: pad.bodyPath }
         }
     }
 
-    // A circle around (0, 0)
-    component Circle: Rectangle {
-        property real r
-        x: -r; y: -r; width: 2 * r; height: 2 * r; radius: r
+    // ---- Triggers and bumpers, above the body ----
+    Trigger { x: 259.75; y: 39.65; amount: pad.lt }
+    Trigger { x: 510.95; y: 39.65; amount: pad.rt }
+    Bumper { x: 239.6; y: 129.85; pressed: !!pad.buttons.lb }
+    Bumper { x: 511.1; y: 129.85; pressed: !!pad.buttons.rb }
+
+    // ---- Left stick and the face buttons, the d-pad and the right stick.
+    // SDL names the face buttons by where they are (a = bottom, b = right,
+    // x = left, y = top), so these light up right on any make ----
+    Stick { x: 242.7; y: 283.0; dx: pad.input.leftX || 0; dy: pad.input.leftY || 0; pressed: !!pad.buttons.leftStick }
+    Petals {
+        x: 574.7; y: 283.0
+        topHeld: !!pad.buttons.y; rightHeld: !!pad.buttons.b; bottomHeld: !!pad.buttons.a; leftHeld: !!pad.buttons.x
+    }
+    Petals {
+        x: 322.7; y: 402.4
+        topHeld: !!pad.buttons.up; rightHeld: !!pad.buttons.right; bottomHeld: !!pad.buttons.down; leftHeld: !!pad.buttons.left
+    }
+    Stick { x: 494.7; y: 402.4; dx: pad.input.rightX || 0; dy: pad.input.rightY || 0; pressed: !!pad.buttons.rightStick }
+
+    // ---- Back, Guide and Start ----
+    Button { x: 351.7; y: 286.0; r: 15.1; pressed: !!pad.buttons.back }
+    Button { x: 408.7; y: 286.0; r: 20.3; pressed: !!pad.buttons.guide }
+    Button { x: 465.7; y: 286.0; r: 15.1; pressed: !!pad.buttons.start }
+
+    // The player number: player 1's quarter is top left, 2 top right,
+    // 3 bottom left and 4 bottom right
+    Shape {
+        x: 408.7 - 40; y: 286.0 - 40
+        width: 80; height: 80
+        visible: pad.player >= 1 && pad.player <= 4
+        preferredRendererType: Shape.CurveRenderer
+        ShapePath {
+            strokeColor: pad.lit
+            strokeWidth: 5
+            fillColor: "transparent"
+            capStyle: ShapePath.RoundCap
+            PathAngleArc {
+                centerX: 40; centerY: 40
+                radiusX: 30; radiusY: 30
+                startAngle: [190, 280, 100, 10][Math.max(0, Math.min(pad.player, 4) - 1)]
+                sweepAngle: 70
+            }
+        }
     }
 
+    // ---- Pieces ----
+
+    // A circle round (0, 0), r to the middle of its outline
+    component Circle: Rectangle {
+        property real r
+        x: -r - pad.stroke / 2; y: x
+        width: 2 * r + pad.stroke; height: width
+        radius: width / 2
+        color: pad.face
+        border.color: pad.line
+        border.width: pad.stroke
+    }
+
+    component Button: Item {
+        id: button
+        property real r
+        property bool pressed
+        Circle { r: button.r; color: button.pressed ? pad.lit : pad.face }
+    }
+
+    // A stick in its ring, moved the way it's pushed
     component Stick: Item {
         id: stick
         property real dx                        // -1 to 1, right and down are positive
         property real dy
         property bool pressed
-
-        Circle { r: 69; color: pad.ring; border.color: pad.ringEdge; border.width: 1 }
-        Circle { r: 55; color: pad.hole }
-        Item {                                  // the cap, moved the way the stick is pushed
-            x: stick.dx * 14; y: stick.dy * 14
-            Glow { r: 64; visible: stick.pressed }
-            Circle { r: 41; color: stick.pressed ? pad.lit : pad.knurl }
-            Repeater {                          // the grip ridges round the edge
-                model: 64
-                Rectangle {
-                    x: -0.6; y: -40
-                    width: 1.2; height: 8
-                    color: stick.pressed ? Qt.lighter(pad.lit, 1.35) : pad.knurlTick
-                    transform: Rotation { origin.x: 0.6; origin.y: 40; angle: index * 360 / 64 }
-                }
-            }
-            Circle { r: 31; color: stick.pressed ? Qt.darker(pad.lit, 1.5) : pad.capEdge }
-            Circle { r: 26; color: stick.pressed ? Qt.darker(pad.lit, 1.2) : pad.capTop }
+        // pushed into a corner it goes no further than pushed straight
+        readonly property real reach: Math.max(1, Math.hypot(dx, dy))
+        Circle { r: 57.4 }
+        Item {
+            x: stick.dx / stick.reach * 9; y: stick.dy / stick.reach * 9
+            Circle { r: 42.9; color: stick.pressed ? pad.lit : pad.face }
         }
     }
 
-    component DPad: Item {
-        Circle { r: 60; color: pad.hole; border.color: pad.ringEdge; border.width: 1 }
-        Shape {
-            x: -60; y: -60; width: 120; height: 120
-            preferredRendererType: Shape.CurveRenderer
-            ShapePath {
-                strokeColor: pad.crossEdge
-                strokeWidth: 2.5
-                fillColor: pad.cross
-                joinStyle: ShapePath.RoundJoin
-                PathSvg {
-                    path: "M 44,12 Q 44,6 50,6 L 70,6 Q 76,6 76,12 L 76,44 L 108,44 Q 114,44 114,50 L 114,70 Q 114,76 108,76 "
-                        + "L 76,76 L 76,108 Q 76,114 70,114 L 50,114 Q 44,114 44,108 L 44,76 L 12,76 Q 6,76 6,70 L 6,50 Q 6,44 12,44 L 44,44 Z"
-                }
-            }
-        }
-        Arm { x: -14; y: -52; width: 28; height: 34; pressed: !!pad.buttons.up }
-        Arm { x: -14; y: 18; width: 28; height: 34; pressed: !!pad.buttons.down }
-        Arm { x: -52; y: -14; width: 34; height: 28; pressed: !!pad.buttons.left }
-        Arm { x: 18; y: -14; width: 34; height: 28; pressed: !!pad.buttons.right }
+    // Four buttons in a ring: the face buttons, or the d-pad
+    component Petals: Item {
+        id: petals
+        property bool topHeld
+        property bool rightHeld
+        property bool bottomHeld
+        property bool leftHeld
+        Circle { r: 57.4 }
+        Petal { rotation: 0; pressed: petals.topHeld }
+        Petal { rotation: 90; pressed: petals.rightHeld }
+        Petal { rotation: 180; pressed: petals.bottomHeld }
+        Petal { rotation: 270; pressed: petals.leftHeld }
     }
 
-    component Arm: Rectangle {
+    // One of them, at the top of a 90 x 90 box round the ring's centre
+    // (turned to its place by rotation)
+    component Petal: Shape {
+        id: petal
         property bool pressed
-        radius: 4
-        visible: pressed
-        color: pad.lit
-    }
-
-    component SmallButton: Item {
-        id: small
-        property string kind
-        property bool pressed
-        readonly property color mark: pressed ? "#10240A" : pad.icon
-
-        Glow { r: 34; visible: small.pressed }
-        Circle { r: 18; color: small.pressed ? pad.lit : pad.buttonLip; border.color: small.pressed ? Qt.darker(pad.lit, 1.3) : pad.buttonEdge; border.width: 1.5 }
-        // view: two overlapping windows
-        Rectangle { visible: small.kind === "view"; x: -8; y: -6; width: 10; height: 8; color: "transparent"; border.color: small.mark; border.width: 1.5; antialiasing: true }
-        Rectangle { visible: small.kind === "view"; x: -3; y: -2; width: 10; height: 8; color: small.pressed ? pad.lit : pad.buttonLip; border.color: small.mark; border.width: 1.5; antialiasing: true }
-        // menu / options: three lines
-        Column {
-            visible: small.kind === "menu" || small.kind === "options"
-            x: -7; y: -5; spacing: 2.5
-            Repeater { model: 3; Rectangle { width: 14; height: 1.6; color: small.mark } }
-        }
-        // create: three short upright lines
-        Row {
-            visible: small.kind === "create"
-            x: -5.5; y: -6; spacing: 2.6
-            Repeater { model: 3; Rectangle { width: 1.8; height: 12; color: small.mark } }
-        }
-        // minus / plus
-        Rectangle { visible: small.kind === "minus" || small.kind === "plus"; x: -6; y: -1; width: 12; height: 2; color: small.mark }
-        Rectangle { visible: small.kind === "plus"; x: -1; y: -6; width: 2; height: 12; color: small.mark }
-    }
-
-    component Face: Item {
-        id: face
-        property string which                   // where it sits: top, left, right, bottom
-        property bool pressed
-
-        // label and colour for each family, by position
-        readonly property var looks: ({
-            xbox: { top: ["Y", "#FCEE21"], left: ["X", "#0071BC"], right: ["B", "#C1272D"], bottom: ["A", "#39B54A"] },
-            playstation: { top: ["triangle", "#3DC6B4"], left: ["square", "#E07ED2"], right: ["circle", "#FF5A5A"], bottom: ["cross", "#7FA8FF"] },
-            nintendo: { top: ["X", ""], left: ["Y", ""], right: ["A", ""], bottom: ["B", ""] }
-        })
-        readonly property var look: (looks[pad.family] || looks.xbox)[which]
-        readonly property color tint: look[1] !== "" ? look[1] : pad.lit
-        readonly property color mark: pressed ? "#0A0A0A" : look[1] !== "" ? look[1] : "#D8D8D8"
-
-        Glow { r: 50; tint: face.tint; visible: face.pressed }
-        Circle { y: -r + 4; r: 27; color: pad.buttonLip; border.color: pad.buttonEdge; border.width: 1 }   // the side, seen below
-        Circle { r: 26; color: face.pressed ? face.tint : pad.buttonTop; border.color: face.pressed ? Qt.darker(face.tint, 1.2) : pad.buttonEdge; border.width: 1 }
-        Text {
-            anchors.centerIn: parent
-            visible: face.look[0].length === 1
-            text: face.look[0]
-            color: face.mark
-            font.pixelSize: 36
-            font.weight: Font.DemiBold
-        }
-        Shape {
-            anchors.centerIn: parent
-            width: 22; height: 22
-            visible: face.look[0].length > 1
-            preferredRendererType: Shape.CurveRenderer
-            ShapePath {
-                strokeColor: face.mark
-                strokeWidth: 2.6
-                fillColor: "transparent"
-                joinStyle: ShapePath.RoundJoin
-                capStyle: ShapePath.RoundCap
-                PathSvg {
-                    path: face.look[0] === "triangle" ? "M 11,1.5 L 21,19 L 1,19 Z"
-                        : face.look[0] === "square" ? "M 2,2 L 20,2 L 20,20 L 2,20 Z"
-                        : face.look[0] === "circle" ? "M 11,1.5 A 9.5,9.5 0 1 1 10.99,1.5 Z"
-                        : "M 2,2 L 20,20 M 20,2 L 2,20"
-                }
+        x: -45; y: -45
+        width: 90; height: 90
+        preferredRendererType: Shape.CurveRenderer
+        ShapePath {
+            strokeColor: pad.line
+            strokeWidth: pad.stroke
+            fillColor: petal.pressed ? pad.lit : pad.face
+            joinStyle: ShapePath.RoundJoin
+            PathSvg {
+                path: "M 45.0,4.2 C 42.7,4.2 40.3,4.2 38.1,4.5 C 36.0,4.8 33.8,5.2 31.9,6.1 "
+                      + "C 30.0,6.9 27.7,8.1 26.7,9.8 C 25.8,11.4 25.8,14.0 26.2,16.0 "
+                      + "C 26.7,17.9 28.2,19.8 29.5,21.5 C 30.8,23.1 32.5,24.5 34.1,26.0 "
+                      + "C 35.7,27.4 37.3,29.0 39.1,30.0 C 40.9,31.1 43.0,32.3 45.0,32.3 "
+                      + "C 47.0,32.3 49.1,31.1 50.9,30.0 C 52.7,29.0 54.3,27.4 55.9,26.0 "
+                      + "C 57.5,24.5 59.2,23.1 60.5,21.5 C 61.8,19.8 63.3,17.9 63.8,16.0 "
+                      + "C 64.2,14.0 64.2,11.4 63.3,9.8 C 62.3,8.1 60.0,6.9 58.1,6.1 C 56.2,5.2 54.0,4.8 51.9,4.5 "
+                      + "C 49.7,4.2 47.3,4.2 45.0,4.2 Z"
             }
         }
+    }
+
+    // A trigger, round at the top, filling up from the bottom as it's squeezed
+    component Trigger: Item {
+        id: trigger
+        property real amount                    // 0 to 1
+        width: 46.7; height: 68.3
+
+        Rectangle {
+            anchors.fill: parent
+            topLeftRadius: width / 2; topRightRadius: width / 2
+            bottomLeftRadius: 11.7; bottomRightRadius: 11.7
+            color: pad.face
+        }
+        Item {
+            anchors.bottom: parent.bottom
+            width: parent.width
+            height: parent.height * Math.min(trigger.amount, 1)
+            clip: true
+            visible: trigger.amount > 0.02
+            Rectangle {
+                anchors.bottom: parent.bottom
+                width: trigger.width; height: trigger.height
+                topLeftRadius: width / 2; topRightRadius: width / 2
+                bottomLeftRadius: 11.7; bottomRightRadius: 11.7
+                color: pad.lit
+            }
+        }
+        Rectangle {
+            anchors.fill: parent
+            topLeftRadius: width / 2; topRightRadius: width / 2
+            bottomLeftRadius: 11.7; bottomRightRadius: 11.7
+            color: "transparent"
+            border.color: pad.line
+            border.width: pad.stroke
+        }
+    }
+
+    component Bumper: Rectangle {
+        property bool pressed
+        width: 66.6; height: 23.9
+        radius: height / 2
+        color: pressed ? pad.lit : pad.face
+        border.color: pad.line
+        border.width: pad.stroke
     }
 }
