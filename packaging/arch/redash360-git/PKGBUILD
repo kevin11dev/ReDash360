@@ -9,7 +9,7 @@ pkgrel=1
 pkgdesc="Xbox 360-style desktop shell: a login screen like the 360's Sign In, then the dashboard as your desktop"
 arch=('x86_64' 'aarch64')
 url="https://github.com/KevinKoortzen/ReDash360"
-license=('unknown')
+license=('LicenseRef-PolyForm-Strict-1.0.0')
 depends=('qt6-base' 'qt6-declarative' 'qt6-multimedia' 'qt6-svg' 'sdl2' 'layer-shell-qt' 'sddm')
 makedepends=('git' 'cmake')
 optdepends=('hyprland: pausing and closing games from the Guide'
@@ -54,4 +54,5 @@ build() {
 
 package() {
     DESTDIR="$pkgdir" cmake --install build
+    install -Dm644 ReDash360/LICENSE.md "$pkgdir/usr/share/licenses/$pkgname/LICENSE.md"
 }

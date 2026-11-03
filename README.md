@@ -148,3 +148,10 @@ Creator with a Qt 6.10 MinGW kit. It looks for SDL2 in
 `C:\SDL2\x86_64-w64-mingw32`: that folder comes from SDL2's MinGW development
 download. Put `SDL2.dll` next to `appReDash360.exe`. The login screen and the
 sessions are Linux only.
+
+## License
+
+ReDash360 is under the [PolyForm Strict License 1.0.0](LICENSE.md). You can
+install and use it for free for anything that isn't commercial, but you may not
+sell it, share copies of it, or make changed versions of it. If you'd like to
+do something the license doesn't allow, ask me.
