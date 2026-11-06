@@ -19,7 +19,8 @@ FocusScope {
         { label: "Apps", icon: "apps" },
         { label: "Steam", icon: "controller" },
         { label: "Heroic", icon: "controller" },
-        { label: "Faugus", icon: "controller" }
+        { label: "Faugus", icon: "controller" },
+        { label: "Emulators", icon: "console" }
     ]
     readonly property var sorts: [
         { label: "Recently Pinned", icon: "clock" },
@@ -39,6 +40,8 @@ FocusScope {
             list = list.filter(item => item.kind === "game")
         else if (filter === "Apps")
             list = list.filter(item => item.kind === "app")
+        else if (filter === "Emulators")
+            list = list.filter(item => item.kind === "game" && GameLibrary.find(item.command).system)
         else if (filter !== "All Pins")
             list = list.filter(item => sourceOf(item) === filter)
         if (sort === "A-Z")

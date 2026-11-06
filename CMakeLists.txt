@@ -96,6 +96,7 @@ qt_add_qml_module(appReDash360
         src/gamepad.h src/gamepad.cpp
         src/launcher.h src/launcher.cpp
         src/gamelibrary.h src/gamelibrary.cpp
+        src/roms.h src/roms.cpp
         src/pointer.h src/pointer.cpp
         src/applibrary.h src/applibrary.cpp
         src/achievements.h src/achievements.cpp

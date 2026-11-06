@@ -1,4 +1,5 @@
 #include "gamelibrary.h"
+#include "roms.h"
 
 #include <QDir>
 #include <QDirIterator>
@@ -51,7 +52,8 @@ QVariantMap toMap(const Game &game){
         {"command", game.command},
         {"cover", game.cover},
         {"banner", game.banner},
-        {"hero", game.hero}
+        {"hero", game.hero},
+        {"system", game.system}
     };
 }
 
@@ -118,6 +120,7 @@ void GameLibrary::refresh()
     QList<Game> games = scanSteam();
     games += scanHeroic();
     games += scanFaugus();
+    games += scanRoms();
 
     std::sort(games.begin(), games.end(), [](const Game &a, const Game &b) {
         return a.name.compare(b.name, Qt::CaseInsensitive) < 0;

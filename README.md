@@ -23,8 +23,9 @@ sounds.
   gamer picture, and the on-screen keyboard for passwords.
 - **The dashboard as your desktop**, on top of Hyprland or KDE Plasma.
 - **The 360's tabs**: search, home, social, games, apps and settings.
-- **Your games** from Steam, Heroic and Faugus, with four slots for the ones
-  you play most, your recent games, and Steam achievements.
+- **Your games** from Steam, Heroic and Faugus, and your ROMs played with
+  the emulators you have, with four slots for the ones you play most, your
+  recent games, and Steam achievements.
 - **Your apps**, and Get for the ones you don't have yet (through Discover or
   GNOME Software).
 - **Add-ons**: emulators, launchers and other apps for gaming.
@@ -102,6 +103,39 @@ You can also run ReDash360 as an app in your normal desktop session. Settings >
 Preferences > Start Automatically opens it every time you sign in. Only one
 dashboard runs at a time: starting it again brings the running one to the
 front, and `appReDash360 --replace` replaces it instead.
+
+## Your ROMs
+
+Put your games for other consoles in `~/ROMs`, a folder per console, and they
+show up in My Games next to your Steam, Heroic and Faugus games, with box art
+from libretro's collection. EmuDeck's `~/Emulation/roms` and RetroDECK's
+`~/retrodeck/roms` work too.
+
+| Folder | Console | Played with |
+|--------|---------|-------------|
+| `nes`, `snes`, `n64` | NES, SNES, N64 | RetroArch |
+| `gb`, `gbc`, `gba` | Game Boy, Color, Advance | mGBA, or RetroArch |
+| `nds` | Nintendo DS | melonDS, or RetroArch |
+| `gc`, `wii` | GameCube, Wii | Dolphin, or RetroArch |
+| `wiiu` | Wii U | Cemu |
+| `genesis`, `mastersystem`, `gamegear`, `segacd` | Sega | RetroArch |
+| `saturn`, `dreamcast` | Saturn, Dreamcast | RetroArch |
+| `psx` | PlayStation | RetroArch |
+| `ps2` | PlayStation 2 | PCSX2, or RetroArch |
+| `ps3` | PlayStation 3 (a folder per game) | RPCS3 |
+| `psp` | PSP | PPSSPP, or RetroArch |
+| `xbox`, `xbox360` | Xbox, Xbox 360 | xemu, Xenia |
+| `pcengine`, `atari2600` | PC Engine, Atari 2600 | RetroArch |
+| `dos` | DOS | DOSBox Staging, or RetroArch |
+| `scummvm` | ScummVM (a folder per game) | ScummVM |
+
+Get the emulators from Settings > Add-ons; native installs and Flatpaks both
+work. RetroArch needs a core for each console (Main Menu > Online Updater >
+Core Downloader), and some consoles need their BIOS files in RetroArch's
+`system` folder. A game shows up once something you have can play it, and My
+Games looks again every time you open it. Games with more than one disc go
+together in a `.m3u` playlist, which shows as one game. Box art you already
+have from ES-DE or EmuDeck is used first.
 
 ## Your pictures and sounds
 

@@ -28,7 +28,8 @@ FocusScope {
         { label: "All Games", icon: "apps" },
         { label: "Steam", icon: "controller" },
         { label: "Heroic", icon: "controller" },
-        { label: "Faugus", icon: "controller" }
+        { label: "Faugus", icon: "controller" },
+        { label: "Emulators", icon: "console" }
     ]
     readonly property var sorts: [
         { label: "A-Z", icon: "star" },
@@ -41,7 +42,9 @@ FocusScope {
         if (found)
             return found
         let list = GameLibrary.all()            // already sorted A-Z
-        if (filter !== "All Games")
+        if (filter === "Emulators")
+            list = list.filter(game => game.system)                 // ROMs, from any console
+        else if (filter !== "All Games")
             list = list.filter(game => game.source === filter)
         if (sort === "Source")
             list.sort((a, b) => a.source.localeCompare(b.source))   // stays A-Z within each source
@@ -65,6 +68,7 @@ FocusScope {
     }
 
     function show() {
+        GameLibrary.refresh()                   // ROMs and games added since it last looked
         returnFocusTo = Window.activeFocusItem
         menu.close()
         visible = true

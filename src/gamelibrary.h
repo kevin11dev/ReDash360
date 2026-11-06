@@ -12,6 +12,7 @@ struct Game
     QString cover;      // image URL (file:// or https://), or empty
     QString banner;
     QString hero;
+    QString system;     // a ROM's console folder ("snes"); empty for other games
 };
 
 // Every installed game, as a list model QML can show with a ListView/Repeater
