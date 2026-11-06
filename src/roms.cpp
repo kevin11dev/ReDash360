@@ -241,84 +241,101 @@ QString ps3Boot(const QString &folder)
     return {};
 }
 
-} // namespace
+}
 
-QList<Game> scanRoms()
+QList<Game> scanRoms(const QStringList &extraRoots)
 {
     const QString home = QDir::homePath();
-    const QStringList roots = {
-        home + "/ROMs", home + "/Roms", home + "/roms",
-        home + "/Emulation/roms",               // EmuDeck
-        home + "/retrodeck/roms",               // RetroDECK
-    };
+    const QStringList roots = QStringList{
+                                  home + "/ROMs", home + "/Roms", home + "/roms",
+                                  home + "/Emulation/roms",               // EmuDeck
+                                  home + "/retrodeck/roms",               // RetroDECK
+                              } + extraRoots;
 
-    QList<Game> games;
-    QSet<QString> seen;
+    // Every console folder to look in: those inside each root, or the root
+    // itself when it's named like a console ("ps2")
+    QList<QPair<const System *, QString>> places;
     for (const QString &root : roots) {
         if (!QDir(root).exists())
             continue;
+        const QString rootName = QDir(root).dirName().toLower();
+        const System *itself = nullptr;
         for (const System &system : systems()) {
-            for (const QString &folderName : system.folders) {
-                const QString folder = root + "/" + folderName;
-                const QDir dir(folder);
-                if (!dir.exists() || seen.contains(QFileInfo(folder).canonicalFilePath()))
-                    continue;
-                seen.insert(QFileInfo(folder).canonicalFilePath());
+            if (system.folders.contains(rootName))
+                itself = &system;
+        }
+        if (itself) {
+            places << qMakePair(itself, root);
+            continue;
+        }
+        for (const System &system : systems()) {
+            for (const QString &folderName : system.folders)
+                places << qMakePair(&system, root + "/" + folderName);
+        }
+    }
 
-                const QString command = commandFor(system, folder);
-                if (command.isEmpty())
-                    continue;                   // nothing installed plays these
+    QList<Game> games;
+    QSet<QString> seen;
+    for (const auto &place : std::as_const(places)) {
+        const System &system = *place.first;
+        const QString folder = place.second;
+        const QDir dir(folder);
+        if (!dir.exists() || seen.contains(QFileInfo(folder).canonicalFilePath()))
+            continue;
+        seen.insert(QFileInfo(folder).canonicalFilePath());
 
-                const bool folders = system.extensions.contains("dir");
-                const QFileInfoList entries = folders
-                                                  ? dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name)
-                                                  : dir.entryInfoList(QDir::Files, QDir::Name);
+        const QString command = commandFor(system, folder);
+        if (command.isEmpty())
+            continue;                   // nothing installed plays these
 
-                // Discs a .m3u playlist lists are played through it, not one by one
-                QSet<QString> inPlaylists;
-                for (const QFileInfo &entry : entries) {
-                    if (entry.suffix().compare("m3u", Qt::CaseInsensitive) != 0)
-                        continue;
-                    QFile playlist(entry.absoluteFilePath());
-                    if (playlist.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                        for (const QString &line : QString::fromUtf8(playlist.readAll()).split('\n')) {
-                            const QString disc = line.trimmed();
-                            if (!disc.isEmpty() && !disc.startsWith('#'))
-                                inPlaylists.insert(QFileInfo(dir, disc).absoluteFilePath());
-                        }
-                    }
-                }
+        const bool folders = system.extensions.contains("dir");
+        const QFileInfoList entries = folders
+                                          ? dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name)
+                                          : dir.entryInfoList(QDir::Files, QDir::Name);
 
-                for (const QFileInfo &entry : entries) {
-                    if (entry.fileName().startsWith('.') || inPlaylists.contains(entry.absoluteFilePath()))
-                        continue;
-                    QString target = entry.absoluteFilePath();
-                    if (folders) {
-                        if (system.label == "PS3") {
-                            target = ps3Boot(target);
-                            if (target.isEmpty())
-                                continue;
-                        }
-                    } else if (!system.extensions.contains(entry.suffix().toLower())) {
-                        continue;
-                    }
-
-                    const QString baseName = folders ? entry.fileName() : entry.completeBaseName();
-                    Game game;
-                    game.name = displayName(baseName);
-                    game.source = system.label;
-                    game.system = system.folders.first();
-                    game.command = QString(command).replace("{rom}", quoted(target));
-                    game.cover = localPicture(target, game.system, baseName, "covers");
-                    if (game.cover.isEmpty())
-                        game.cover = thumbnail(system, baseName, "Named_Boxarts");
-                    game.hero = localPicture(target, game.system, baseName, "screenshots");
-                    if (game.hero.isEmpty())
-                        game.hero = thumbnail(system, baseName, "Named_Snaps");
-                    game.banner = thumbnail(system, baseName, "Named_Titles");
-                    games << game;
+        // Discs a .m3u playlist lists are played through it, not one by one
+        QSet<QString> inPlaylists;
+        for (const QFileInfo &entry : entries) {
+            if (entry.suffix().compare("m3u", Qt::CaseInsensitive) != 0)
+                continue;
+            QFile playlist(entry.absoluteFilePath());
+            if (playlist.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                for (const QString &line : QString::fromUtf8(playlist.readAll()).split('\n')) {
+                    const QString disc = line.trimmed();
+                    if (!disc.isEmpty() && !disc.startsWith('#'))
+                        inPlaylists.insert(QFileInfo(dir, disc).absoluteFilePath());
                 }
             }
+        }
+
+        for (const QFileInfo &entry : entries) {
+            if (entry.fileName().startsWith('.') || inPlaylists.contains(entry.absoluteFilePath()))
+                continue;
+            QString target = entry.absoluteFilePath();
+            if (folders) {
+                if (system.label == "PS3") {
+                    target = ps3Boot(target);
+                    if (target.isEmpty())
+                        continue;
+                }
+            } else if (!system.extensions.contains(entry.suffix().toLower())) {
+                continue;
+            }
+
+            const QString baseName = folders ? entry.fileName() : entry.completeBaseName();
+            Game game;
+            game.name = displayName(baseName);
+            game.source = system.label;
+            game.system = system.folders.first();
+            game.command = QString(command).replace("{rom}", quoted(target));
+            game.cover = localPicture(target, game.system, baseName, "covers");
+            if (game.cover.isEmpty())
+                game.cover = thumbnail(system, baseName, "Named_Boxarts");
+            game.hero = localPicture(target, game.system, baseName, "screenshots");
+            if (game.hero.isEmpty())
+                game.hero = thumbnail(system, baseName, "Named_Snaps");
+            game.banner = thumbnail(system, baseName, "Named_Titles");
+            games << game;
         }
     }
     return games;

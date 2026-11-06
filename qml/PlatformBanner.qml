@@ -8,7 +8,8 @@ Rectangle{
     readonly property var looks: ({
         Steam: { top: "#2A475E", bottom: "#171D25", line: "#66C0F4", icon: "steam,com.valvesoftware.Steam" },
         Heroic: { top: "#7246D6", bottom: "#3A1D82", line: "#B9A2FF", icon: "heroic,com.heroicgameslauncher.hgl" },
-        Faugus: { top: "#1E7F75", bottom: "#0D4842", line: "#6EE6D6", icon: "faugus-launcher,io.github.Faugus.faugus-launcher" }
+        Faugus: { top: "#1E7F75", bottom: "#0D4842", line: "#6EE6D6", icon: "faugus-launcher,io.github.Faugus.faugus-launcher" },
+        Linux: { top: "#3B3B3B", bottom: "#161616", line: "#F5C211", icon: "" }      // from Game Folders
     })
     // ROMs: each console's banner in its maker's colours, with no icon
     readonly property var makers: ({

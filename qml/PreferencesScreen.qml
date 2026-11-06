@@ -15,7 +15,14 @@ FocusScope {
     property string choosing: ""                // "clock", "engine" or "news"
     property var choices: []                    // [{label, detail, value, current}]
 
-    readonly property var rows: ["background", "sounds", "soundVolume", "clock", "engine", "news", "startup"]
+    readonly property var rows: ["background", "sounds", "soundVolume", "clock", "engine", "news", "startup",
+                                 "gameFolders", "romFolders"]
+
+    // Game Folders and ROM Folders: which one is open ("games" or "roms"), and its rows
+    property string foldersKind: "games"
+    readonly property var folderRows: (foldersKind === "roms" ? GameLibrary.romFolders : GameLibrary.gameFolders)
+                                      .map(folder => ({ label: folder, folder: folder }))
+                                      .concat([{ label: "Add a Folder", add: true }])
 
     // The time now, for the clock row; ticks while the screen is open
     property date now: new Date()
@@ -46,13 +53,19 @@ FocusScope {
         if (view === "background")
             panelAnimation.restart()
         Preferences.previewing = false
+        if (view === "browse") {                // out of the folder picker: the folders again
+            view = "folders"
+            folderList.forceActiveFocus()
+            return
+        }
         view = "menu"
         menu.forceActiveFocus()
     }
 
     function label(id) {
         return { background: "Background", sounds: "Sound Effects", soundVolume: "Sound Effects Volume",
-                 clock: "Clock", engine: "Search Engine", news: "News Site", startup: "Start Automatically" }[id] || ""
+                 clock: "Clock", engine: "Search Engine", news: "News Site", startup: "Start Automatically",
+            gameFolders: "Game Folders", romFolders: "ROM Folders" }[id] || ""
     }
 
     function usable(id) {
@@ -78,8 +91,13 @@ FocusScope {
         case "engine": return Preferences.searchEngine.name
         case "news": return Preferences.newsSite.name
         case "startup": return Autostart.enabled ? "On" : "Off"
-        }
+        case "gameFolders": return folderCount(GameLibrary.gameFolders)
+        case "romFolders": return folderCount(GameLibrary.romFolders)
         return ""
+    }
+
+    function folderCount(list) {
+        return list.length === 0 ? "None" : list.length === 1 ? "1 folder" : list.length + " folders"
     }
 
     // What the panel on the right says about a row
@@ -95,6 +113,15 @@ FocusScope {
             news: "Where the News tile on Home gets gaming news, next to the news about your Steam games.",
             startup: "Opens the dashboard as soon as you sign in, so your PC starts like a console. "
                      + "If you move the dashboard to another folder, turn this off and on again.",
+            gameFolders: view === "browse"
+                ? "Go into the folder with your games and choose Use This Folder."
+                : "Games on your other drives that aren't in a launcher: Linux games and AppImages, "
+                  + "each in a folder here. Steam, Heroic and Faugus games are found on every drive already.",
+            romFolders: view === "browse"
+                ? "Go into the folder with your ROMs and choose Use This Folder: one with a folder "
+                  + "per console in it (snes, ps2 ...), or a console's own folder."
+                : "More places with your ROMs, on any drive. ~/ROMs and EmuDeck's and RetroDECK's "
+                  + "folders are always looked in.",
         }[id] || ""
     }
 
@@ -123,6 +150,12 @@ FocusScope {
             chooser.forceActiveFocus()
         } else if (id === "startup") {
             Autostart.enabled = !Autostart.enabled
+        } else if (id === "gameFolders" || id === "romFolders") {
+            foldersKind = id === "romFolders" ? "roms" : "games"
+            view = "folders"
+            folderList.currentIndex = 0
+            folderList.forceActiveFocus()
+        }
         }
     }
 
@@ -193,7 +226,10 @@ FocusScope {
         anchors.verticalCenter: parent.top
         anchors.verticalCenterOffset: 120
         text: preferencesScreen.view === "choose" ? preferencesScreen.label(preferencesScreen.choosing)
-            : preferencesScreen.view === "background" ? "Background" : "Preferences"
+            : preferencesScreen.view === "background" ? "Background"
+            : preferencesScreen.view === "folders" || preferencesScreen.view === "browse"
+            ? (preferencesScreen.foldersKind === "roms" ? "ROM Folders" : "Game Folders")
+            : "Preferences"
         color: "white"
         font.pixelSize: 50
     }
@@ -238,6 +274,52 @@ FocusScope {
                 }
             }
 
+            // ---- Game Folders / ROM Folders: yours, then Add a Folder ----
+            ListView {
+                id: folderList
+                width: parent.width
+                height: Math.min(count * 70, parent.height)
+                clip: true
+                visible: preferencesScreen.view === "folders"
+                keyNavigationEnabled: true
+                highlightMoveDuration: 0
+                model: preferencesScreen.folderRows
+
+                delegate: FolderRow {}
+
+                function activateCurrent() {
+                    const row = preferencesScreen.folderRows[currentIndex]
+                    if (row && row.add) {
+                        preferencesScreen.view = "browse"
+                        folderPicker.open()
+                    }
+                }
+                Keys.onReturnPressed: activateCurrent()
+                Keys.onEnterPressed: activateCurrent()
+                Keys.onPressed: (event) => {
+                    const row = preferencesScreen.folderRows[currentIndex]
+                    if (event.key === Qt.Key_Y && row && row.folder) {
+                        GameLibrary.removeFolder(preferencesScreen.foldersKind, row.folder)
+                        currentIndex = Math.min(currentIndex, count - 1)
+                        event.accepted = true
+                    }
+                }
+            }
+
+            // ---- Choosing a folder to add ----
+            FolderPicker {
+                id: folderPicker
+                anchors.fill: parent
+                visible: preferencesScreen.view === "browse"
+                onChosen: (path) => {
+                    GameLibrary.addFolder(preferencesScreen.foldersKind, path)
+                    preferencesScreen.view = "folders"
+                    folderList.currentIndex = preferencesScreen.folderRows.findIndex(row => row.folder === path)
+                    folderList.forceActiveFocus()
+                }
+                onCancelled: preferencesScreen.back()
+            }
+
             // ---- The choices for one setting ----
             ListView {
                 id: chooser
@@ -266,13 +348,16 @@ FocusScope {
             }
 
             readonly property string row: preferencesScreen.view === "choose" ? preferencesScreen.choosing
-                                          : preferencesScreen.rows[menu.currentIndex] || ""
+                                        : preferencesScreen.view === "folders" || preferencesScreen.view === "browse"
+                                        ? (preferencesScreen.foldersKind === "roms" ? "romFolders" : "gameFolders")
+                                        : preferencesScreen.rows[menu.currentIndex] || ""
 
             TileIcon {
                 x: 40; y: 40
                 width: 96; height: 96
                 name: ({ background: "picture", sounds: "volume", soundVolume: "volume",
-                         clock: "clock", engine: "globe", news: "list", startup: "power" })[parent.row] || ""
+                        clock: "clock", engine: "globe", news: "list", startup: "power",
+                        gameFolders: "folder", romFolders: "folder" })[parent.row] || ""
                 color: "#2E3336"
             }
             Text {
@@ -445,12 +530,21 @@ FocusScope {
         spacing: 30
         ButtonHint {
             button: "A"
-            label: preferencesScreen.view === "background" ? "Choose" : "Select"
-            visible: preferencesScreen.view !== "menu"
-                     || (preferencesScreen.usable(preferencesScreen.rows[menu.currentIndex])
-                         && preferencesScreen.rows[menu.currentIndex] !== "soundVolume")
+            label: preferencesScreen.view === "background" ? "Choose"
+                 : preferencesScreen.view === "browse" ? "Open" : "Select"
+            visible: preferencesScreen.view === "folders"
+                     ? !!(preferencesScreen.folderRows[folderList.currentIndex] || {}).add
+                     : preferencesScreen.view !== "menu"
+                       || (preferencesScreen.usable(preferencesScreen.rows[menu.currentIndex])
+                           && preferencesScreen.rows[menu.currentIndex] !== "soundVolume")
         }
         ButtonHint { button: "B"; label: "Back" }
+        ButtonHint {
+            button: "Y"
+            label: "Remove"
+            visible: preferencesScreen.view === "folders"
+                     && !!(preferencesScreen.folderRows[folderList.currentIndex] || {}).folder
+        }
     }
 
     // ---- Pieces ----------------------------------------------------------------
@@ -543,6 +637,52 @@ FocusScope {
             onClicked: {
                 row.ListView.view.currentIndex = row.index
                 preferencesScreen.activate(row.modelData)
+            }
+        }
+    }
+
+    // One of your folders, or Add a Folder at the end
+    component FolderRow: Rectangle {
+        id: folderRow
+        required property int index
+        required property var modelData
+        readonly property bool selected: ListView.isCurrentItem && ListView.view.activeFocus
+        readonly property color ink: selected ? "white" : "#222222"
+
+        width: ListView.view.width
+        height: 70
+        color: selected ? "#008E00" : "transparent"
+
+        TileIcon {
+            x: 30
+            anchors.verticalCenter: parent.verticalCenter
+            width: 36; height: 36
+            name: folderRow.modelData.add ? "plus" : "folder"
+            color: folderRow.ink
+        }
+        Text {
+            x: 90
+            anchors.verticalCenter: parent.verticalCenter
+            width: parent.width - x - 45
+            text: folderRow.modelData.label
+            color: folderRow.ink
+            font.pixelSize: folderRow.modelData.add ? 36 : 30
+            elide: Text.ElideMiddle
+        }
+        Column {
+            anchors.bottom: parent.bottom
+            width: parent.width
+            visible: !folderRow.selected && folderRow.ListView.view.currentIndex !== folderRow.index + 1
+            Rectangle { width: parent.width; height: 1; color: "#8E979A" }
+            Rectangle { width: parent.width; height: 1; color: "#C4CCCF" }
+        }
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            onEntered: if (Pointer.active) folderRow.ListView.view.currentIndex = folderRow.index
+            onClicked: {
+                folderRow.ListView.view.currentIndex = folderRow.index
+                folderRow.ListView.view.activateCurrent()
             }
         }
     }

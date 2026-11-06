@@ -20,6 +20,7 @@ FocusScope {
         { label: "Steam", icon: "controller" },
         { label: "Heroic", icon: "controller" },
         { label: "Faugus", icon: "controller" },
+        { label: "Linux", icon: "folder" },
         { label: "Emulators", icon: "console" }
     ]
     readonly property var sorts: [

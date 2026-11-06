@@ -24,6 +24,12 @@ class GameLibrary : public QAbstractListModel
 
     Q_PROPERTY(int count READ count NOTIFY countChanged)
 
+    // Settings > Preferences: more places to look, each a folder path. Game
+    // Folders: games outside the launchers (Linux games and AppImages). ROM
+    // Folders: ROMs, a folder per console inside (or a console's own folder).
+    Q_PROPERTY(QStringList gameFolders READ gameFolders NOTIFY foldersChanged)
+    Q_PROPERTY(QStringList romFolders READ romFolders NOTIFY foldersChanged)
+
 public:
     enum Role {
         NameRole = Qt::UserRole + 1,
@@ -36,6 +42,13 @@ public:
     explicit GameLibrary(QObject *parent = nullptr);
 
     int count() const { return m_games.size(); }
+
+    QStringList gameFolders() const;
+    QStringList romFolders() const;
+
+    // kind: "games" or "roms". Saved in ReDash360.conf under [library]; the games are looked for again
+    Q_INVOKABLE void addFolder(const QString &kind, const QString &path);
+    Q_INVOKABLE void removeFolder(const QString &kind, const QString &path);
 
     // QAbstractListModel: how many rows, what's in each, and the role names QML uses
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -53,11 +66,13 @@ public:
 
 signals:
     void countChanged();
+    void foldersChanged();
 
 private:
     static QList<Game> scanSteam();
     static QList<Game> scanHeroic();
     static QList<Game> scanFaugus();
+    static QList<Game> scanFolders(const QStringList &folders);
 
     QList<Game> m_games;
 };

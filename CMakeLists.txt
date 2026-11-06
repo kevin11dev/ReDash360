@@ -64,6 +64,7 @@ set(qml_files
     qml/BatteryIcon.qml
     qml/BatteryNotice.qml
     qml/PlatformBanner.qml
+    qml/FolderPicker.qml
     qml/SystemScreen.qml
     qml/DisplaySoundScreen.qml
     qml/PreferencesScreen.qml

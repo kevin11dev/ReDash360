@@ -9,6 +9,8 @@
 #include <QJsonObject>
 #include <QRegularExpression>
 #include <QUrl>
+#include <QFileInfo>
+#include <QSettings>
 
 namespace {
 
@@ -56,6 +58,36 @@ QVariantMap toMap(const Game &game){
         {"system", game.system}
     };
 }
+
+// Where Settings > Preferences keeps the extra folders: [library] in ReDash360.conf
+QString folderKey(const QString &kind)
+{
+    return kind == "roms" ? "library/romFolders" : "library/gameFolders";
+}
+
+QStringList savedFolders(const QString &kind)
+{
+    return QSettings().value(folderKey(kind)).toStringList();
+}
+
+// A path as one argument for Launcher.run(), quotes and all
+QString quoted(QString text)
+{
+    text.replace("\"", "\"\"\"");
+    return "\"" + text + "\"";
+}
+
+// "Celeste-1.4.0.0-x86_64" / "hollow_knight" -> "Celeste" / "hollow knight"
+QString gameName(QString name)
+{
+    static const QRegularExpression trailing("[-_ ]*(v?\\d+(\\.\\d+)+|x86_64|x86|amd64|linux|appimage)$",
+                                             QRegularExpression::CaseInsensitiveOption);
+    for (int i = 0; i < 4; ++i)
+        name.remove(trailing);
+    name.replace('_', ' ');
+    return name.simplified();
+}
+
 
 } // namespace
 
@@ -120,7 +152,8 @@ void GameLibrary::refresh()
     QList<Game> games = scanSteam();
     games += scanHeroic();
     games += scanFaugus();
-    games += scanRoms();
+    games += scanFolders(savedFolders("games"));
+    games += scanRoms(savedFolders("roms"));
 
     std::sort(games.begin(), games.end(), [](const Game &a, const Game &b) {
         return a.name.compare(b.name, Qt::CaseInsensitive) < 0;
@@ -130,6 +163,111 @@ void GameLibrary::refresh()
     m_games = games;
     endResetModel();
     emit countChanged();
+}
+
+QStringList GameLibrary::gameFolders() const
+{
+    return savedFolders("games");
+}
+
+QStringList GameLibrary::romFolders() const
+{
+    return savedFolders("roms");
+}
+
+void GameLibrary::addFolder(const QString &kind, const QString &path)
+{
+    // A path, or a file:// URL from a folder list in QML
+    QString folder = path.startsWith("file:") ? QUrl(path).toLocalFile() : path;
+    folder = QDir::cleanPath(folder);
+    QStringList folders = savedFolders(kind);
+    if (folder.isEmpty() || folders.contains(folder))
+        return;
+    folders << folder;
+    QSettings().setValue(folderKey(kind), folders);
+    emit foldersChanged();
+    refresh();
+}
+
+void GameLibrary::removeFolder(const QString &kind, const QString &path)
+{
+    QStringList folders = savedFolders(kind);
+    if (!folders.removeAll(path))
+        return;
+    QSettings().setValue(folderKey(kind), folders);
+    emit foldersChanged();
+    refresh();
+}
+
+// Games in folders you chose, that no launcher knows about: an AppImage, or a
+// folder with a Linux game in it (GOG's start.sh, itch.io's .x86_64, a program
+// named like the folder). Each starts in its own folder, as games expect.
+// Windows games belong in Faugus or Heroic, which run them with Proton.
+QList<Game> GameLibrary::scanFolders(const QStringList &folders)
+{
+    QList<Game> games;
+    QStringList seen;
+    const auto add = [&](const QString &name, const QString &program, const QString &workingDir, const QString &cover) {
+        if (seen.contains(program))
+            return;
+        seen << program;
+        Game game;
+        game.name = gameName(name);
+        game.source = "Linux";
+        // env -C: start it from its own folder; a script runs through sh even if it isn't executable
+        game.command = "env -C " + quoted(workingDir) + " "
+                       + (program.endsWith(".sh") ? "sh " : "") + quoted(program);
+        game.cover = cover;
+        if (!game.name.isEmpty())
+            games << game;
+    };
+    const auto picture = [](const QDir &dir) {
+        for (const QString &file : { "cover.png", "cover.jpg", "folder.jpg", "folder.png", "support/icon.png", "icon.png" }) {
+            if (dir.exists(file))
+                return QUrl::fromLocalFile(dir.filePath(file)).toString();
+        }
+        return QString();
+    };
+
+    for (const QString &folder : folders) {
+        const QDir dir(folder);
+        if (!dir.exists())
+            continue;
+
+        for (const QFileInfo &file : dir.entryInfoList({ "*.AppImage", "*.appimage" }, QDir::Files))
+            add(file.completeBaseName(), file.absoluteFilePath(), file.absolutePath(), "");
+
+        for (const QFileInfo &sub : dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name)) {
+            const QDir game(sub.absoluteFilePath());
+            QString program;
+            if (game.exists("start.sh"))                                        // GOG
+                program = game.filePath("start.sh");
+            for (const QString &pattern : { QString("*.AppImage"), QString("*.x86_64") }) {
+                if (program.isEmpty()) {
+                    const QStringList found = game.entryList({ pattern }, QDir::Files, QDir::Name);
+                    if (!found.isEmpty())
+                        program = game.filePath(found.first());
+                }
+            }
+            if (program.isEmpty()) {                                            // a program named like the folder
+                for (const QFileInfo &file : game.entryInfoList(QDir::Files | QDir::Executable)) {
+                    if (file.completeBaseName().compare(sub.fileName(), Qt::CaseInsensitive) == 0
+                        && file.suffix().isEmpty()) {
+                        program = file.absoluteFilePath();
+                        break;
+                    }
+                }
+            }
+            if (program.isEmpty()) {                                            // its only launch script
+                const QStringList scripts = game.entryList({ "*.sh" }, QDir::Files);
+                if (scripts.size() == 1)
+                    program = game.filePath(scripts.first());
+            }
+            if (!program.isEmpty())
+                add(sub.fileName(), program, game.absolutePath(), picture(game));
+        }
+    }
+    return games;
 }
 
 QList<Game> GameLibrary::scanSteam()
