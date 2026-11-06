@@ -93,6 +93,7 @@ FocusScope {
         case "startup": return Autostart.enabled ? "On" : "Off"
         case "gameFolders": return folderCount(GameLibrary.gameFolders)
         case "romFolders": return folderCount(GameLibrary.romFolders)
+        }
         return ""
     }
 
@@ -155,7 +156,6 @@ FocusScope {
             view = "folders"
             folderList.currentIndex = 0
             folderList.forceActiveFocus()
-        }
         }
     }
 

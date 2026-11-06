@@ -137,7 +137,8 @@ Core Downloader), and some consoles need their BIOS files in RetroArch's
 `system` folder. A game shows up once something you have can play it, and My
 Games looks again every time you open it. Games with more than one disc go
 together in a `.m3u` playlist, which shows as one game. Box art you already
-have from ES-DE or EmuDeck is used first. 
+have from ES-DE or EmuDeck is used first.
+
 Steam, Heroic and Faugus games are found on every drive already. For Linux
 games and AppImages that aren't in a launcher, add the folders they're in at
 Settings > Preferences > Game Folders: each game in its own folder (or an
