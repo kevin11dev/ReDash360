@@ -1,4 +1,6 @@
 #include "launcher.h"
+#include "gamelibrary.h"
+#include <signal.h>
 
 #include <QCoreApplication>
 #include <QFile>
@@ -10,7 +12,6 @@
 #include <QTimer>
 
 #ifdef Q_OS_UNIX
-#include <signal.h>
 #endif
 
 namespace {
@@ -90,8 +91,9 @@ bool Launcher::run(const QString &command)
         return false;
     const QString program = arguments.takeFirst();
 
-    // Detached: the program keeps running on its own, even after ReDash360 quits
-    const bool started = QProcess::startDetached(program, arguments);
+    // Detached: the program keeps running on its own, even after ReDash360 quits.
+    // A game that has to be started in its own folder (Faugus's) is started there.
+    const bool started = QProcess::startDetached(program, arguments, GameLibrary::startFolder(command));
     if (!started)
         qWarning("Launcher: could not start \"%s\"", qPrintable(command));
     return started;

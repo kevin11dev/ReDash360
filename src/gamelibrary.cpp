@@ -11,6 +11,7 @@
 #include <QUrl>
 #include <QFileInfo>
 #include <QSettings>
+#include <QHash>
 
 namespace {
 
@@ -88,6 +89,33 @@ QString gameName(QString name)
     return name.simplified();
 }
 
+// "~/Games/x.exe" or "$HOME/Games/x.exe" -> "/home/you/Games/x.exe", the way
+// Faugus reads its paths (variables that aren't set stay as they are)
+QString expandPath(QString path)
+{
+    if (path == "~" || path.startsWith("~/"))
+        path.replace(0, 1, QDir::homePath());
+    static const QRegularExpression variable("\\$(\\w+)|\\$\\{(\\w+)\\}");
+    int from = 0;
+    QRegularExpressionMatch match;
+    while ((match = variable.match(path, from)).hasMatch()) {
+        const QString name = match.captured(1).isEmpty() ? match.captured(2) : match.captured(1);
+        from = match.capturedEnd();
+        if (!qEnvironmentVariableIsSet(qPrintable(name)))
+            continue;
+        const QString value = qEnvironmentVariable(qPrintable(name));
+        path.replace(match.capturedStart(), match.capturedLength(), value);
+        from = match.capturedStart() + value.size();
+    }
+    return path;
+}
+
+// Each game's command -> the folder it has to be started in, from the last refresh()
+QHash<QString, QString> &startFolders()
+{
+    static QHash<QString, QString> folders;
+    return folders;
+}
 
 } // namespace
 
@@ -159,10 +187,21 @@ void GameLibrary::refresh()
         return a.name.compare(b.name, Qt::CaseInsensitive) < 0;
     });
 
+    startFolders().clear();
+    for (const Game &game : std::as_const(games)) {
+        if (!game.folder.isEmpty())
+            startFolders().insert(game.command, game.folder);
+    }
+
     beginResetModel();      // tell views the whole list is about to change
     m_games = games;
     endResetModel();
     emit countChanged();
+}
+
+QString GameLibrary::startFolder(const QString &command)
+{
+    return startFolders().value(command);
 }
 
 QStringList GameLibrary::gameFolders() const
@@ -432,6 +471,10 @@ QList<Game> GameLibrary::scanFaugus()
                 game.name = id;
             game.source = "Faugus";
             game.command = install.launch + " --game " + id;
+
+            const QString exe = expandPath(info.value("path").toString());
+            if (!exe.isEmpty() && QFileInfo(exe).absoluteDir().exists())
+                game.folder = QFileInfo(exe).absolutePath();
 
             const QString cover = install.dataDir + "/covers/" + id + ".png";
             if (QFile::exists(cover))

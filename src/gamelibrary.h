@@ -13,6 +13,7 @@ struct Game
     QString banner;
     QString hero;
     QString system;     // a ROM's console folder ("snes"); empty for other games
+    QString folder;
 };
 
 // Every installed game, as a list model QML can show with a ListView/Repeater
@@ -45,6 +46,9 @@ public:
 
     QStringList gameFolders() const;
     QStringList romFolders() const;
+
+    // The folder a game's command has to be started in, for Launcher.run(); "" = anywhere
+    static QString startFolder(const QString &command);
 
     // kind: "games" or "roms". Saved in ReDash360.conf under [library]; the games are looked for again
     Q_INVOKABLE void addFolder(const QString &kind, const QString &path);
