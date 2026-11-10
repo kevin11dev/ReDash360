@@ -327,6 +327,7 @@ QList<Game> scanRoms(const QStringList &extraRoots)
             game.name = displayName(baseName);
             game.source = system.label;
             game.system = system.folders.first();
+            game.direct = true;
             game.command = QString(command).replace("{rom}", quoted(target));
             game.cover = localPicture(target, game.system, baseName, "covers");
             if (game.cover.isEmpty())

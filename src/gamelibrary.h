@@ -14,6 +14,7 @@ struct Game
     QString hero;
     QString system;     // a ROM's console folder ("snes"); empty for other games
     QString folder;
+    bool direct = false;    // the command runs the game itself (a ROM's emulator, a Game Folders game), not a launcher
 };
 
 // Every installed game, as a list model QML can show with a ListView/Repeater
@@ -49,6 +50,9 @@ public:
 
     // The folder a game's command has to be started in, for Launcher.run(); "" = anywhere
     static QString startFolder(const QString &command);
+
+    // Does this command run the game itself, not through Steam, Heroic or Faugus? For Launcher.run()
+    static bool isDirect(const QString &command);
 
     // kind: "games" or "roms". Saved in ReDash360.conf under [library]; the games are looked for again
     Q_INVOKABLE void addFolder(const QString &kind, const QString &path);

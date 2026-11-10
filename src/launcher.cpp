@@ -18,6 +18,20 @@ namespace {
 
 constexpr int MaxRecents = 12;
 
+// What ReDash360 puts in the environment of a game it starts itself: REDASH360_GAME=1
+constexpr char GameVariable[] = "REDASH360_GAME";
+
+// Did ReDash360 start this process as a game itself (a ROM's emulator, a game
+// from Game Folders)? Then it has the marker, and so does everything it starts,
+// in a Flatpak's sandbox too.
+bool startedAsGame(qint64 pid)
+{
+    QFile environment(QString("/proc/%1/environ").arg(pid));
+    if (!environment.open(QIODevice::ReadOnly))
+        return false;
+    return environment.readAll().split('\0').contains(QByteArray(GameVariable) + "=1");
+}
+
 // Was this program started by a game launcher? Steam starts every game through
 // its "reaper" helper, and Heroic, Faugus (umu-run) and Lutris start theirs
 // too. Discord, Firefox and Steam's own window aren't, so they're left alone.
@@ -28,6 +42,8 @@ bool isGame(qint64 pid)
 
     qint64 current = pid;
     for (int depth = 0; depth < 32 && current > 1; ++depth) {
+        if (startedAsGame(current))
+            return true;
         // /proc/<pid>/stat looks like: 1234 (name) S 1200 ...   (1200 = parent)
         QFile stat(QString("/proc/%1/stat").arg(current));
         if (!stat.open(QIODevice::ReadOnly))
@@ -93,7 +109,18 @@ bool Launcher::run(const QString &command)
 
     // Detached: the program keeps running on its own, even after ReDash360 quits.
     // A game that has to be started in its own folder (Faugus's) is started there.
-    const bool started = QProcess::startDetached(program, arguments, GameLibrary::startFolder(command));
+    QProcess process;
+    process.setProgram(program);
+    process.setArguments(arguments);
+    process.setWorkingDirectory(GameLibrary::startFolder(command));
+    if (GameLibrary::isDirect(command)) {
+        // A game ReDash360 starts itself gets the marker, so the Guide knows
+        // it's a game: it pauses it, and Xbox Home quits it (see isGame())
+        QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+        environment.insert(GameVariable, "1");
+        process.setProcessEnvironment(environment);
+    }
+    const bool started = process.startDetached();
     if (!started)
         qWarning("Launcher: could not start \"%s\"", qPrintable(command));
     return started;

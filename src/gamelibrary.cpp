@@ -12,6 +12,7 @@
 #include <QFileInfo>
 #include <QSettings>
 #include <QHash>
+#include <QSet>
 
 namespace {
 
@@ -117,6 +118,13 @@ QHash<QString, QString> &startFolders()
     return folders;
 }
 
+// The commands that run a game themselves, from the last refresh()
+QSet<QString> &directCommands()
+{
+    static QSet<QString> commands;
+    return commands;
+}
+
 } // namespace
 
 GameLibrary::GameLibrary(QObject *parent)
@@ -188,9 +196,12 @@ void GameLibrary::refresh()
     });
 
     startFolders().clear();
+    directCommands().clear();
     for (const Game &game : std::as_const(games)) {
         if (!game.folder.isEmpty())
             startFolders().insert(game.command, game.folder);
+        if (game.direct)
+            directCommands().insert(game.command);
     }
 
     beginResetModel();      // tell views the whole list is about to change
@@ -202,6 +213,11 @@ void GameLibrary::refresh()
 QString GameLibrary::startFolder(const QString &command)
 {
     return startFolders().value(command);
+}
+
+bool GameLibrary::isDirect(const QString &command)
+{
+    return directCommands().contains(command);
 }
 
 QStringList GameLibrary::gameFolders() const
@@ -253,6 +269,7 @@ QList<Game> GameLibrary::scanFolders(const QStringList &folders)
         Game game;
         game.name = gameName(name);
         game.source = "Linux";
+        game.direct = true;
         // env -C: start it from its own folder; a script runs through sh even if it isn't executable
         game.command = "env -C " + quoted(workingDir) + " "
                        + (program.endsWith(".sh") ? "sh " : "") + quoted(program);
