@@ -8,6 +8,10 @@
 #include <QStandardPaths>
 #include <QThread>
 #include <QWindow>
+#include <QNetworkAccessManager>
+#include <QNetworkDiskCache>
+#include <QQmlNetworkAccessManagerFactory>
+#include <QRegularExpression>
 
 #include "applibrary.h"
 #include "gamepad.h"
@@ -24,6 +28,46 @@
 #endif
 
 namespace {
+
+// Pictures from the internet (ROMs' box art, store and news pictures) are kept
+// on disk in ~/.cache/ReDash360/ReDash360/pictures, so the next time they show
+// straight away instead of downloading again. Everything else QML fetches
+// (store details, the Steam check on the Network screen) still always comes
+// from the internet.
+class PictureKeepingNetwork : public QNetworkAccessManager
+{
+public:
+    using QNetworkAccessManager::QNetworkAccessManager;
+
+protected:
+    QNetworkReply *createRequest(Operation operation, const QNetworkRequest &original, QIODevice *data) override
+    {
+        static const QRegularExpression picture("\\.(png|jpe?g|webp|gif)$", QRegularExpression::CaseInsensitiveOption);
+        QNetworkRequest request(original);
+        if (operation == GetOperation && picture.match(request.url().path()).hasMatch()) {
+            request.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::PreferCache);
+        } else {
+            request.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::AlwaysNetwork);
+            request.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
+        }
+        return QNetworkAccessManager::createRequest(operation, request, data);
+    }
+};
+
+class PictureKeepingNetworkFactory : public QQmlNetworkAccessManagerFactory
+{
+public:
+    QNetworkAccessManager *create(QObject *parent) override
+    {
+        auto *network = new PictureKeepingNetwork(parent);
+        auto *pictures = new QNetworkDiskCache(network);
+        pictures->setCacheDirectory(QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/pictures");
+        pictures->setMaximumCacheSize(qint64(512) * 1024 * 1024);     // 512 MB, then the oldest go
+        network->setCache(pictures);
+        return network;
+    }
+};
+
 
 // Make the Guide overlay window able to cover everything, fullscreen games
 // included. On a Wayland desktop (KDE) that takes an "overlay layer" surface,
@@ -163,7 +207,9 @@ int main(int argc, char *argv[])
 
     Gamepad gamepad(nullptr);
 
+    PictureKeepingNetworkFactory networkFactory;            // made before the engine, so it outlives it
     QQmlApplicationEngine engine;
+    engine.setNetworkAccessManagerFactory(&networkFactory);
     QObject::connect(
         &engine,
         &QQmlApplicationEngine::objectCreationFailed,
