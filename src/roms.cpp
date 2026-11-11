@@ -7,6 +7,8 @@
 #include <QSet>
 #include <QStandardPaths>
 #include <QUrl>
+#include <QDateTime>
+#include <QSaveFile>
 
 namespace {
 
@@ -199,16 +201,200 @@ QString displayName(const QString &baseName)
     return name.isEmpty() ? baseName : name;
 }
 
-// libretro's box art collection names files like the ROM, with &*/:`<>?\|" made _
-QString thumbnail(const System &system, const QString &baseName, const QString &kind)
+// ---- libretro's box art ----------------------------------------------------
+// Its covers are named like the No-Intro and Redump sets: "Pokemon - Emerald
+// Version (USA, Europe)". A ROM named a bit differently ("Pokemon Emerald")
+// gets the closest one, from the console's list of covers.
+
+QString coverListPath(const QString &console)
+{
+    return QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/covers/" + console + ".txt";
+}
+
+// "Legend of Zelda, The - A Link to the Past (USA)" and "the legend of zelda a
+// link to the past" -> "legendofzeldaalinktothepast": the title without its
+// tags, "The", accents, punctuation or capitals
+QString titleKey(QString name)
+{
+    static const QRegularExpression tags("[\\(\\[][^\\)\\]]*[\\)\\]]");
+    static const QRegularExpression the("^the\\s+|,\\s*the\\b");
+    static const QRegularExpression other("[^a-z0-9]");
+    name.remove(tags);
+    name = name.normalized(QString::NormalizationForm_KD).toLower().trimmed();
+    name.replace('&', "and");
+    name.remove(the);
+    name.remove(other);
+    return name;
+}
+
+// A name's tags in (brackets), in small letters: "usa", "en,fr,de", "disc 2"
+QStringList tagsOf(const QString &name)
+{
+    static const QRegularExpression tag("\\(([^\\)]*)\\)");
+    QStringList tags;
+    for (auto it = tag.globalMatch(name); it.hasNext();)
+        tags << it.next().captured(1).toLower();
+    return tags;
+}
+
+// The regions a cover is picked for, best first when the ROM doesn't say
+const QStringList &preferredRegions()
+{
+    static const QStringList regions = { "usa", "world", "europe", "japan" };
+    return regions;
+}
+
+// GoodTools' region codes: (U), (E), (J), (W), (JU) ...
+bool isGoodToolsRegion(const QString &tag)
+{
+    static const QRegularExpression codes("^[uejw]+$");
+    return codes.match(tag).hasMatch();
+}
+
+// "usa", "europe, australia", "ju"
+bool isRegionTag(const QString &tag)
+{
+    static const QSet<QString> places = { "usa", "world", "europe", "japan", "asia", "australia", "canada", "korea",
+                                         "china", "taiwan", "hong kong", "brazil", "france", "germany", "spain",
+                                         "italy", "uk", "netherlands", "sweden", "scandinavia", "russia", "latin america" };
+    if (isGoodToolsRegion(tag))
+        return true;
+    for (const QString &part : tag.split(',')) {
+        if (!places.contains(part.trimmed()))
+            return false;
+    }
+    return true;
+}
+
+// Which of USA, World, Europe and Japan these tags are for
+QSet<QString> regionsOf(const QStringList &tags)
+{
+    static const QHash<QChar, QString> codes = { { 'u', "usa" }, { 'e', "europe" }, { 'j', "japan" }, { 'w', "world" } };
+    QSet<QString> regions;
+    for (const QString &tag : tags) {
+        if (isGoodToolsRegion(tag)) {
+            for (const QChar code : tag)
+                regions << codes.value(code);
+        } else if (isRegionTag(tag)) {
+            for (const QString &region : preferredRegions()) {
+                if (tag.contains(region))
+                    regions << region;
+            }
+        }
+    }
+    return regions;
+}
+
+// How well a cover suits a ROM with these tags: its region above all, the
+// same disc or revision, and not a beta, demo or special edition
+int coverScore(const QString &cover, const QStringList &romTags)
+{
+    static const QRegularExpression unwanted("\\b(beta|proto|demo|sample|kiosk|promo|preview|pirate|unl|hack|aftermarket|taikenban|trial)\\b");
+    static const QRegularExpression plain("^([a-z]{2}(,[a-z]{2})*|rev \\w+|v\\d[\\d.]*\\w*|disc \\d+)$");   // languages, revisions, discs
+    const QStringList tags = tagsOf(cover);
+    int score = -int(tags.size());
+    for (const QString &tag : tags) {
+        if (isRegionTag(tag))
+            continue;
+        if (romTags.contains(tag))
+            score += 20;                        // the same disc, revision or edition
+        else if (unwanted.match(tag).hasMatch())
+            score -= 100;
+        else if (!plain.match(tag).hasMatch())
+            score -= 10;                        // a special edition the ROM isn't
+    }
+    const QSet<QString> regions = regionsOf(tags);
+    score += 50 * int((regions & regionsOf(romTags)).size());
+    for (int i = 0; i < preferredRegions().size(); ++i) {
+        if (regions.contains(preferredRegions().at(i))) {
+            score += 8 - 2 * i;
+            break;
+        }
+    }
+    return score;
+}
+
+// A console's covers, by title. Read from its list again when the list changes.
+struct CoverList
+{
+    QDateTime saved;                            // when the list was saved
+    QSet<QString> names;
+    QHash<QString, QStringList> byTitle;        // titleKey() -> covers, in the list's order
+};
+
+const CoverList *coverList(const QString &console)
+{
+    static QHash<QString, CoverList> lists;
+    const QFileInfo file(coverListPath(console));
+    if (!file.exists())
+        return nullptr;
+    CoverList &list = lists[console];
+    if (list.saved != file.lastModified()) {
+        QFile names(file.filePath());
+        if (!names.open(QIODevice::ReadOnly))
+            return nullptr;
+        list = CoverList{ file.lastModified(), {}, {} };
+        for (const QByteArray &line : names.readAll().split('\n')) {
+            const QString name = QString::fromUtf8(line);
+            if (name.isEmpty())
+                continue;
+            list.names << name;
+            list.byTitle[titleKey(name)] << name;
+        }
+    }
+    return &list;
+}
+
+// The name of libretro's cover for a ROM: its own name if there's one by that
+// name, else the best one for the same title, or the closest longer title
+// ("Pokemon Emerald" -> "Pokemon - Emerald Version"). "" if there's none.
+// Until the console's list is downloaded, the ROM's own name.
+QString coverName(const System &system, const QString &baseName)
 {
     if (system.thumbnails.isEmpty())
         return {};
-    QString file = baseName;
-    static const QRegularExpression unsafe("[&*/:`<>?\\\\|\"]");
-    file.replace(unsafe, "_");
+    static const QRegularExpression unsafe("[&*/:`<>?\\\\|\"]");      // made _ in libretro's names
+    QString exact = baseName;
+    exact.replace(unsafe, "_");
+    const CoverList *list = coverList(system.thumbnails);
+    if (!list || list->names.contains(exact))
+        return exact;
+
+    const QString title = titleKey(baseName);
+    QStringList covers = list->byTitle.value(title);
+    if (covers.isEmpty() && title.size() >= 6) {
+        QString closest;
+        for (auto it = list->byTitle.cbegin(); it != list->byTitle.cend(); ++it) {
+            const QString &other = it.key();
+            if (!other.startsWith(title) || other.size() - title.size() > 24)
+                continue;
+            if (closest.isEmpty() || other.size() < closest.size() || (other.size() == closest.size() && other < closest))
+                closest = other;
+        }
+        covers = list->byTitle.value(closest);
+    }
+
+    const QStringList romTags = tagsOf(baseName);
+    QString best;
+    int bestScore = 0;
+    for (const QString &cover : std::as_const(covers)) {
+        const int score = coverScore(cover, romTags);
+        if (best.isEmpty() || score > bestScore) {
+            best = cover;
+            bestScore = score;
+        }
+    }
+    return best;
+}
+
+// One of libretro's pictures for a game, by the name coverName() found:
+// kind is Named_Boxarts, Named_Snaps or Named_Titles
+QString thumbnail(const System &system, const QString &name, const QString &kind)
+{
+    if (system.thumbnails.isEmpty() || name.isEmpty())
+        return {};
     return "https://thumbnails.libretro.com/" + QString::fromUtf8(QUrl::toPercentEncoding(system.thumbnails))
-           + "/" + kind + "/" + QString::fromUtf8(QUrl::toPercentEncoding(file)) + ".png";
+           + "/" + kind + "/" + QString::fromUtf8(QUrl::toPercentEncoding(name)) + ".png";
 }
 
 // A picture you already have for a game: next to the ROM, or where ES-DE and EmuDeck keep theirs
@@ -329,15 +515,56 @@ QList<Game> scanRoms(const QStringList &extraRoots)
             game.system = system.folders.first();
             game.direct = true;
             game.command = QString(command).replace("{rom}", quoted(target));
+            const QString cover = coverName(system, baseName);
             game.cover = localPicture(target, game.system, baseName, "covers");
             if (game.cover.isEmpty())
-                game.cover = thumbnail(system, baseName, "Named_Boxarts");
+                game.cover = thumbnail(system, cover, "Named_Boxarts");
             game.hero = localPicture(target, game.system, baseName, "screenshots");
             if (game.hero.isEmpty())
-                game.hero = thumbnail(system, baseName, "Named_Snaps");
-            game.banner = thumbnail(system, baseName, "Named_Titles");
+                game.hero = thumbnail(system, cover, "Named_Snaps");
+            game.banner = thumbnail(system, cover, "Named_Titles");
             games << game;
         }
     }
     return games;
+}
+
+
+QStringList coverListsToFetch(const QList<Game> &games)
+{
+    QStringList consoles;
+    for (const Game &game : games) {
+        for (const System &system : systems()) {
+            if (game.system.isEmpty() || system.folders.first() != game.system || system.thumbnails.isEmpty()
+                || consoles.contains(system.thumbnails))
+                continue;
+            const QFileInfo list(coverListPath(system.thumbnails));
+            if (!list.exists() || list.lastModified().daysTo(QDateTime::currentDateTime()) > 30)
+                consoles << system.thumbnails;
+        }
+    }
+    return consoles;
+}
+
+QUrl coverListUrl(const QString &console)
+{
+    return QUrl("https://thumbnails.libretro.com/" + QString::fromUtf8(QUrl::toPercentEncoding(console)) + "/Named_Boxarts/");
+}
+
+bool saveCoverList(const QString &console, const QByteArray &page)
+{
+    // The folder page links each cover: <a href="Patapon%20(USA).png">
+    static const QRegularExpression link("href=\"([^\"?/][^\"]*)\\.png\"");
+    QStringList names;
+    for (auto it = link.globalMatch(QString::fromUtf8(page)); it.hasNext();)
+        names << QUrl::fromPercentEncoding(it.next().captured(1).toUtf8());
+    if (names.isEmpty())
+        return false;
+
+    QDir().mkpath(QFileInfo(coverListPath(console)).absolutePath());
+    QSaveFile list(coverListPath(console));
+    if (!list.open(QIODevice::WriteOnly))
+        return false;
+    list.write(names.join('\n').toUtf8());
+    return list.commit();
 }

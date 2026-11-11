@@ -13,6 +13,8 @@
 #include <QSettings>
 #include <QHash>
 #include <QSet>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
 
 namespace {
 
@@ -208,6 +210,35 @@ void GameLibrary::refresh()
     m_games = games;
     endResetModel();
     emit countChanged();
+    fetchCoverLists();
+}
+
+// libretro's lists of covers for the consoles you have ROMs for, once a month
+// (see roms.h). Once they're all in, the games are looked at again, so the
+// ROMs get the right covers.
+void GameLibrary::fetchCoverLists()
+{
+    for (const QString &console : coverListsToFetch(m_games)) {
+        if (m_coverListsTried.contains(console))
+            continue;
+        m_coverListsTried << console;
+        if (!m_network)
+            m_network = new QNetworkAccessManager(this);
+        QNetworkReply *reply = m_network->get(QNetworkRequest(coverListUrl(console)));
+        ++m_coverListsPending;
+        connect(reply, &QNetworkReply::finished, this, [this, reply, console] {
+            reply->deleteLater();
+            if (reply->error() == QNetworkReply::NoError && saveCoverList(console, reply->readAll()))
+                m_coverListsSaved = true;
+            else
+                qWarning("Box art: couldn't get libretro's list of %s covers: %s",
+                         qPrintable(console), qPrintable(reply->errorString()));
+            if (--m_coverListsPending == 0 && m_coverListsSaved) {
+                m_coverListsSaved = false;
+                refresh();
+            }
+        });
+    }
 }
 
 QString GameLibrary::startFolder(const QString &command)

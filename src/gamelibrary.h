@@ -2,6 +2,9 @@
 
 #include <QAbstractListModel>
 #include <QtQml/qqmlregistration.h>
+#include <QSet>
+
+class QNetworkAccessManager;
 
 // One installed game, from any launcher
 struct Game
@@ -82,5 +85,12 @@ private:
     static QList<Game> scanFaugus();
     static QList<Game> scanFolders(const QStringList &folders);
 
+    // ROMs' box art: download libretro's lists of covers (see roms.h)
+    void fetchCoverLists();
+
     QList<Game> m_games;
+    QNetworkAccessManager *m_network = nullptr;
+    QSet<QString> m_coverListsTried;            // each once while the dashboard runs
+    int m_coverListsPending = 0;
+    bool m_coverListsSaved = false;
 };
