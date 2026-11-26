@@ -52,6 +52,7 @@ FocusScope {
 
     function close() {
         visible = false
+        focus = false
         if (returnFocusTo)
             returnFocusTo.forceActiveFocus()
     }
