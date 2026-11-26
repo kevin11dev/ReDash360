@@ -122,8 +122,9 @@ systemctl --user daemon-reload
 ```
 
 This builds the latest commit from GitHub and installs the dashboard, the
-sessions and the login screen, and makes it SDDM's login screen. Run
-`makepkg -si` in the same folder again to update.
+sessions and the login screen, and makes it SDDM's login screen. After this,
+the dashboard updates itself (see [Updating](#updating)), or run
+`makepkg -si` in the same folder again.
 
 #### Other Linux
 
@@ -195,6 +196,11 @@ running out of sight, so the controller works the mouse there. To go back,
 press the Xbox button and choose Xbox Home, or start ReDash360 from the app
 menu.
 
+**Apps fill the screen** while the dashboard is up, on Plasma: what you open
+from it is maximized without a title bar, like on a console, so the dashboard
+doesn't show round the edges. After Exit to Desktop they're normal windows
+again.
+
 **Sign Out** (on the social tab, or X in the Guide) takes you back to the login
 screen. If the dashboard crashes in a session it comes straight back;
 `journalctl --user -b -u redash360` shows what happened.
@@ -203,6 +209,21 @@ You can also run ReDash360 as an app in your normal desktop session. Settings >
 Preferences > Start Automatically opens it every time you sign in. Only one
 dashboard runs at a time: starting it again brings the running one to the
 front, and `appReDash360 --replace` replaces it instead.
+
+## Updating
+
+The dashboard looks on GitHub for a newer ReDash360 when it starts and every
+few hours. When there is one, it pops up with what's new: **Update Now** asks
+for your password with the on-screen keyboard, then downloads, builds and
+installs the update in the background while you carry on, and **Restart Now**
+starts the new version. **Later** waits for the next one. Settings > System >
+Y shows the same, any time.
+
+The password goes to `sudo` for that update only, and isn't saved. The update
+is built in `~/.cache/ReDash360/ReDash360/update`, with everything it did in
+`update.log` there. Updating from the dashboard is for the `redash360-git`
+package (Arch and CachyOS); built and installed another way, it tells you
+there's an update, and you get it the same way you installed it.
 
 ## Your ROMs
 

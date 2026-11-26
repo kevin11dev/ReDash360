@@ -11,6 +11,9 @@ FocusScope {
 
     readonly property var live: SystemInfo.live
 
+    // Y: updating ReDash360
+    signal updateRequested()
+
     function open() {
         returnFocusTo = Window.activeFocusItem
         visible = true
@@ -57,6 +60,12 @@ FocusScope {
     }
 
     Keys.onEscapePressed: close()
+    Keys.onPressed: (event) => {
+        if (event.key === Qt.Key_Y) {
+            systemScreen.updateRequested()
+            event.accepted = true
+        }
+    }
 
     // Stops the mouse reaching the dashboard underneath
     MouseArea {
@@ -104,7 +113,10 @@ FocusScope {
                         Text {
                             y: 32
                             width: parent.width
-                            text: parent.modelData.value
+                            // ReDash360's own row says which version it is
+                            text: parent.modelData.label === "Dashboard" && Updater.version !== ""
+                                  ? parent.modelData.value.replace("ReDash360", "ReDash360 " + Updater.version)
+                                  : parent.modelData.value
                             color: "#222222"
                             font.pixelSize: 30
                             elide: Text.ElideRight
@@ -177,7 +189,9 @@ FocusScope {
 
     Row {
         x: 138; y: 973
+        spacing: 30
         ButtonHint { button: "B"; label: "Back" }
+        ButtonHint { button: "Y"; label: Updater.state === "available" ? "Update Available" : "Updates" }
     }
 
     // ---- Pieces ----------------------------------------------------------------

@@ -14,6 +14,7 @@
 #include <QRegularExpression>
 
 #include "applibrary.h"
+#include "appwindows.h"
 #include "gamepad.h"
 
 #ifdef HAVE_LAYER_SHELL
@@ -236,6 +237,9 @@ int main(int argc, char *argv[])
     // Controller buttons become key presses for the dashboard, or the Guide over a game
     gamepad.setWindow(mainWindow);
     gamepad.setOverlay(overlay);
+
+    // Apps opened from the dashboard fill the screen (on Plasma)
+    AppWindows::fillScreen();
 
     QLocalServer restarts;
     listenForRestarts(&restarts, mainWindow);

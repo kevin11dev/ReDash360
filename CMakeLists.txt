@@ -72,6 +72,7 @@ set(qml_files
     qml/NewsTile.qml
     qml/NewsScreen.qml
     qml/AddOnsScreen.qml
+    qml/UpdateScreen.qml
     qml/icons.js
 )
 
@@ -96,6 +97,8 @@ qt_add_qml_module(appReDash360
     SOURCES
         src/gamepad.h src/gamepad.cpp
         src/virtualinput.h src/virtualinput.cpp
+        src/appwindows.h src/appwindows.cpp
+        src/updater.h src/updater.cpp
         src/launcher.h src/launcher.cpp
         src/gamelibrary.h src/gamelibrary.cpp
         src/roms.h src/roms.cpp
@@ -126,6 +129,27 @@ set_target_properties(appReDash360 PROPERTIES
 target_link_libraries(appReDash360
     PRIVATE Qt6::Quick Qt6::Network SDL2::SDL2
 )
+
+# The commit this is built from, so the dashboard can tell when GitHub has a
+# newer one, and where updates come from. Only updater.cpp gets them, so a
+# new commit doesn't make everything build again.
+find_package(Git QUIET)
+if (GIT_FOUND)
+    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE REDASH360_COMMIT OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+endif()
+set(REDASH360_REPO "kevin11dev/ReDash360" CACHE STRING "The GitHub repository updates come from")
+set_source_files_properties(src/updater.cpp PROPERTIES COMPILE_DEFINITIONS
+    "REDASH360_COMMIT=\"${REDASH360_COMMIT}\";REDASH360_REPO=\"${REDASH360_REPO}\"")
+message(STATUS "ReDash360 version: ${REDASH360_COMMIT}")
+
+# On Linux, D-Bus: for KWin, so apps opened from the dashboard fill the screen
+if (UNIX AND NOT APPLE)
+    find_package(Qt6 REQUIRED COMPONENTS DBus)
+    target_link_libraries(appReDash360 PRIVATE Qt6::DBus)
+    target_compile_definitions(appReDash360 PRIVATE HAVE_QTDBUS)
+endif()
 
 # For the code Qt generates, which includes the C++ headers by their plain names
 target_include_directories(appReDash360 PRIVATE src)

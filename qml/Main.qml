@@ -74,6 +74,12 @@ ApplicationWindow {
                               signOutCard.close()
                         if(getAppCard.visible)
                               getAppCard.close()
+                        if(updateScreen.visible)
+                              updateScreen.close()
+                        if(updateCard.visible)
+                              updateCard.close()
+                        if(restartCard.visible)
+                              restartCard.close()
                         guide.open()
                   }
             }
@@ -109,8 +115,9 @@ ApplicationWindow {
 
       readonly property int pageWidth: 1252
       readonly property int pageGap: 160
-      readonly property bool subScreenOpen: shelf.visible || appShelf.visible || recentShelf.visible || pinShelf.visible || profileScreen.visible || gameDetails.visible || networkScreen.visible || storageScreen.visible || controllersScreen.visible || systemScreen.visible || displaySoundScreen.visible || preferencesScreen.visible || searchScreen.visible || newsScreen.visible || addOnsScreen.visible
+      readonly property bool subScreenOpen: shelf.visible || appShelf.visible || recentShelf.visible || pinShelf.visible || profileScreen.visible || gameDetails.visible || networkScreen.visible || storageScreen.visible || controllersScreen.visible || systemScreen.visible || displaySoundScreen.visible || preferencesScreen.visible || searchScreen.visible || newsScreen.visible || addOnsScreen.visible || updateScreen.visible
       readonly property bool cardOpen: powerMenu.visible || signOutCard.visible || getAppCard.visible
+                                       || updateCard.visible || restartCard.visible
       readonly property Window guideOverlay: overlay
 
       // Bring the dashboard in front of whatever is running (e.g. a game),
@@ -322,6 +329,7 @@ ApplicationWindow {
             SystemScreen{
                   id: systemScreen
                   anchors.fill: parent
+                  onUpdateRequested: updateScreen.open(false)
             }
 
             DisplaySoundScreen{
@@ -348,6 +356,11 @@ ApplicationWindow {
 
             AddOnsScreen{
                   id: addOnsScreen
+                  anchors.fill: parent
+            }
+
+            UpdateScreen{
+                  id: updateScreen
                   anchors.fill: parent
             }
 
@@ -392,6 +405,57 @@ ApplicationWindow {
                         {label: "Get " + getAppCard.app, run: () => addOnsScreen.getNamed(getAppCard.app)},
                         {label: "Back", run: () => {}}
                   ]
+            }
+
+            // A newer ReDash360 on GitHub: what's new, and Update Now
+            MessageCard{
+                  id: updateCard
+                  anchors.fill: parent
+                  readonly property var changes: Updater.changes
+                  icon: "↑"
+                  title: "Update Available"
+                  message: "ReDash360 has " + changes.length + (changes.length === 1 ? " new change:" : " new changes:")
+                           + changes.slice(0, 4).map(change => "\n•  " + change.title).join("")
+                           + (changes.length > 4 ? "\n   and " + (changes.length - 4) + " more" : "")
+                  defaultIndex: 0
+                  options: [
+                        {label: Updater.canInstall ? "Update Now" : "See What's New", run: () => updateScreen.open(Updater.canInstall)},
+                        {label: "Later", run: () => Updater.later()}
+                  ]
+            }
+
+            // Installed while you were doing something else: restart to use it
+            MessageCard{
+                  id: restartCard
+                  anchors.fill: parent
+                  icon: "↑"
+                  title: "Update Installed"
+                  message: "Restart ReDash360 to use the new version. It only takes a moment."
+                  defaultIndex: 0
+                  options: [
+                        {label: "Restart Now", run: () => Updater.restart()},
+                        {label: "Later", run: () => {}}
+                  ]
+            }
+
+            // Those two wait until you're on the dashboard with nothing else open
+            Timer{
+                  property string toldAbout: ""
+                  property bool toldRestart: false
+                  interval: 2000
+                  repeat: true
+                  running: true
+                  onTriggered: {
+                        if (!window.active || window.subScreenOpen || window.cardOpen || guide.visible)
+                              return
+                        if (Updater.worthTelling && Updater.latest !== toldAbout) {
+                              toldAbout = Updater.latest
+                              updateCard.open()
+                        } else if (Updater.state === "done" && !toldRestart) {
+                              toldRestart = true
+                              restartCard.open()
+                        }
+                  }
             }
 
             Guide{
