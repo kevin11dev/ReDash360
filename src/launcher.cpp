@@ -5,6 +5,8 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QSaveFile>
+#include <QSet>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -88,6 +90,139 @@ void setVrrSetting(int value)
 }
 #endif
 
+#ifdef Q_OS_LINUX
+// ---- Steam -----------------------------------------------------------------
+
+// Is this command Steam? (/usr/bin/steam, or the Flatpak)
+bool isSteam(const QString &program, const QStringList &arguments)
+{
+    const QString name = QFileInfo(program).fileName();
+    return name == "steam" || name == "steam-native" || name == "steam-runtime"
+           || (name == "flatpak" && arguments.contains("com.valvesoftware.Steam"));
+}
+
+bool steamRunning()
+{
+    const QDir proc("/proc");
+    for (const QString &entry : proc.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+        // "1234 (steam) S ...": its name, then its state (Z: it has finished)
+        QFile stat(proc.filePath(entry + "/stat"));
+        if (!stat.open(QIODevice::ReadOnly))
+            continue;
+        const QByteArray line = stat.readAll();
+        const qsizetype open = line.indexOf('(');
+        const qsizetype close = line.lastIndexOf(')');
+        if (open < 0 || close < open || close + 2 >= line.size())
+            continue;
+        const QByteArray name = line.mid(open + 1, close - open - 1);
+        if ((name == "steam" || name == "steam.sh") && line.at(close + 2) != 'Z')
+            return true;
+    }
+    return false;
+}
+
+// In Steam's text settings (a .vdf: "name" "value", and "name" { ... } for a
+// section), set a key straight inside the outermost section, or add it at the
+// end of it. The rest stays exactly as it was. False if it isn't a file like that.
+bool setTopKey(QByteArray &vdf, const QByteArray &key, const QByteArray &value)
+{
+    struct Token { qsizetype start; qsizetype end; char kind; };   // a "string", { or }
+    QList<Token> tokens;
+    for (qsizetype i = 0; i < vdf.size(); ++i) {
+        const char c = vdf.at(i);
+        if (c == '"') {
+            qsizetype end = i + 1;
+            while (end < vdf.size() && vdf.at(end) != '"')
+                end += vdf.at(end) == '\\' ? 2 : 1;
+            if (end >= vdf.size())
+                return false;
+            tokens.append({ i, end + 1, '"' });
+            i = end;
+        } else if (c == '{' || c == '}') {
+            tokens.append({ i, i + 1, c });
+        }
+    }
+
+    int depth = 0;
+    bool isName = true;                             // a name comes first, then its value or section
+    for (qsizetype t = 0; t < tokens.size(); ++t) {
+        const Token &token = tokens.at(t);
+        if (token.kind == '{') {
+            ++depth;
+            isName = true;
+        } else if (token.kind == '}') {
+            if (depth == 1) {                       // the end of the outermost section: add it here
+                const QByteArray line = "\t\"" + key + "\"\t\t\"" + value + "\"\n";
+                qsizetype at = token.start;
+                while (at > 0 && (vdf.at(at - 1) == '\t' || vdf.at(at - 1) == ' '))
+                    --at;
+                if (at > 0 && vdf.at(at - 1) == '\n')
+                    vdf.insert(at, line);           // on its own line, before the }
+                else
+                    vdf.insert(token.start, "\n" + line);
+                return true;
+            }
+            --depth;
+            isName = true;
+        } else if (isName) {
+            const QByteArray name = vdf.mid(token.start + 1, token.end - token.start - 2);
+            if (depth == 1 && name == key && t + 1 < tokens.size() && tokens.at(t + 1).kind == '"') {
+                const Token &old = tokens.at(t + 1);
+                vdf.replace(old.start, old.end - old.start, '"' + value + '"');
+                return true;
+            }
+            isName = false;
+        } else {
+            isName = true;                          // that was a value
+        }
+    }
+    return false;
+}
+
+// Steam's "Guide Button Focuses Steam" (Steam > Settings > Controller): with
+// it on, the Xbox button brings Steam to the front, and Steam and the Guide
+// fight over it. Turned off once for each Steam account, so turning it back on
+// in Steam sticks: Controller_CheckGuideButton in the account's
+// localconfig.vdf. Only while Steam isn't running, as Steam writes its
+// settings back when it quits.
+void turnOffSteamGuideButton()
+{
+    const QString home = QDir::homePath();
+    QSet<QString> files;                            // ~/.steam/steam is a link to the first one
+    for (const QString &steam : { home + "/.local/share/Steam", home + "/.steam/steam",
+                                 home + "/.var/app/com.valvesoftware.Steam/.local/share/Steam" }) {
+        const QDir userdata(steam + "/userdata");
+        for (const QString &account : userdata.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+            const QFileInfo file(userdata.filePath(account + "/config/localconfig.vdf"));
+            if (file.exists())
+                files.insert(file.canonicalFilePath());
+        }
+    }
+
+    QSettings settings;
+    QStringList done = settings.value("steam/guideButtonOff").toStringList();
+    for (const QString &path : std::as_const(files)) {
+        if (done.contains(path))
+            continue;
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly))
+            continue;
+        QByteArray vdf = file.readAll();
+        file.close();
+        if (!setTopKey(vdf, "Controller_CheckGuideButton", "0")) {
+            qWarning("Launcher: can't read Steam's settings in %s", qPrintable(path));
+            continue;
+        }
+        QSaveFile save(path);
+        if (save.open(QIODevice::WriteOnly) && save.write(vdf) == vdf.size() && save.commit()) {
+            done << path;
+            qInfo("Launcher: turned off Steam's \"Guide Button Focuses Steam\" in %s", qPrintable(path));
+        }
+    }
+    settings.setValue("steam/guideButtonOff", done);
+}
+#endif
+
 } // namespace
 
 Launcher::Launcher(QObject *parent)
@@ -107,6 +242,18 @@ bool Launcher::run(const QString &command)
     if (arguments.isEmpty())
         return false;
     const QString program = arguments.takeFirst();
+    #ifdef Q_OS_LINUX
+        // Steam: its Xbox button setting first, while it isn't running yet. Then
+        // Steam itself (not one of its games) opens in Big Picture, or switches
+        // to it when it's open already.
+        if (isSteam(program, arguments)) {
+            const bool running = steamRunning();
+            if (!running)
+                turnOffSteamGuideButton();
+            if (!command.contains("steam://"))
+                arguments << (running ? "steam://open/bigpicture" : "-gamepadui");
+        }
+    #endif
 
     // Detached: the program keeps running on its own, even after ReDash360 quits.
     // A game that has to be started in its own folder (Faugus's) is started there.

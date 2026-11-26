@@ -201,6 +201,12 @@ from it is maximized without a title bar, like on a console, so the dashboard
 doesn't show round the edges. After Exit to Desktop they're normal windows
 again.
 
+**Steam opens in Big Picture** when you start it from the dashboard, and
+switches to it if it's already open. The first time, ReDash360 also turns off
+Steam's "Guide Button Focuses Steam" (Steam > Settings > Controller) for each
+of your Steam accounts, so the Xbox button opens the Guide instead of bringing
+Steam to the front. Turn it back on in Steam and it stays on.
+
 **Sign Out** (on the social tab, or X in the Guide) takes you back to the login
 screen. If the dashboard crashes in a session it comes straight back;
 `journalctl --user -b -u redash360` shows what happened.
