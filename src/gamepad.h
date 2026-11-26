@@ -95,6 +95,9 @@ private:
     // Start SDL's controllers over, to find one it missed (see controllerwatch.h)
     void lookAgain();
 
+    // Using the controller counts as using the PC, so the screen doesn't dim
+    void stillHere();
+
     // Controller as mouse
     void updateMouseMode();
     void setMouseMode(bool on);
@@ -135,6 +138,7 @@ private:
     bool m_switching = false;
     bool m_gameRunning = false;
     QElapsedTimer m_gameCheck;
+    QElapsedTimer m_stillHere;
     QElapsedTimer m_frame;
     double m_moveRestX = 0;
     double m_moveRestY = 0;

@@ -201,6 +201,11 @@ from it is maximized without a title bar, like on a console, so the dashboard
 doesn't show round the edges. After Exit to Desktop they're normal windows
 again.
 
+**The screen stays on while you use the controller.** Plasma and Hyprland only
+count keyboards, mice and touchpads as someone using the PC, so the dashboard
+tells them when you use the controller. Once you put it down, your power
+settings (dimming, turning the screen off, sleep) work as usual.
+
 **Apps open once:** picking an app that's open already takes you back to its
 window instead of opening another one (on Plasma and Hyprland).
 

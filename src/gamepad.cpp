@@ -35,6 +35,7 @@ constexpr double PointerDeadzone = 0.24; // how far a stick moves before it coun
 constexpr double PointerSpeed = 1000;    // steps a second, with the left stick pushed all the way
 constexpr double ScrollSpeed = 12;       // wheel notches a second, with the right stick pushed all the way
 constexpr int GameCheckMs = 1000;        // look for a running game once a second
+constexpr int StillHereMs = 20000;       // tell the desktop someone's there at most this often
 
 // Which key each controller button pretends to be
 int keyForButton(Uint8 button)
@@ -265,6 +266,7 @@ void Gamepad::poll()
 
         case SDL_CONTROLLERBUTTONDOWN: {
             setLastUsed(event.cbutton.which);
+            stillHere();
             if (m_captured)
                 break;
             const Uint8 button = event.cbutton.button;
@@ -284,6 +286,11 @@ void Gamepad::poll()
                 sendKey(key);
             break;
         }
+
+        case SDL_CONTROLLERAXISMOTION:
+            if (std::abs(event.caxis.value) > StickDeadzone)
+                stillHere();
+            break;
 
         case SDL_CONTROLLERBUTTONUP:
             if (m_mouseMode)
@@ -346,6 +353,11 @@ void Gamepad::open(int deviceIndex)
         setLastUsed(id);
     readBatteries();
     updateList();
+
+    // The virtual device, ready before it's needed (see stillHere): a device
+    // the desktop has only just found can miss its first key
+    if (m_mousePossible)
+        m_mouse.open();
 }
 
 void Gamepad::close(SDL_JoystickID id)
@@ -715,6 +727,28 @@ void Gamepad::moveMouse(double seconds)
     // Moving the pointer: the big ring instead of the small arrow
     if (dx || dy || vertical || horizontal)
         m_cursor.moved();
+}
+
+// Plasma and Hyprland dim the screen, turn it off and put the PC to sleep
+// when nobody has used it for a while, and they only count keyboards, mice
+// and touchpads, not controllers. So while you use the controller, the
+// virtual device tells them someone's there, with a key nothing uses (at most
+// every 20 seconds). That wakes a screen that's gone dark too. Not needed for
+// the mouse mode, which is the virtual device already, and not in a game,
+// which keeps the screen on itself (and could take the key for "press any key").
+void Gamepad::stillHere()
+{
+#ifdef Q_OS_LINUX
+    const bool ours = (m_window && m_window->isActive()) || (m_overlay && m_overlay->isVisible());
+    if (!ours && (m_mouseMode || m_gameRunning))
+        return;
+    if (m_stillHere.isValid() && m_stillHere.elapsed() < StillHereMs)
+        return;
+    if (!m_mousePossible || !m_mouse.open())
+        return;
+    m_stillHere.start();
+    m_mouse.tap(KEY_UNKNOWN);
+#endif
 }
 
 // View: the app in front reads the controller itself (a game launcher, Kodi,
