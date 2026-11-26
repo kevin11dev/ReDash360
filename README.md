@@ -52,7 +52,7 @@ sounds.
 ### Arch Linux and CachyOS
 
 ```sh
-git clone https://github.com/KevinKoortzen/ReDash360.git
+git clone https://github.com/kevin11dev/ReDash360.git
 cd ReDash360/packaging/arch/redash360-git
 makepkg -si
 systemctl --user daemon-reload

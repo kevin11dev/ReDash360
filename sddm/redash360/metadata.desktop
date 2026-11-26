@@ -2,7 +2,7 @@
 Name=ReDash360
 Description=Pick your profile like on the Xbox 360, then sign in to ReDash360
 Author=Kevin Koortzen
-Website=https://github.com/KevinKoortzen/ReDash360
+Website=https://github.com/kevin11dev/ReDash360
 Type=sddm-theme
 Version=0.1
 MainScript=Main.qml

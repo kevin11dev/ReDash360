@@ -1,4 +1,4 @@
-Required Notice: Copyright Kevin Koortzen (https://github.com/KevinKoortzen/ReDash360)
+Required Notice: Copyright Kevin Koortzen (https://github.com/kevin11dev/ReDash360)
 
 # PolyForm Strict License 1.0.0
 
