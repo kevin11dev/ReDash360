@@ -8,6 +8,8 @@
 #include <QKeyEvent>
 #include <QPointF>
 #include <QProcess>
+#include <QQuickItem>
+#include <QQuickWindow>
 #include <QRegularExpression>
 #include <QSettings>
 
@@ -60,6 +62,28 @@ void postKey(QWindow *window, int key)
 {
     QGuiApplication::postEvent(window, new QKeyEvent(QEvent::KeyPress, key, Qt::NoModifier));
     QGuiApplication::postEvent(window, new QKeyEvent(QEvent::KeyRelease, key, Qt::NoModifier));
+}
+
+// For a window that doesn't have the keyboard: Qt only hands keys to the one
+// that does, so give the key straight to the item inside that would get it,
+// then to its parents until one takes it, like Qt does
+void giveKey(QWindow *window, int key)
+{
+    auto *quick = qobject_cast<QQuickWindow *>(window);
+    if (!quick)
+        return;
+    QQuickItem *item = quick->contentItem();            // down to the item with the focus
+    while (item && item->isFocusScope() && item->scopedFocusItem())
+        item = item->scopedFocusItem();
+    for (; item; item = item->parentItem()) {
+        QKeyEvent press(QEvent::KeyPress, key, Qt::NoModifier);
+        QCoreApplication::sendEvent(item, &press);
+        if (press.isAccepted()) {
+            QKeyEvent release(QEvent::KeyRelease, key, Qt::NoModifier);
+            QCoreApplication::sendEvent(item, &release);
+            return;
+        }
+    }
 }
 
 bool isDirection(int key)
@@ -549,7 +573,17 @@ void Gamepad::sendKey(int key)
 {
     // While the Guide is open over a game, the controller drives the Guide
     if (m_overlay && m_overlay->isVisible()) {
-        postKey(m_overlay, key);
+        if (m_overlay->isActive()) {
+            postKey(m_overlay, key);
+            return;
+        }
+        // The app behind took the keyboard: Steam does, when the Xbox button
+        // brings it to the front. Ask for it back, and drive the Guide anyway.
+        m_overlay->requestActivate();
+        if (key == Qt::Key_Home)
+            QMetaObject::invokeMethod(m_overlay, "closeGuide");
+        else
+            giveKey(m_overlay, key);
         return;
     }
 
