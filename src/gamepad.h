@@ -13,6 +13,7 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
+#include "controllercursor.h"
 #include "virtualinput.h"
 
 class QQmlEngine;
@@ -119,6 +120,7 @@ private:
 
     // Controller as mouse
     VirtualInput m_mouse;
+    ControllerCursor m_cursor;      // the big ring while the controller moves the pointer
     bool m_mouseEnabled = true;
     bool m_mousePossible = false;
     bool m_mouseMode = false;

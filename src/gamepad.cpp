@@ -590,6 +590,8 @@ void Gamepad::setMouseMode(bool on)
     m_switching = false;
     m_mouse.releaseAll();
     m_moveRestX = m_moveRestY = m_scrollRestV = m_scrollRestH = 0;
+    if (!on)
+        m_cursor.hide();                        // your own cursor again
     qInfo("Controller as mouse: %s", on ? "on" : "off");
 }
 
@@ -655,6 +657,10 @@ void Gamepad::moveMouse(double seconds)
     m_scrollRestV -= vertical;
     m_scrollRestH -= horizontal;
     m_mouse.scroll(vertical, horizontal);
+
+    // Moving the pointer: the big ring instead of the small arrow
+    if (dx || dy || vertical || horizontal)
+        m_cursor.moved();
 }
 
 // View: the app in front reads the controller itself (a game launcher, Kodi,

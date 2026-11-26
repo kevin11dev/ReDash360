@@ -97,6 +97,7 @@ qt_add_qml_module(appReDash360
     SOURCES
         src/gamepad.h src/gamepad.cpp
         src/virtualinput.h src/virtualinput.cpp
+        src/controllercursor.h src/controllercursor.cpp
         src/appwindows.h src/appwindows.cpp
         src/updater.h src/updater.cpp
         src/launcher.h src/launcher.cpp
