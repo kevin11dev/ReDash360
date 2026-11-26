@@ -152,10 +152,33 @@ bool writeCursor(const QString &path, Kind kind)
     return file.write(out) == out.size();
 }
 
+// In ~/.icons, the one folder everything looks in for cursors: Plasma's
+// plasma-apply-cursortheme doesn't look in ~/.local/share/icons
 QString themeFolder()
+{
+    return QDir::homePath() + "/.icons/" + ControllerCursor::ThemeName;
+}
+
+// Where earlier versions put it
+QString oldThemeFolder()
 {
     return QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/icons/"
            + ControllerCursor::ThemeName;
+}
+
+// Switch the cursor without waiting. What it says goes in cursor.log (in
+// ~/.cache/ReDash360/ReDash360), to see why if the cursor didn't change.
+void run(const QString &program, const QStringList &arguments)
+{
+    const QString folder = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    QDir().mkpath(folder);
+    QProcess process;
+    process.setProgram(program);
+    process.setArguments(arguments);
+    process.setStandardOutputFile(folder + "/cursor.log");
+    process.setStandardErrorFile(folder + "/cursor.log", QIODevice::Append);
+    if (!process.startDetached())
+        qWarning("Controller cursor: can't run %s", qPrintable(program));
 }
 
 bool onPlasma() { return qEnvironmentVariable("XDG_CURRENT_DESKTOP").contains("KDE"); }
@@ -171,6 +194,10 @@ ControllerCursor::ControllerCursor(QObject *parent, int idleMs)
     m_idle.setSingleShot(true);
     m_idle.setInterval(idleMs);
     connect(&m_idle, &QTimer::timeout, this, &ControllerCursor::hide);
+
+    // The theme from an earlier version, in the folder Plasma doesn't look in
+    if (QFile::exists(oldThemeFolder() + "/.redash360-version"))
+        QDir(oldThemeFolder()).removeRecursively();
 
     // The ring still on from a dashboard that didn't get to put yours back
     if (QSettings().value("cursor/ring").toBool())
@@ -229,9 +256,9 @@ void ControllerCursor::use(bool ring)
     }
 
     if (onPlasma())
-        QProcess::startDetached("plasma-apply-cursortheme", { theme });
+        run("plasma-apply-cursortheme", { theme });
     else
-        QProcess::startDetached("hyprctl", { "setcursor", theme, hyprlandSize() });
+        run("hyprctl", { "setcursor", theme, hyprlandSize() });
 
     m_shown = ring;
     settings.setValue("cursor/ring", ring);
