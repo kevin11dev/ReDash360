@@ -14,6 +14,7 @@
 #include <SDL.h>
 
 #include "controllercursor.h"
+#include "controllerwatch.h"
 #include "virtualinput.h"
 
 class QQmlEngine;
@@ -91,6 +92,9 @@ private:
     void sendKey(int key);
     void setLastUsed(int id);
 
+    // Start SDL's controllers over, to find one it missed (see controllerwatch.h)
+    void lookAgain();
+
     // Controller as mouse
     void updateMouseMode();
     void setMouseMode(bool on);
@@ -121,6 +125,9 @@ private:
     // Controller as mouse
     VirtualInput m_mouse;
     ControllerCursor m_cursor;      // the big ring while the controller moves the pointer
+
+    // Controllers that connect later, which SDL can miss
+    ControllerWatch m_watch { [this] { lookAgain(); } };
     bool m_mouseEnabled = true;
     bool m_mousePossible = false;
     bool m_mouseMode = false;

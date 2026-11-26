@@ -9,11 +9,8 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
-// The controller on ReDash360's login screen. SDDM only knows the keyboard
-// and mouse, so this reads controllers with SDL2 and turns their buttons into
-// the keys the dashboard uses (A is Enter, B is Escape, the d-pad and left
-// stick are the arrows...), sent to the login screen's window. The theme
-// loads it as LoginPad {} when it's installed.
+#include "controllerwatch.h"
+
 class LoginPad : public QQuickItem
 {
     Q_OBJECT
@@ -33,6 +30,9 @@ private:
     void stopHold(int key);
     void sendKey(int key);
 
+    // Start SDL's controllers over, to find one it missed (see controllerwatch.h)
+    void lookAgain();
+
     QTimer m_timer;
     QHash<SDL_JoystickID, SDL_GameController *> m_pads;
 
@@ -45,4 +45,7 @@ private:
     bool m_leftTrigger = false;         // LT / RT held past halfway
     bool m_rightTrigger = false;
     bool m_started = false;             // SDL is running
+
+    // Controllers that connect later, which SDL can miss
+    ControllerWatch m_watch { [this] { lookAgain(); } };
 };

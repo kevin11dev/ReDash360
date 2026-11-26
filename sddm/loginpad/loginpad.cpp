@@ -105,8 +105,10 @@ void LoginPad::poll()
 void LoginPad::open(int deviceIndex)
 {
     SDL_GameController *controller = SDL_GameControllerOpen(deviceIndex);
-    if (!controller)
+    if (!controller) {
+        qWarning("LoginPad: can't open a controller that connected: %s", SDL_GetError());
         return;
+    }
     const SDL_JoystickID id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
     if (m_pads.contains(id)) {                  // already open: SDL counts opens, so even it out
         SDL_GameControllerClose(controller);
@@ -123,11 +125,33 @@ void LoginPad::close(SDL_JoystickID id)
     const auto it = m_pads.find(id);
     if (it == m_pads.end())
         return;
+    qInfo("LoginPad: a controller disconnected");
     SDL_GameControllerClose(it.value());
     m_pads.erase(it);
     if (m_pads.isEmpty()) {
         m_heldKey = 0;
         m_stickKey = 0;
+    }
+}
+
+void LoginPad::lookAgain()
+{
+    qInfo("LoginPad: a controller connected that SDL missed, so looking for controllers again");
+    for (SDL_GameController *controller : std::as_const(m_pads))
+        SDL_GameControllerClose(controller);
+    m_pads.clear();
+    m_heldKey = 0;
+    m_stickKey = 0;
+
+    // As at start: SDL finds every controller there, and says so (SDL_CONTROLLERDEVICEADDED)
+    if (m_started)
+        SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
+    m_started = SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) == 0;
+    if (!m_started)
+        qWarning("LoginPad: SDL_InitSubSystem failed: %s", SDL_GetError());
+    else if (!m_timer.isActive()) {
+        connect(&m_timer, &QTimer::timeout, this, &LoginPad::poll, Qt::UniqueConnection);
+        m_timer.start(PollIntervalMs);
     }
 }
 

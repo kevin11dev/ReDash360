@@ -25,6 +25,9 @@ qt_add_qml_module(redash360loginpad
 
 target_link_libraries(redash360loginpad PRIVATE Qt6::Quick SDL2::SDL2)
 
+# controllerwatch.h, shared with the dashboard
+target_include_directories(redash360loginpad PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../src")
+
 set(destination "${QT6_INSTALL_QML}/ReDash360/LoginPad")
 install(TARGETS redash360loginpad LIBRARY DESTINATION "${destination}")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ReDash360/LoginPad/qmldir"

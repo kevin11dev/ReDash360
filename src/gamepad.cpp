@@ -288,8 +288,10 @@ void Gamepad::poll()
 void Gamepad::open(int deviceIndex)
 {
     SDL_GameController *controller = SDL_GameControllerOpen(deviceIndex);
-    if (!controller)
+    if (!controller) {
+        qWarning("Gamepad: can't open a controller that connected: %s", SDL_GetError());
         return;
+    }
     const SDL_JoystickID id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
     if (m_pads.contains(id)) {                  // already open: SDL counts opens, so even it out
         SDL_GameControllerClose(controller);
@@ -327,6 +329,7 @@ void Gamepad::close(SDL_JoystickID id)
     const auto it = m_pads.find(id);
     if (it == m_pads.end())
         return;
+    qInfo("Gamepad: %s disconnected", qPrintable(it->name));
     SDL_GameControllerClose(it->controller);
     m_pads.erase(it);
 
@@ -337,6 +340,23 @@ void Gamepad::close(SDL_JoystickID id)
     if (m_lastUsed == id)
         setLastUsed(m_pads.isEmpty() ? -1 : m_pads.cbegin().key());
     updateList();
+}
+
+void Gamepad::lookAgain()
+{
+    qInfo("Gamepad: a controller connected that SDL missed, so looking for controllers again");
+    for (const Pad &pad : std::as_const(m_pads))
+        SDL_GameControllerClose(pad.controller);
+    m_pads.clear();
+    m_heldKey = 0;
+    m_stickKey = 0;
+    setLastUsed(-1);
+    updateList();
+
+    // As at start: SDL finds every controller there, and says so (SDL_CONTROLLERDEVICEADDED)
+    SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
+    if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) != 0)
+        qWarning("Gamepad: SDL_InitSubSystem failed: %s", SDL_GetError());
 }
 
 // How full each controller's battery is: SDL knows for many controllers,

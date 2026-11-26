@@ -114,6 +114,7 @@ qt_add_qml_module(appReDash360
         src/autostart.h src/autostart.cpp
         src/news.h src/news.cpp
         src/loginscreen.h src/loginscreen.cpp
+        src/controllerwatch.h
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
