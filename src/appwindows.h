@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QString>
+#include <QStringList>
 
 // While the dashboard is on screen, the apps you open from it fill the screen
 // like a console's: maximized, without a title bar, so the dashboard doesn't
@@ -17,5 +18,15 @@ void fillScreen();
 
 // The script itself, for the dashboard with this process id
 QString kwinScript(qint64 dashboardPid);
+
+// The names an app's windows go by, worked out from how it's started: its
+// icon name, its program and its Flatpak ID, in lower case
+// ("firefox", "org.mozilla.firefox")
+QStringList appNames(const QString &command, const QString &icon);
+
+// If the app with these names has a window open already, bring it to the
+// front and say so: then it isn't started a second time. On Plasma (KWin)
+// and Hyprland; elsewhere it always says no.
+bool raise(const QStringList &names);
 
 }

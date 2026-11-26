@@ -1,4 +1,5 @@
 #include "launcher.h"
+#include "appwindows.h"
 #include "gamelibrary.h"
 #include <signal.h>
 
@@ -296,8 +297,17 @@ bool Launcher::play(const QString &name, const QString &command)
 
 bool Launcher::openApp(const QString &name, const QString &command, const QString &icon)
 {
-    if (!run(command))
-        return false;
+    // Open already? Then back to its window, not a second one of it. Not
+    // Steam: starting it again is what switches it to Big Picture (see run())
+    bool steam = false;
+#ifdef Q_OS_LINUX
+    QStringList words = QProcess::splitCommand(command);
+    steam = !words.isEmpty() && isSteam(words.takeFirst(), words);
+#endif
+    if (steam || !AppWindows::raise(AppWindows::appNames(command, icon))) {
+        if (!run(command))
+            return false;
+    }
     addRecent("app", name, command, icon);
     return true;
 }

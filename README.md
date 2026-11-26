@@ -201,6 +201,9 @@ from it is maximized without a title bar, like on a console, so the dashboard
 doesn't show round the edges. After Exit to Desktop they're normal windows
 again.
 
+**Apps open once:** picking an app that's open already takes you back to its
+window instead of opening another one (on Plasma and Hyprland).
+
 **Steam opens in Big Picture** when you start it from the dashboard, and
 switches to it if it's already open. The first time, ReDash360 also turns off
 Steam's "Guide Button Focuses Steam" (Steam > Settings > Controller) for each
