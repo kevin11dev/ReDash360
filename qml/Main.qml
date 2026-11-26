@@ -329,7 +329,7 @@ ApplicationWindow {
             SystemScreen{
                   id: systemScreen
                   anchors.fill: parent
-                  onUpdateRequested: updateScreen.open(false)
+                  onUpdateRequested: { systemScreen.close(); updateScreen.open(false) }   // one screen at a time
             }
 
             DisplaySoundScreen{
