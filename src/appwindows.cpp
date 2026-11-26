@@ -10,6 +10,7 @@
 #include <QStandardPaths>
 
 #ifdef HAVE_QTDBUS
+#include <QDBusVirtualObject>
 #include <QDBusArgument>
 #include <QDBusInterface>
 #include <QDBusMessage>
@@ -19,6 +20,34 @@
 namespace {
 
 constexpr char ScriptName[] = "redash360-fill-screen";
+
+#ifdef HAVE_QTDBUS
+// Where the KWin script tells the dashboard which window is in front: a call
+// to front("1234") on /FrontWindow
+class FrontWindow : public QDBusVirtualObject
+{
+public:
+    qint64 pid = 0;
+    int changes = 0;
+
+    QString introspect(const QString &) const override { return {}; }
+    bool handleMessage(const QDBusMessage &message, const QDBusConnection &connection) override
+    {
+        if (message.member() != "front" || message.arguments().isEmpty())
+            return false;
+        pid = message.arguments().constFirst().toString().toLongLong();
+        ++changes;
+        connection.send(message.createReply());
+        return true;
+    }
+};
+
+FrontWindow *frontWindow()
+{
+    static FrontWindow *window = new FrontWindow;   // for as long as the dashboard runs
+    return window;
+}
+#endif
 
 #ifdef HAVE_QTDBUS
 // KWin: its window search (the one KRunner uses) lists every window when
@@ -98,7 +127,7 @@ bool raiseOnHyprland(const QStringList &names)
 
 } // namespace
 
-QString AppWindows::kwinScript(qint64 dashboardPid)
+QString AppWindows::kwinScript(qint64 dashboardPid, const QString &bus)
 {
     // KWin's scripting: workspace.windowList(), windowAdded/windowRemoved,
     // and each window's normalWindow, transient, pid, noBorder, setMaximize()...
@@ -154,7 +183,18 @@ workspace.windowRemoved.connect(w => {
 
 if (dashboardShown())
     fillAll();
-)JS").arg(dashboardPid);
+
+// Which window is in front, for the dashboard: an app there that reads the
+// controller itself gets it, instead of the controller working the mouse
+const dashboardBus = "%2";
+function tellFront() {
+    const w = workspace.activeWindow;
+    if (dashboardBus)
+        callDBus(dashboardBus, "/FrontWindow", "io.github.kevin11dev.ReDash360", "front", w ? String(w.pid) : "0");
+}
+workspace.windowActivated.connect(tellFront);
+tellFront();
+)JS").arg(dashboardPid).arg(bus);
 }
 
 void AppWindows::fillScreen()
@@ -171,7 +211,9 @@ void AppWindows::fillScreen()
         qWarning("Apps fill the screen: can't write %s", qPrintable(path));
         return;
     }
-    file.write(kwinScript(QCoreApplication::applicationPid()).toUtf8());
+    QDBusConnection bus = QDBusConnection::sessionBus();
+    bus.registerVirtualObject("/FrontWindow", frontWindow());
+    file.write(kwinScript(QCoreApplication::applicationPid(), bus.baseService()).toUtf8());
     file.close();
 
     QDBusInterface scripting("org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting");
@@ -249,4 +291,26 @@ bool AppWindows::raise(const QStringList &names)
     if (desktop.contains("Hyprland"))
         return raiseOnHyprland(names);
     return false;
+}
+
+
+qint64 AppWindows::frontApp()
+{
+    const QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP");
+#ifdef HAVE_QTDBUS
+    if (desktop.contains("KDE"))
+        return frontWindow()->pid;
+#endif
+    if (desktop.contains("Hyprland"))       // {"pid": 1234, "class": ..., ...}
+        return QJsonDocument::fromJson(hyprctl({ "activewindow", "-j" }).toUtf8()).object().value("pid").toInteger();
+    return 0;
+}
+
+int AppWindows::frontChanges()
+{
+#ifdef HAVE_QTDBUS
+    return frontWindow()->changes;
+#else
+    return 0;
+#endif
 }

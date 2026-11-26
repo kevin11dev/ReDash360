@@ -1,4 +1,5 @@
 #include "gamepad.h"
+#include "appwindows.h"
 #include "launcher.h"
 
 #include <QDir>
@@ -20,6 +21,11 @@
 #include <linux/input-event-codes.h>
 #endif
 
+#ifdef HAVE_QTDBUS
+#include <QDBusInterface>
+#include <QDBusReply>
+#endif
+
 namespace {
 
 constexpr int PollIntervalMs = 16;       // check the controllers ~60 times a second
@@ -36,6 +42,7 @@ constexpr double PointerSpeed = 1000;    // steps a second, with the left stick 
 constexpr double ScrollSpeed = 12;       // wheel notches a second, with the right stick pushed all the way
 constexpr int GameCheckMs = 1000;        // look for a running game once a second
 constexpr int StillHereMs = 20000;       // tell the desktop someone's there at most this often
+constexpr int AwakeMs = 60000;           // keep the screen on this long after the controller's last used
 
 // Which key each controller button pretends to be
 int keyForButton(Uint8 button)
@@ -222,6 +229,17 @@ Gamepad::Gamepad(QObject *parent)
         updateList();
     });
     m_batteryTimer.start(BatteryCheckMs);
+
+    // A minute after the controller was last used in a game: the screen can
+    // turn off again (see keepAwake)
+    m_awake.setSingleShot(true);
+    connect(&m_awake, &QTimer::timeout, this, [this] {
+#ifdef HAVE_QTDBUS
+        QDBusInterface saver("org.freedesktop.ScreenSaver", "/ScreenSaver", "org.freedesktop.ScreenSaver");
+        saver.call("UnInhibit", m_awakeCookie);
+#endif
+        m_awakeCookie = 0;
+    });
 }
 
 Gamepad::~Gamepad()
@@ -270,11 +288,20 @@ void Gamepad::poll()
             if (m_captured)
                 break;
             const Uint8 button = event.cbutton.button;
-            // Working the mouse: every button but the Xbox button is the mouse's or a key
-            if (m_mouseMode && button == SDL_CONTROLLER_BUTTON_BACK) {
-                pauseMouse(event.cbutton.which);
-                break;
+            // View: in the mouse mode, the app gets the controller; press it
+            // again (or in an app that reads the controller itself), the mouse
+            if (button == SDL_CONTROLLER_BUTTON_BACK) {
+                if (m_mouseMode) {
+                    pauseMouse(event.cbutton.which);
+                    break;
+                }
+                const bool ours = (m_window && m_window->isActive()) || (m_overlay && m_overlay->isVisible());
+                if (!ours && (m_mousePaused || m_appHasController) && !m_gameRunning && m_mouseEnabled && m_mousePossible) {
+                    wantMouse(event.cbutton.which);
+                    break;
+                }
             }
+            // Working the mouse: every button but the Xbox button is the mouse's or a key
             if (m_mouseMode && button != SDL_CONTROLLER_BUTTON_GUIDE) {
                 mouseButton(button, true);
                 break;
@@ -625,7 +652,8 @@ void Gamepad::updateMouseMode()
     const bool dashboard = m_window && m_window->isActive();
     const bool guide = m_overlay && m_overlay->isVisible();
     if (dashboard || guide) {
-        m_mousePaused = false;                  // View's "hand it to the app" lasts until here
+        m_mousePaused = false;                  // what View asked for lasts until here
+        m_mouseWanted = false;
         setMouseMode(false);
         return;
     }
@@ -633,12 +661,26 @@ void Gamepad::updateMouseMode()
         setMouseMode(false);
         return;
     }
-    // Is a game running? Only looked at once a second, as it reads all of /proc
+    // Another window in front (Plasma says so straight away): look now
+    if (AppWindows::frontChanges() != m_frontChanges) {
+        m_frontChanges = AppWindows::frontChanges();
+        m_gameCheck.invalidate();
+    }
+    // Is a game running, or does the app in front read the controller itself
+    // (Steam's Big Picture, an app's TV mode)? Then the controller is theirs,
+    // or every press would count twice. Only looked at once a second, as it
+    // reads /proc.
     if (!m_gameCheck.isValid() || m_gameCheck.elapsed() >= GameCheckMs) {
         m_gameRunning = Launcher::gameRunning();
+        const qint64 front = AppWindows::frontApp();
+        if (front != m_front) {
+            m_front = front;
+            m_mouseWanted = false;              // View's "the mouse after all" was for the last one
+        }
+        m_appHasController = front > 0 && Launcher::readsController(front);
         m_gameCheck.restart();
     }
-    setMouseMode(!m_gameRunning);
+    setMouseMode(!m_gameRunning && (!m_appHasController || m_mouseWanted));
 }
 
 void Gamepad::setMouseMode(bool on)
@@ -740,8 +782,12 @@ void Gamepad::stillHere()
 {
 #ifdef Q_OS_LINUX
     const bool ours = (m_window && m_window->isActive()) || (m_overlay && m_overlay->isVisible());
-    if (!ours && (m_mouseMode || m_gameRunning))
+    if (!ours && m_mouseMode)
         return;
+    if (!ours && (m_gameRunning || m_appHasController)) {
+        keepAwake();
+        return;
+    }
     if (m_stillHere.isValid() && m_stillHere.elapsed() < StillHereMs)
         return;
     if (!m_mousePossible || !m_mouse.open())
@@ -754,10 +800,45 @@ void Gamepad::stillHere()
 // View: the app in front reads the controller itself (a game launcher, Kodi,
 // Steam's Big Picture), so leave it alone until the dashboard or the Guide is
 // back. A short buzz says so.
+// A game, or an app that reads the controller itself, gets no keys from us
+// (it could take one for "press any key", or for typing). Instead the desktop's
+// asked to keep the screen on while the controller's in use, until a minute
+// after it was last used.
+void Gamepad::keepAwake()
+{
+#ifdef HAVE_QTDBUS
+    if (m_awakeCookie == 0) {
+        QDBusInterface saver("org.freedesktop.ScreenSaver", "/ScreenSaver", "org.freedesktop.ScreenSaver");
+        const QDBusReply<uint> cookie = saver.call("Inhibit", QString("ReDash360"), QString("Playing with a controller"));
+        if (!cookie.isValid())
+            return;
+        m_awakeCookie = cookie.value();
+    }
+    m_awake.start(AwakeMs);
+#endif
+}
+
 void Gamepad::pauseMouse(SDL_JoystickID id)
 {
     m_mousePaused = true;
+    m_mouseWanted = false;
     setMouseMode(false);
+    buzz(id);
+}
+
+// View again, or View in an app that reads the controller itself: the
+// controller works the mouse after all, until the dashboard or the Guide is
+// back, or another app comes to the front. A short buzz says so.
+void Gamepad::wantMouse(SDL_JoystickID id)
+{
+    m_mousePaused = false;
+    m_mouseWanted = true;
+    setMouseMode(true);
+    buzz(id);
+}
+
+void Gamepad::buzz(SDL_JoystickID id)
+{
     const auto it = m_pads.constFind(id);
     if (it != m_pads.cend())
         SDL_GameControllerRumble(it->controller, 0x6000, 0x6000, 150);

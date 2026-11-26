@@ -396,6 +396,52 @@ void Launcher::exitToDesktop()
 #endif
 }
 
+bool Launcher::readsController(qint64 pid)
+{
+#ifdef Q_OS_LINUX
+    // A controller, as a program has it open: /dev/input/js0, /dev/hidraw0
+    // (how Steam and SDL read them), or an /dev/input/event0 that has an A
+    // button (BTN_SOUTH, in the bit list Linux shows for each device)
+    auto isController = [](const QString &file) {
+        if (file.startsWith("/dev/input/js") || file.startsWith("/dev/hidraw"))
+            return true;
+        if (!file.startsWith("/dev/input/event"))
+            return false;
+        QFile keys("/sys/class/input/" + QFileInfo(file).fileName() + "/device/capabilities/key");
+        if (!keys.open(QIODevice::ReadOnly))
+            return false;
+        constexpr int ButtonSouth = 0x130;
+        constexpr int WordBits = QT_POINTER_SIZE * 8;
+        const QStringList words = QString::fromLatin1(keys.readAll()).simplified().split(' ', Qt::SkipEmptyParts);
+        const int word = int(words.size()) - 1 - ButtonSouth / WordBits;         // the lowest last
+        return word >= 0 && (words.at(word).toULongLong(nullptr, 16) >> (ButtonSouth % WordBits)) & 1;
+    };
+
+    // The program, then the ones that started it (Steam's window is its
+    // steamwebhelper, while Steam itself reads the controller), up to the
+    // dashboard or the session
+    const qint64 self = QCoreApplication::applicationPid();
+    qint64 current = pid;
+    for (int depth = 0; depth < 8 && current > 1 && current != self; ++depth) {
+        const QDir fds(QString("/proc/%1/fd").arg(current));
+        for (const QString &fd : fds.entryList(QDir::AllEntries | QDir::System | QDir::NoDotAndDotDot)) {
+            if (isController(QFileInfo(fds.filePath(fd)).symLinkTarget()))
+                return true;
+        }
+        QFile stat(QString("/proc/%1/stat").arg(current));    // "1234 (name) S 1200 ...": 1200 started it
+        if (!stat.open(QIODevice::ReadOnly))
+            break;
+        const QString line = QString::fromUtf8(stat.readAll());
+        if (line.mid(line.indexOf('(') + 1, line.lastIndexOf(')') - line.indexOf('(') - 1) == "systemd")
+            break;
+        current = line.mid(line.lastIndexOf(')') + 2).section(' ', 1, 1).toLongLong();
+    }
+#else
+    Q_UNUSED(pid)
+#endif
+    return false;
+}
+
 bool Launcher::gameRunning()
 {
 #ifdef Q_OS_LINUX

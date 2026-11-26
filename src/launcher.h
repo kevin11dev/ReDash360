@@ -36,6 +36,10 @@ public:
 
     static bool gameRunning();
 
+    // Does this program (or the one that started it) read a controller
+    // itself? Like Steam's Big Picture, or an app with a TV mode
+    static bool readsController(qint64 pid);
+
     Q_INVOKABLE void rememberGame();
     Q_INVOKABLE void closeGame();
     Q_INVOKABLE void pauseGame();

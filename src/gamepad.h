@@ -97,6 +97,7 @@ private:
 
     // Using the controller counts as using the PC, so the screen doesn't dim
     void stillHere();
+    void keepAwake();
 
     // Controller as mouse
     void updateMouseMode();
@@ -104,6 +105,8 @@ private:
     void mouseButton(Uint8 button, bool down);
     void moveMouse(double seconds);
     void pauseMouse(SDL_JoystickID id);
+    void wantMouse(SDL_JoystickID id);
+    void buzz(SDL_JoystickID id);
 
     static Gamepad *s_instance;
 
@@ -137,6 +140,12 @@ private:
     bool m_mousePaused = false;
     bool m_switching = false;
     bool m_gameRunning = false;
+    bool m_appHasController = false;    // the app in front reads the controller itself
+    bool m_mouseWanted = false;         // ...and View asked for the mouse there anyway
+    qint64 m_front = 0;                 // the process of the window in front
+    int m_frontChanges = 0;
+    QTimer m_awake;                     // while it runs, the screen's kept on (keepAwake)
+    uint m_awakeCookie = 0;
     QElapsedTimer m_gameCheck;
     QElapsedTimer m_stillHere;
     QElapsedTimer m_frame;

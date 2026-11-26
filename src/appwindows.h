@@ -16,8 +16,18 @@ namespace AppWindows {
 // Load the script into KWin (Plasma only; elsewhere it does nothing)
 void fillScreen();
 
-// The script itself, for the dashboard with this process id
-QString kwinScript(qint64 dashboardPid);
+// The script itself, for the dashboard with this process id. With bus (the
+// dashboard's name on D-Bus), it also tells the dashboard which window is in
+// front, each time that changes.
+QString kwinScript(qint64 dashboardPid, const QString &bus = {});
+
+// The process of the window in front: on Plasma what the script said last, on
+// Hyprland from hyprctl; 0 if it isn't known
+qint64 frontApp();
+
+// On Plasma, goes up by one each time the window in front changes, so the
+// dashboard can look at it straight away (elsewhere it stays 0)
+int frontChanges();
 
 // The names an app's windows go by, worked out from how it's started: its
 // icon name, its program and its Flatpak ID, in lower case
