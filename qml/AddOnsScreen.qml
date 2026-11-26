@@ -398,9 +398,10 @@ FocusScope {
 
     // ---- Pieces ----------------------------------------------------------------
 
-    // Its icon on green: the app's own if you have it, otherwise Flathub's or
-    // your icon theme's, otherwise a picture for its group. The big one shows
-    // its screenshot, with the icon in the corner.
+    // Its icon, filling the square: the app's own if you have it, otherwise
+    // Flathub's or your icon theme's, otherwise a picture for its group on
+    // green. The big one shows its screenshot, with the icon in the corner
+    // (on green when there's no screenshot).
     component Picture: Rectangle {
         id: picture
         property var addOn: ({})
@@ -417,7 +418,7 @@ FocusScope {
         property int tried: 0
         onIconsChanged: tried = 0
 
-        color: "#009000"
+        color: image.visible && (!screenshot || shot.visible) ? "transparent" : "#009000"
 
         Image {
             id: shot
@@ -430,21 +431,18 @@ FocusScope {
             visible: status === Image.Ready
         }
 
-        Rectangle {
+        Item {
             id: iconBox
             readonly property bool corner: shot.visible
             x: corner ? 16 : 0
             y: corner ? parent.height - height - 16 : 0
             width: corner ? 104 : parent.width
             height: corner ? 104 : parent.height
-            color: corner ? "#009000" : "transparent"
-            border.color: corner ? "#B0FFFFFF" : "transparent"
-            border.width: corner ? 2 : 0
 
             Image {
                 id: image
                 anchors.centerIn: parent
-                width: iconBox.corner ? 80 : picture.iconSize
+                width: iconBox.corner ? iconBox.width : picture.iconSize
                 height: width
                 source: picture.icons[picture.tried] || ""
                 sourceSize.width: picture.iconSize * 2
@@ -499,7 +497,7 @@ FocusScope {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 64; height: 64
                 addOn: row.modelData
-                iconSize: 48
+                iconSize: 64
             }
             Column {
                 x: 112
