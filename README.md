@@ -49,9 +49,47 @@ sounds.
 
 ## Install
 
-### Arch Linux and CachyOS
+ReDash360 runs on top of a desktop, KDE Plasma or Hyprland, and its login
+screen is an SDDM theme. If you already have Plasma or Hyprland, skip to
+step 2.
+
+### 1. A desktop: Plasma or Hyprland
+
+**Starting from scratch?** Install [CachyOS](https://cachyos.org), the
+Arch-based Linux that ReDash360 is made on. Its installer asks which desktop
+you want:
+
+- **KDE Plasma**: the easiest, and the one to pick if you're not sure. It's a
+  complete desktop for when you Exit to Desktop, and the dashboard's display
+  settings need it.
+- **Hyprland**: lighter, and set up with a config file you write yourself.
+
+**Already on Arch or CachyOS with another desktop?** Add one of them. Plasma:
 
 ```sh
+sudo pacman -S --needed plasma-meta konsole dolphin
+```
+
+Hyprland, with uwsm (the ReDash360 (Hyprland) session starts Hyprland through
+it), a terminal, sound, and the agent that asks for your password when an app
+needs it:
+
+```sh
+sudo pacman -S --needed hyprland uwsm xdg-desktop-portal-hyprland hyprpolkitagent kitty pipewire pipewire-pulse wireplumber
+systemctl --user enable hyprpolkitagent.service
+```
+
+Hyprland makes a starter config in `~/.config/hypr` the first time it starts.
+The dashboard doesn't need anything in it, so make it yours whenever you like.
+Your screen's resolution and refresh rate go in that config too: the
+dashboard's display settings only work on Plasma.
+
+### 2. ReDash360
+
+#### Arch Linux and CachyOS
+
+```sh
+sudo pacman -S --needed base-devel git
 git clone https://github.com/kevin11dev/ReDash360.git
 cd ReDash360/packaging/arch/redash360-git
 makepkg -si
@@ -62,11 +100,13 @@ This builds the latest commit from GitHub and installs the dashboard, the
 sessions and the login screen, and makes it SDDM's login screen. Run
 `makepkg -si` in the same folder again to update.
 
-### Other Linux
+#### Other Linux
 
-You need SDDM, Qt 6.10 or newer (base, declarative, multimedia and SVG), SDL2,
-CMake, and layer-shell-qt for the Guide to show over games on Wayland. Install
-into `/usr`, where SDDM and the sessions are looked for:
+Install Plasma or Hyprland (with uwsm) first: the build only adds sessions for
+the desktops it finds. You also need SDDM, Qt 6.10 or newer (base,
+declarative, multimedia and SVG), SDL2, CMake, and layer-shell-qt for the
+Guide to show over games on Wayland. Install into `/usr`, where SDDM and the
+sessions are looked for:
 
 ```sh
 cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
@@ -76,6 +116,39 @@ systemctl --user daemon-reload
 ```
 
 To remove it again: `sudo xargs rm < build/install_manifest.txt`
+
+### 3. The login screen
+
+Restart the PC. If you don't get ReDash360's Sign In screen, another login
+screen is still in charge (GNOME's, for one). Switch to SDDM, which replaces
+it, and restart again:
+
+```sh
+sudo systemctl enable --force sddm.service
+```
+
+### 4. Extras
+
+What Steam, Bluetooth controllers and the dashboard's settings screens use.
+Install the ones you want:
+
+```sh
+sudo pacman -S --needed steam playerctl networkmanager libpulse udisks2 bluez bluez-utils
+sudo systemctl enable --now bluetooth.service
+```
+
+- **steam**: Steam games, the store and achievements. On plain Arch, turn on
+  the multilib repository in `/etc/pacman.conf` first (CachyOS has it on). If
+  pacman asks which Vulkan driver you want, pick the one for your graphics
+  card.
+- **playerctl**: the media controls in the Guide
+- **networkmanager**, **libpulse**, **udisks2**: the network and sound
+  settings, and removing drives
+- **bluez**, **bluez-utils**: Bluetooth controllers, and turning them off from
+  the dashboard
+
+Emulators, and launchers like Heroic, are in the dashboard at Settings >
+Add-ons.
 
 ## Using it
 
@@ -93,7 +166,8 @@ The login screen remembers the session for next time.
 **Exit to Desktop** (Guide > Settings > Turn Off Console > Exit to Desktop)
 takes you to your normal desktop: on Hyprland it's already there under the
 dashboard, and on Plasma it brings Plasma's desktop up. To go back, start
-ReDash360 from the app menu.
+ReDash360 from the app menu, or on Hyprland without an app launcher, run
+`systemctl --user start redash360` in a terminal.
 
 **Sign Out** (on the social tab, or X in the Guide) takes you back to the login
 screen. If the dashboard crashes in a session it comes straight back;
