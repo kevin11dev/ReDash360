@@ -1,3 +1,4 @@
+import QtCore
 import QtQuick
 
 // Add-ons (on the games tab): emulators, launchers and other apps for gaming.
@@ -143,9 +144,66 @@ FocusScope {
         return ""
     }
 
+    // ---- Icons and screenshots from Flathub ------------------------------------
+    // For each add-on that's on Flathub, its icon and a screenshot, so you see
+    // them before you install it. Where they are is kept for two weeks (in
+    // ~/.cache/ReDash360/ReDash360/addons.conf), and the pictures stay on disk
+    // with the other pictures from the internet.
+    property var art: ({})                      // Flathub ID -> { icon, shot, when }
+
+    Settings {
+        id: artStore
+        location: StandardPaths.writableLocation(StandardPaths.CacheLocation) + "/addons.conf"
+        category: "flathub"
+        property string art: "{}"
+    }
+
+    Component.onCompleted: {
+        try {
+            art = JSON.parse(artStore.art)
+        } catch (error) {}
+    }
+
+    function fetchArt() {
+        const twoWeeks = 14 * 24 * 60 * 60 * 1000
+        for (const addOn of shown) {
+            const id = addOn.flatpak
+            if (!id || (art[id] && Date.now() - art[id].when < twoWeeks))
+                continue
+            const request = new XMLHttpRequest()
+            request.onreadystatechange = function() {
+                if (request.readyState !== XMLHttpRequest.DONE || request.status !== 200)
+                    return
+                try {
+                    const app = JSON.parse(request.responseText)
+                    const found = Object.assign({}, art)
+                    found[id] = { icon: app.icon || "", shot: screenshot(app.screenshots), when: Date.now() }
+                    art = found
+                    artStore.art = JSON.stringify(found)
+                } catch (error) {}
+            }
+            request.open("GET", "https://flathub.org/api/v2/appstream/" + id)
+            request.send()
+        }
+    }
+
+    // Its main screenshot, or the first one that's wider than it's tall, at
+    // about 750 pixels wide
+    function screenshot(screenshots) {
+        const all = screenshots || []
+        const wide = shot => shot.sizes && shot.sizes.length > 0
+                             && parseInt(shot.sizes[0].width) >= parseInt(shot.sizes[0].height)
+        const chosen = all.find(shot => shot.default && wide(shot)) || all.find(wide) || all[0]
+        if (!chosen || !chosen.sizes || chosen.sizes.length === 0)
+            return ""
+        const sizes = chosen.sizes.slice().sort((a, b) => parseInt(a.width) - parseInt(b.width))
+        return (sizes.find(size => parseInt(size.width) >= 720) || sizes[sizes.length - 1]).src
+    }
+
     function open() {
         returnFocusTo = Window.activeFocusItem
         AppLibrary.refresh()                    // see what's been installed since
+        fetchArt()
         list.currentIndex = 0
         visible = true
         list.forceActiveFocus()
@@ -268,6 +326,7 @@ FocusScope {
                 width: 480; height: 270
                 addOn: addOnsScreen.current
                 iconSize: 160
+                screenshot: true
             }
             Column {
                 x: 40; y: 334
@@ -339,34 +398,72 @@ FocusScope {
 
     // ---- Pieces ----------------------------------------------------------------
 
-    // Its icon on green: the app's own if you have it (or your icon theme has
-    // one), otherwise a picture for its group
+    // Its icon on green: the app's own if you have it, otherwise Flathub's or
+    // your icon theme's, otherwise a picture for its group. The big one shows
+    // its screenshot, with the icon in the corner.
     component Picture: Rectangle {
         id: picture
         property var addOn: ({})
         property int iconSize: 40
+        property bool screenshot: false
 
         readonly property var app: addOnsScreen.installed[addOn.name] || null
+        readonly property var online: addOnsScreen.art[addOn.flatpak] || ({})
+
+        // The icons to try, best first: on to the next if one doesn't load
+        readonly property var icons: [app && app.icon ? "image://appicon/" + app.icon : "",
+                                      online.icon || "",
+                                      addOn.icon ? "image://appicon/" + addOn.icon : ""].filter(icon => icon !== "")
+        property int tried: 0
+        onIconsChanged: tried = 0
 
         color: "#009000"
 
         Image {
-            id: image
-            anchors.centerIn: parent
-            width: picture.iconSize; height: picture.iconSize
-            source: picture.app && picture.app.icon ? "image://appicon/" + picture.app.icon
-                  : picture.addOn.icon ? "image://appicon/" + picture.addOn.icon : ""
-            sourceSize.width: picture.iconSize * 2
-            sourceSize.height: picture.iconSize * 2
+            id: shot
+            anchors.fill: parent
+            source: picture.screenshot && picture.online.shot ? picture.online.shot : ""
+            sourceSize.width: 960
+            fillMode: Image.PreserveAspectCrop
+            verticalAlignment: Image.AlignTop
             asynchronous: true
-            visible: status === Image.Ready && implicitWidth > 0
+            visible: status === Image.Ready
         }
-        TileIcon {
-            anchors.centerIn: parent
-            width: picture.iconSize * 0.8; height: picture.iconSize * 0.8
-            name: picture.addOn.group === "Emulators" ? "console"
-                : picture.addOn.group === "Launchers" ? "controller" : "sliders"
-            visible: !image.visible
+
+        Rectangle {
+            id: iconBox
+            readonly property bool corner: shot.visible
+            x: corner ? 16 : 0
+            y: corner ? parent.height - height - 16 : 0
+            width: corner ? 104 : parent.width
+            height: corner ? 104 : parent.height
+            color: corner ? "#009000" : "transparent"
+            border.color: corner ? "#B0FFFFFF" : "transparent"
+            border.width: corner ? 2 : 0
+
+            Image {
+                id: image
+                anchors.centerIn: parent
+                width: iconBox.corner ? 80 : picture.iconSize
+                height: width
+                source: picture.icons[picture.tried] || ""
+                sourceSize.width: picture.iconSize * 2
+                sourceSize.height: picture.iconSize * 2
+                asynchronous: true
+                visible: status === Image.Ready && implicitWidth > 0
+                onStatusChanged: {
+                    const failed = status === Image.Error || (status === Image.Ready && implicitWidth === 0)
+                    if (failed && picture.tried < picture.icons.length - 1)
+                        picture.tried++
+                }
+            }
+            TileIcon {
+                anchors.centerIn: parent
+                width: image.width * 0.8; height: image.height * 0.8
+                name: picture.addOn.group === "Emulators" ? "console"
+                    : picture.addOn.group === "Launchers" ? "controller" : "sliders"
+                visible: !image.visible
+            }
         }
     }
 
