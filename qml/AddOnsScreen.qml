@@ -81,6 +81,12 @@ FocusScope {
           text: "Installs games from lots of stores and emulators, using install scripts made by its community.",
           find: /lutris/i, icon: "net.lutris.Lutris,lutris",
           flatpak: "net.lutris.Lutris" },
+        { group: "Launchers", name: "RecompLauncher", about: "Console games made native for PC",
+          text: "Finds, installs and updates recomps: native PC versions of console games, like Zelda 64: Recompiled, made from your own copy of the game. It has a Big Picture mode for the TV.",
+          find: /recomplauncher|recomp-launcher/i, icon: "recomplauncher,com.recomplauncher.app",
+          site: "https://recomplauncher.com/",
+          art: { icon: "https://raw.githubusercontent.com/elripalda/RecompLauncher/main/src-tauri/icons/128x128@2x.png",
+            shot: "https://raw.githubusercontent.com/elripalda/RecompLauncher/main/docs/images/bigpicture.jpg" } },
         { group: "Launchers", name: "Bottles", about: "Windows programs", only: "linux",
           text: "Runs Windows programs and game launchers on Linux, each in its own bottle.",
           find: /bottles/i, icon: "com.usebottles.bottles,bottles",
@@ -409,7 +415,7 @@ FocusScope {
         property bool screenshot: false
 
         readonly property var app: addOnsScreen.installed[addOn.name] || null
-        readonly property var online: addOnsScreen.art[addOn.flatpak] || ({})
+        readonly property var online: addOnsScreen.art[addOn.flatpak] || addOn.art || ({})
 
         // The icons to try, best first: on to the next if one doesn't load
         readonly property var icons: [app && app.icon ? "image://appicon/" + app.icon : "",
