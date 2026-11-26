@@ -4,10 +4,20 @@ post_install() {
     echo ":: Sign out for ReDash360's login screen. Press X there until it says"
     echo "   ReDash360 (Hyprland) or ReDash360 (Plasma), and that's remembered."
     _check_sddm_conf
+    _use_uinput_rule
 }
 
 post_upgrade() {
     _check_sddm_conf
+    _use_uinput_rule
+}
+
+# Controller as mouse: put ReDash360's udev rule to work straight away, so
+# the person at the screen may use /dev/uinput without restarting first
+_use_uinput_rule() {
+    modprobe uinput 2>/dev/null
+    udevadm control --reload-rules 2>/dev/null
+    udevadm trigger --sysname-match=uinput 2>/dev/null
 }
 
 # SDDM reads /etc/sddm.conf after /etc/sddm.conf.d, so a login screen picked

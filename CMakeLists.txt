@@ -95,6 +95,7 @@ qt_add_qml_module(appReDash360
     QML_FILES ${qml_files}
     SOURCES
         src/gamepad.h src/gamepad.cpp
+        src/virtualinput.h src/virtualinput.cpp
         src/launcher.h src/launcher.cpp
         src/gamelibrary.h src/gamelibrary.cpp
         src/roms.h src/roms.cpp

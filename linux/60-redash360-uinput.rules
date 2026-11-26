@@ -1,0 +1,5 @@
+# Controller as mouse: lets whoever is signed in at the screen use
+# /dev/uinput, so ReDash360 can make its virtual mouse. The same rule Steam
+# uses for Steam Input. static_node makes /dev/uinput exist (with this
+# access) before anything has loaded the uinput driver.
+KERNEL=="uinput", SUBSYSTEM=="misc", TAG+="uaccess", OPTIONS+="static_node=uinput"

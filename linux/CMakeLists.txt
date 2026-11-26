@@ -22,6 +22,9 @@ configure_file(redash360.service.in redash360.service @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/redash360.service DESTINATION ${USER_UNITS})
 install(FILES start-redash360.conf DESTINATION ${USER_UNITS}/graphical-session.target.d RENAME redash360.conf)
 
+# Controller as mouse: the person at the screen may use /dev/uinput
+install(FILES 60-redash360-uinput.rules DESTINATION lib/udev/rules.d)
+
 find_program(STARTPLASMA_WAYLAND startplasma-wayland)
 if (STARTPLASMA_WAYLAND)
     # Plasma's own session starts through this when there's no D-Bus yet;

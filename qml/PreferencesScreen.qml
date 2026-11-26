@@ -15,8 +15,9 @@ FocusScope {
     property string choosing: ""                // "clock", "engine" or "news"
     property var choices: []                    // [{label, detail, value, current}]
 
-    readonly property var rows: ["background", "sounds", "soundVolume", "clock", "engine", "news", "startup",
-                                 "gameFolders", "romFolders"]
+    readonly property var rows: ["background", "sounds", "soundVolume", "clock", "engine", "news", "startup"]
+                                .concat(Qt.platform.os === "linux" ? ["mouse"] : [])
+                                .concat(["gameFolders", "romFolders"])
 
     // Game Folders and ROM Folders: which one is open ("games" or "roms"), and its rows
     property string foldersKind: "games"
@@ -65,7 +66,7 @@ FocusScope {
     function label(id) {
         return { background: "Background", sounds: "Sound Effects", soundVolume: "Sound Effects Volume",
                  clock: "Clock", engine: "Search Engine", news: "News Site", startup: "Start Automatically",
-            gameFolders: "Game Folders", romFolders: "ROM Folders" }[id] || ""
+                 mouse: "Controller as Mouse", gameFolders: "Game Folders", romFolders: "ROM Folders" }[id] || ""
     }
 
     function usable(id) {
@@ -91,6 +92,7 @@ FocusScope {
         case "engine": return Preferences.searchEngine.name
         case "news": return Preferences.newsSite.name
         case "startup": return Autostart.enabled ? "On" : "Off"
+        case "mouse": return !Gamepad.mouseEnabled ? "Off" : Gamepad.mousePossible ? "On" : "Restart Needed"
         case "gameFolders": return folderCount(GameLibrary.gameFolders)
         case "romFolders": return folderCount(GameLibrary.romFolders)
         }
@@ -114,6 +116,12 @@ FocusScope {
             news: "Where the News tile on Home gets gaming news, next to the news about your Steam games.",
             startup: "Opens the dashboard as soon as you sign in, so your PC starts like a console. "
                      + "If you move the dashboard to another folder, turn this off and on again.",
+            mouse: Gamepad.mouseEnabled && !Gamepad.mousePossible
+                ? "Restart your PC once after installing or updating ReDash360, and the controller "
+                  + "works the mouse outside the dashboard."
+                : "In apps and on the desktop, the controller works the mouse: the left stick moves "
+                  + "it, A clicks, X right-clicks and the right stick scrolls. Never in games. "
+                  + "If an app uses the controller itself, press View to let it.",
             gameFolders: view === "browse"
                 ? "Go into the folder with your games and choose Use This Folder."
                 : "Games on your other drives that aren't in a launcher: Linux games and AppImages, "
@@ -151,6 +159,8 @@ FocusScope {
             chooser.forceActiveFocus()
         } else if (id === "startup") {
             Autostart.enabled = !Autostart.enabled
+        } else if (id === "mouse") {
+            Gamepad.mouseEnabled = !Gamepad.mouseEnabled
         } else if (id === "gameFolders" || id === "romFolders") {
             foldersKind = id === "romFolders" ? "roms" : "games"
             view = "folders"
@@ -357,7 +367,7 @@ FocusScope {
                 width: 96; height: 96
                 name: ({ background: "picture", sounds: "volume", soundVolume: "volume",
                         clock: "clock", engine: "globe", news: "list", startup: "power",
-                        gameFolders: "folder", romFolders: "folder" })[parent.row] || ""
+                        mouse: "controller", gameFolders: "folder", romFolders: "folder" })[parent.row] || ""
                 color: "#2E3336"
             }
             Text {

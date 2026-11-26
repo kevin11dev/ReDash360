@@ -3,6 +3,7 @@
 #include <signal.h>
 
 #include <QCoreApplication>
+#include <QDir>
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -226,13 +227,53 @@ bool Launcher::signOut()
 
 void Launcher::exitToDesktop()
 {
-#ifndef Q_OS_WIN
+#ifdef Q_OS_WIN
+    QCoreApplication::quit();
+#else
     // The login screen names the session in DESKTOP_SESSION. In the Hyprland
-    // one, your Hyprland desktop is already there.
+    // one, your Hyprland desktop is already there. (Started again later,
+    // Plasma's desktop sees it's already running and leaves it at that.)
     if (qEnvironmentVariable("DESKTOP_SESSION") == "redash360-plasma")
         run("plasmashell");
+    emit desktopRequested();
 #endif
-    QCoreApplication::quit();
+}
+
+bool Launcher::gameRunning()
+{
+#ifdef Q_OS_LINUX
+    // Every program running is a folder in /proc, named by its number
+    const qint64 self = QCoreApplication::applicationPid();
+    const QDir proc("/proc");
+    for (const QString &entry : proc.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+        bool isNumber = false;
+        const qint64 pid = entry.toLongLong(&isNumber);
+        if (!isNumber || pid == self)
+            continue;
+
+        // Its name (up to 15 letters). Steam starts every game under its
+        // "reaper"; Faugus starts games with umu-run, and so do Heroic and
+        // Lutris with Proton.
+        QFile comm(proc.filePath(entry + "/comm"));
+        if (!comm.open(QIODevice::ReadOnly))
+            continue;
+        const QByteArray name = comm.readAll().trimmed();
+        if (name == "reaper" || name == "umu-run")
+            return true;
+
+        // A Windows game in Wine or Proton goes by its Windows path
+        // ("C:\Games\Game.exe"), the first thing in its command line
+        QFile commandLine(proc.filePath(entry + "/cmdline"));
+        if (commandLine.open(QIODevice::ReadOnly)
+            && commandLine.read(4096).split('\0').value(0).toLower().endsWith(".exe"))
+            return true;
+
+        // A ROM's emulator or a Game Folders game: ReDash360 marked it
+        if (startedAsGame(pid))
+            return true;
+    }
+#endif
+    return false;
 }
 
 Launcher::~Launcher()

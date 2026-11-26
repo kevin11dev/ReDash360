@@ -47,6 +47,31 @@ sounds.
 | Guide              | Home       | The Guide                              |
 | Start              | Menu       | Done, on the on-screen keyboard        |
 
+### Outside the dashboard
+
+In apps and on the desktop the controller works the mouse, so you don't need
+one on the couch. Never in games: they keep the controller to themselves.
+
+| Controller   | Does                                                         |
+|--------------|--------------------------------------------------------------|
+| Left stick   | Moves the pointer                                            |
+| Right stick  | Scrolls; press it to middle-click                            |
+| A            | Click; hold it to drag                                       |
+| X            | Right-click                                                  |
+| B            | Esc                                                          |
+| Start        | Enter                                                        |
+| D-pad        | Arrow keys                                                   |
+| LT / RT      | Page Up / Page Down                                          |
+| LB           | Alt+Tab: back to the last window. Hold LB and press RB to go further |
+| RB           | Meta+W: Plasma's Overview, with all your windows             |
+| View         | Lets the app have the controller, for apps that use one themselves |
+| Guide        | The Guide, as always: Xbox Home brings the dashboard back    |
+
+Turn it off at Settings > Preferences > Controller as Mouse. It needs the PC
+restarted once after installing ReDash360 (for its udev rule, which lets you
+use `/dev/uinput`). On Hyprland, LB and RB only do something if you've bound
+Alt+Tab and Super+W.
+
 ## Install
 
 ReDash360 runs on top of a desktop, KDE Plasma or Hyprland, and its login
@@ -165,9 +190,10 @@ The login screen remembers the session for next time.
 
 **Exit to Desktop** (Guide > Settings > Turn Off Console > Exit to Desktop)
 takes you to your normal desktop: on Hyprland it's already there under the
-dashboard, and on Plasma it brings Plasma's desktop up. To go back, start
-ReDash360 from the app menu, or on Hyprland without an app launcher, run
-`systemctl --user start redash360` in a terminal.
+dashboard, and on Plasma it brings Plasma's desktop up. The dashboard keeps
+running out of sight, so the controller works the mouse there. To go back,
+press the Xbox button and choose Xbox Home, or start ReDash360 from the app
+menu.
 
 **Sign Out** (on the social tab, or X in the Guide) takes you back to the login
 screen. If the dashboard crashes in a session it comes straight back;

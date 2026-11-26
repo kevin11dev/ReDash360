@@ -113,10 +113,18 @@ ApplicationWindow {
       readonly property bool cardOpen: powerMenu.visible || signOutCard.visible || getAppCard.visible
       readonly property Window guideOverlay: overlay
 
-      // Bring the dashboard in front of whatever is running (e.g. a game)
+      // Bring the dashboard in front of whatever is running (e.g. a game),
+      // or back from the desktop
       function showDashboard() {
+            if (!window.visible)
+                  window.showFullScreen()
             window.raise()
             window.requestActivate()
+      }
+
+      Connections{
+            target: Launcher
+            function onDesktopRequested() { window.hide() }
       }
 
       Item{

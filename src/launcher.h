@@ -32,9 +32,9 @@ public:
     // Sign out of the desktop, back to the login screen
     Q_INVOKABLE bool signOut();
 
-    // Quit ReDash360. In the ReDash360 (Plasma) session it is the desktop,
-    // so this starts Plasma's desktop to go to first.
     Q_INVOKABLE void exitToDesktop();
+
+    static bool gameRunning();
 
     Q_INVOKABLE void rememberGame();
     Q_INVOKABLE void closeGame();
@@ -50,6 +50,7 @@ signals:
     void lastPlayedChanged();
     void gameChanged();
     void recentsChanged();
+    void desktopRequested();
 
 private:
     void addRecent(const QString &kind, const QString &name, const QString &command, const QString &icon);

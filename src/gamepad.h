@@ -13,37 +13,28 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
+#include "virtualinput.h"
+
 class QQmlEngine;
 class QJSEngine;
 
-// Reads game controllers with SDL2 and turns them into key presses for the
-// window, so the QML side only ever has to handle the keyboard. Every
-// connected controller works, and each one gets a player number (1-4) like
-// the 360's ring of light. QML also sees it as the Gamepad singleton, for the
-// Controllers screen: battery levels, vibration, turning a Bluetooth
-// controller off and every button's live state for Test Controller.
 class Gamepad : public QObject
 {
     Q_OBJECT
     QML_ELEMENT
     QML_SINGLETON
 
-    // Every connected controller, player 1 first:
-    // [{id, name, type, player, battery, percent, wired, bluetooth}]
-    //   type: "xbox", "playstation" or "nintendo", for its button labels
-    //   battery: "full", "medium", "low", "empty", or "" when it can't tell
-    //   percent: 0-100, or -1 when only the rough level is known
     Q_PROPERTY(QVariantList controllers READ controllers NOTIFY controllersChanged)
 
-    // The controller that pressed something last (its id), e.g. for the Guide
     Q_PROPERTY(int lastUsed READ lastUsed NOTIFY lastUsedChanged)
 
-    // While true the buttons don't move around the dashboard (Test Controller)
     Q_PROPERTY(bool captured READ captured WRITE setCaptured NOTIFY capturedChanged)
 
+    Q_PROPERTY(bool mouseEnabled READ mouseEnabled WRITE setMouseEnabled NOTIFY mouseEnabledChanged)
+
+    Q_PROPERTY(bool mousePossible READ mousePossible CONSTANT)
+
 public:
-    // No "= nullptr" on purpose: then QML can't make a second Gamepad of
-    // its own and uses the one main() made, through create()
     explicit Gamepad(QObject *parent);
     ~Gamepad() override;
 
@@ -57,21 +48,21 @@ public:
     bool captured() const { return m_captured; }
     void setCaptured(bool captured);
 
-    // What one controller is doing right now, for Test Controller:
-    // {buttons: {a, b, x, y, back, guide, start, leftStick, rightStick, lb, rb, up, down, left, right},
-    //  leftX, leftY, rightX, rightY (-1 to 1, down and right are positive), lt, rt (0 to 1)}
+    bool mouseEnabled() const { return m_mouseEnabled; }
+    void setMouseEnabled(bool enabled);
+    bool mousePossible() const { return m_mousePossible; }
+
     Q_INVOKABLE QVariantMap state(int id) const;
 
-    // Rumble both motors for a moment
     Q_INVOKABLE void vibrate(int id);
 
-    // Disconnect a Bluetooth controller, which turns it off. false when it isn't one
     Q_INVOKABLE bool turnOff(int id);
 
 signals:
     void controllersChanged();
     void lastUsedChanged();
     void capturedChanged();
+    void mouseEnabledChanged();
     void batteryLow(const QString &name, int player);
 
 private:
@@ -99,6 +90,13 @@ private:
     void sendKey(int key);
     void setLastUsed(int id);
 
+    // Controller as mouse
+    void updateMouseMode();
+    void setMouseMode(bool on);
+    void mouseButton(Uint8 button, bool down);
+    void moveMouse(double seconds);
+    void pauseMouse(SDL_JoystickID id);
+
     static Gamepad *s_instance;
 
     QTimer m_timer;
@@ -110,13 +108,27 @@ private:
     int m_lastUsed = -1;
     bool m_captured = false;
 
-    // Holding a direction repeats it, like the real dashboard
     int m_heldKey = 0;
     QElapsedTimer m_heldFor;
     qint64 m_nextRepeatAt = 0;
 
-    int m_stickKey = 0;     // direction a left stick is pushed, or 0
+    int m_stickKey = 0;
 
-    bool m_leftTrigger = false;     // LT / RT held down past halfway (on any controller)
+    bool m_leftTrigger = false;
     bool m_rightTrigger = false;
+
+    // Controller as mouse
+    VirtualInput m_mouse;
+    bool m_mouseEnabled = true;
+    bool m_mousePossible = false;
+    bool m_mouseMode = false;
+    bool m_mousePaused = false;
+    bool m_switching = false;
+    bool m_gameRunning = false;
+    QElapsedTimer m_gameCheck;
+    QElapsedTimer m_frame;
+    double m_moveRestX = 0;
+    double m_moveRestY = 0;
+    double m_scrollRestV = 0;
+    double m_scrollRestH = 0;
 };
