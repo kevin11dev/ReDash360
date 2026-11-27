@@ -57,6 +57,7 @@ Window {
             id: guide
             anchors.fill: parent
             gameTitle: Launcher.gameTitle
+            appTitle: Launcher.appTitle
             backdropColor: "#99000000"          // lighter, so the paused game shows through
             onVisibleChanged: {
                 if(!visible){

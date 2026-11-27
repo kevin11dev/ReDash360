@@ -23,11 +23,12 @@ constexpr char ScriptName[] = "redash360-fill-screen";
 
 #ifdef HAVE_QTDBUS
 // Where the KWin script tells the dashboard which window is in front: a call
-// to front("1234") on /FrontWindow
+// to front("1234", "its title") on /FrontWindow
 class FrontWindow : public QDBusVirtualObject
 {
 public:
     qint64 pid = 0;
+    QString title;
     int changes = 0;
 
     QString introspect(const QString &) const override { return {}; }
@@ -36,6 +37,7 @@ public:
         if (message.member() != "front" || message.arguments().isEmpty())
             return false;
         pid = message.arguments().constFirst().toString().toLongLong();
+        title = message.arguments().value(1).toString();
         ++changes;
         connection.send(message.createReply());
         return true;
@@ -47,24 +49,22 @@ FrontWindow *frontWindow()
     static FrontWindow *window = new FrontWindow;   // for as long as the dashboard runs
     return window;
 }
-#endif
 
-#ifdef HAVE_QTDBUS
 // KWin: its window search (the one KRunner uses) lists every window when
-// asked for "", as "0_{id}" ("0": bring it to the front, with Run()), and
-// getWindowInfo() tells what each one is
-bool raiseOnPlasma(const QStringList &names)
+// asked for "", as "0_{id}", and getWindowInfo() tells what each one is
+// (uuid, pid, desktopFile, resourceClass...). Not the dashboard's own.
+QList<QVariantMap> plasmaWindows()
 {
     QDBusInterface runner("org.kde.KWin", "/WindowsRunner", "org.kde.krunner1");
     QDBusInterface kwin("org.kde.KWin", "/KWin", "org.kde.KWin");
     if (!runner.isValid() || !kwin.isValid())
-        return false;
+        return {};
     runner.setTimeout(1000);
     kwin.setTimeout(1000);
 
     const QDBusMessage reply = runner.call("Match", QString());
     if (reply.type() != QDBusMessage::ReplyMessage || reply.arguments().isEmpty())
-        return false;
+        return {};
     QStringList windows;
     const QDBusArgument matches = reply.arguments().constFirst().value<QDBusArgument>();
     matches.beginArray();                       // each one: id, text, icon, category, relevance, properties
@@ -81,14 +81,30 @@ bool raiseOnPlasma(const QStringList &names)
     }
     matches.endArray();
 
+    QList<QVariantMap> infos;
     const qint64 dashboard = QCoreApplication::applicationPid();
     for (const QString &window : std::as_const(windows)) {
         const QDBusReply<QVariantMap> info = kwin.call("getWindowInfo", window.mid(2));
-        if (!info.isValid() || info.value().value("pid").toLongLong() == dashboard)
-            continue;
+        if (info.isValid() && info.value().value("pid").toLongLong() != dashboard)
+            infos << info.value();
+    }
+    return infos;
+}
+
+// What Run() does with a window: 0 brings it to the front, 1 closes it (as
+// if you'd clicked its X)
+void runOnPlasma(const QVariantMap &window, int action)
+{
+    QDBusInterface runner("org.kde.KWin", "/WindowsRunner", "org.kde.krunner1");
+    runner.call("Run", QString("%1_%2").arg(action).arg(window.value("uuid").toString()), QString());
+}
+
+bool raiseOnPlasma(const QStringList &names)
+{
+    for (const QVariantMap &window : plasmaWindows()) {
         for (const char *key : { "desktopFile", "resourceClass", "resourceName" }) {
-            if (names.contains(info.value().value(key).toString().toLower())) {
-                runner.call("Run", window, QString());
+            if (names.contains(window.value(key).toString().toLower())) {
+                runOnPlasma(window, 0);
                 return true;
             }
         }
@@ -106,7 +122,13 @@ QString hyprctl(const QStringList &arguments)
     return QString::fromUtf8(process.readAllStandardOutput()).trimmed();
 }
 
-// Hyprland: hyprctl clients -j lists the windows, with their class and address
+// Hyprland: hyprctl clients -j lists the windows, with their class, pid and
+// address; dispatch runs Lua (Hyprland 0.55+) or, for older ones, a dispatcher
+bool dispatchOnHyprland(const QString &lua, const QStringList &old)
+{
+    return hyprctl({ "dispatch", lua }) == "ok" || hyprctl(QStringList{ "dispatch" } + old) == "ok";
+}
+
 bool raiseOnHyprland(const QStringList &names)
 {
     const qint64 dashboard = QCoreApplication::applicationPid();
@@ -117,10 +139,9 @@ bool raiseOnHyprland(const QStringList &names)
             || (!names.contains(window.value("class").toString().toLower())
                 && !names.contains(window.value("initialClass").toString().toLower())))
             continue;
-        // Lua configs (Hyprland 0.55+), then older ones
         const QString address = window.value("address").toString();
-        return hyprctl({ "dispatch", QString("hl.dsp.focus({ window = \"address:%1\" })").arg(address) }) == "ok"
-               || hyprctl({ "dispatch", "focuswindow", "address:" + address }) == "ok";
+        return dispatchOnHyprland(QString("hl.dsp.focus({ window = \"address:%1\" })").arg(address),
+                                  { "focuswindow", "address:" + address });
     }
     return false;
 }
@@ -190,7 +211,8 @@ const dashboardBus = "%2";
 function tellFront() {
     const w = workspace.activeWindow;
     if (dashboardBus)
-        callDBus(dashboardBus, "/FrontWindow", "io.github.kevin11dev.ReDash360", "front", w ? String(w.pid) : "0");
+        callDBus(dashboardBus, "/FrontWindow", "io.github.kevin11dev.ReDash360", "front",
+                 w ? String(w.pid) : "0", w ? String(w.caption) : "");
 }
 workspace.windowActivated.connect(tellFront);
 tellFront();
@@ -293,7 +315,6 @@ bool AppWindows::raise(const QStringList &names)
     return false;
 }
 
-
 qint64 AppWindows::frontApp()
 {
     const QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP");
@@ -313,4 +334,46 @@ int AppWindows::frontChanges()
 #else
     return 0;
 #endif
+}
+
+QString AppWindows::frontTitle()
+{
+    const QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP");
+#ifdef HAVE_QTDBUS
+    if (desktop.contains("KDE"))
+        return frontWindow()->title;
+#endif
+    if (desktop.contains("Hyprland"))       // {"pid": 1234, "title": ..., ...}
+        return QJsonDocument::fromJson(hyprctl({ "activewindow", "-j" }).toUtf8()).object().value("title").toString();
+    return {};
+}
+
+bool AppWindows::close(qint64 pid)
+{
+    if (pid <= 0)
+        return false;
+    bool found = false;
+    const QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP");
+#ifdef HAVE_QTDBUS
+    if (desktop.contains("KDE")) {
+        for (const QVariantMap &window : plasmaWindows()) {
+            if (window.value("pid").toLongLong() == pid) {
+                runOnPlasma(window, 1);
+                found = true;
+            }
+        }
+    }
+#endif
+    if (desktop.contains("Hyprland")) {
+        const QJsonArray windows = QJsonDocument::fromJson(hyprctl({ "clients", "-j" }).toUtf8()).array();
+        for (const QJsonValue &value : windows) {
+            const QJsonObject window = value.toObject();
+            if (window.value("pid").toInteger() != pid)
+                continue;
+            const QString address = window.value("address").toString();
+            found |= dispatchOnHyprland(QString("hl.dsp.window.close({ window = \"address:%1\" })").arg(address),
+                                        { "closewindow", "address:" + address });
+        }
+    }
+    return found;
 }

@@ -29,6 +29,13 @@ qint64 frontApp();
 // dashboard can look at it straight away (elsewhere it stays 0)
 int frontChanges();
 
+// The title of the window in front, the same way ("" if it isn't known)
+QString frontTitle();
+
+// Ask the windows of the program with this process id to close, as if you'd
+// clicked their X, so an app gets to save first (or ask). True if it had one.
+bool close(qint64 pid);
+
 // The names an app's windows go by, worked out from how it's started: its
 // icon name, its program and its Flatpak ID, in lower case
 // ("firefox", "org.mozilla.firefox")

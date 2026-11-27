@@ -12,6 +12,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcess>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QTimer>
 
@@ -520,22 +521,38 @@ void Launcher::rememberGame()
     resumeGame();
     m_gamePid = 0;
     m_gameTitle.clear();
+    m_appPid = 0;
+    m_appTitle.clear();
 
-    // Hyprland can tell us which window is in front and which program owns it:
-    // hyprctl activewindow -j  ->  {"title": "...", "pid": 12345, ...}
-    QProcess hyprctl;
-    hyprctl.start("hyprctl", { "activewindow", "-j" });
-    if (hyprctl.waitForFinished(1000)) {
-        const QJsonObject window = QJsonDocument::fromJson(hyprctl.readAllStandardOutput()).object();
-        const qint64 pid = window.value("pid").toInteger();
-        const QString title = window.value("title").toString();
-        if (pid > 0 && pid != QCoreApplication::applicationPid() && isGame(pid)) {
+    // The window in front and the program it's from (Plasma and Hyprland):
+    // a game, or an app the Guide can close
+    const qint64 pid = AppWindows::frontApp();
+    const QString title = AppWindows::frontTitle();
+    if (pid > 0 && pid != QCoreApplication::applicationPid()) {
+        if (isGame(pid)) {
             m_gamePid = pid;
             m_gameTitle = title;
-        } else if (pid > 0) {
+        } else {
+            m_appPid = pid;
+            // "Inbox - Mozilla Thunderbird": apps put their name last
+            static const QRegularExpression separator(" [-\u2013\u2014] ");
+            m_appTitle = title.split(separator).constLast().trimmed();
+            if (m_appTitle.isEmpty())
+                m_appTitle = "this app";
             qInfo("Guide overlay: \"%s\" isn't a game, leaving it running", qPrintable(title));
         }
     }
+    emit gameChanged();
+}
+
+// Close the app the Guide opened over, the way clicking its X would: it gets
+// to save, or ask first
+void Launcher::closeApp()
+{
+    if (m_appPid > 0 && !AppWindows::close(m_appPid))
+        qWarning("Guide overlay: couldn't close \"%s\"", qPrintable(m_appTitle));
+    m_appPid = 0;
+    m_appTitle.clear();
     emit gameChanged();
 }
 

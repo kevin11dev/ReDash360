@@ -14,6 +14,8 @@ class Launcher : public QObject
     Q_PROPERTY(QString lastName READ lastName NOTIFY lastPlayedChanged)
     Q_PROPERTY(QString lastCommand READ lastCommand NOTIFY lastPlayedChanged)
     Q_PROPERTY(QString gameTitle READ gameTitle NOTIFY gameChanged)
+    // The app in front when the Guide opened over it (not a game), for "Close"
+    Q_PROPERTY(QString appTitle READ appTitle NOTIFY gameChanged)
     Q_PROPERTY(QVariant recents READ recents NOTIFY recentsChanged)
 
 public:
@@ -47,12 +49,14 @@ public:
 
     Q_INVOKABLE void rememberGame();
     Q_INVOKABLE void closeGame();
+    Q_INVOKABLE void closeApp();
     Q_INVOKABLE void pauseGame();
     Q_INVOKABLE void resumeGame();
 
     QString lastName() const { return m_lastName; }
     QString lastCommand() const { return m_lastCommand; }
     QString gameTitle() const {return m_gameTitle;}
+    QString appTitle() const { return m_appTitle; }
     QVariantList recents() const{return m_recents;}
 
 signals:
@@ -69,6 +73,8 @@ private:
     QString m_lastCommand;
     qint64 m_gamePid = 0;
     QString m_gameTitle;
+    qint64 m_appPid = 0;
+    QString m_appTitle;
     bool m_gamePaused = false;
     int m_savedVrr = 0;
     QVariantList m_recents;

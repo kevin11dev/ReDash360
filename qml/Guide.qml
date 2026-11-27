@@ -30,8 +30,11 @@ FocusScope {
     signal signOutRequested()
 
     property string gameTitle
+    property string appTitle                    // an app the Guide's open over (not a game), to close
     property bool confirming: false
     property var afterQuit: null
+    // What the confirm box asks: [question, note, yes, no]
+    property var question: []
     property Item returnFocusTo: null
     property int tab: 1                         // opens on your gamertag blade
     property bool inControls: false             // on the media buttons (Media blade)
@@ -71,11 +74,13 @@ FocusScope {
           ].concat(!guide.hasSteam ? [] : [
             { label: "Active Downloads", run: () => Qt.openUrlExternally("steam://open/downloads") } ]) },
         { title: guide.gamertag, rows: [
-            { label: "Xbox Home", dashboard: true, icon: "home", run: () => guide.tabRequested(1) },
-            { label: "File Browser", icon: "folder",
-              run: () => Launcher.run(Qt.platform.os === "windows" ? "explorer"
-                                                                    : "xdg-open " + guide.homeFolder) }
-          ].concat(Launcher.lastName === "" ? [] : [
+                { label: "Xbox Home", dashboard: true, icon: "home", run: () => guide.tabRequested(1) }
+              ].concat(guide.appTitle === "" ? [] : [
+                { label: "Close " + guide.appTitle, icon: "cross", asks: true, run: () => guide.askToClose() } ]).concat([
+                { label: "File Browser", icon: "folder",
+                  run: () => Launcher.run(Qt.platform.os === "windows" ? "explorer"
+                                                                        : "xdg-open " + guide.homeFolder) }
+              ]).concat(Launcher.lastName === "" ? [] : [
             { label: "Play " + Launcher.lastName, image: guide.lastCover,
               run: () => Launcher.play(Launcher.lastName, Launcher.lastCommand) } ]) },
         { title: "Media", media: true, rows: [
@@ -189,6 +194,10 @@ FocusScope {
             askToQuit(row.run)                  // over a game: quit it first
             return
         }
+        if (row.asks) {
+            row.run()                           // it asks first, in the Guide
+            return
+        }
         close()                                 // close first, so focus is back on the dashboard
         row.run()
     }
@@ -204,7 +213,21 @@ FocusScope {
 
     // "Quit <game>?" - then() runs if you say yes
     function askToQuit(then) {
-        afterQuit = then
+        question = ["Quit " + gameTitle + "?", "Any unsaved progress will be lost.",
+                    "Yes, quit and go to Xbox Home", "No, back to the game"]
+        afterQuit = () => { Launcher.closeGame(); then() }
+        ask()
+    }
+
+    // "Close <app>?" - closed the way its X would, so it can save (or ask)
+    function askToClose() {
+        question = ["Close " + appTitle + "?", "It's closed like clicking its X, so it can save first.",
+                    "Yes, close it and go to Xbox Home", "No, back to " + appTitle]
+        afterQuit = () => { Launcher.closeApp(); guide.tabRequested(1) }
+        ask()
+    }
+
+    function ask() {
         confirming = true
         confirmList.currentIndex = 1            // "No" is selected first, to be safe
         confirmList.forceActiveFocus()
@@ -218,7 +241,6 @@ FocusScope {
         }
         const then = afterQuit
         close()
-        Launcher.closeGame()
         then()
     }
 
@@ -546,14 +568,14 @@ FocusScope {
             Text {
                 x: 32; y: 28
                 width: parent.width - 64
-                text: "Quit " + guide.gameTitle + "?"
+                text: guide.question[0] || ""
                 color: "#111111"
                 font.pixelSize: 40
                 elide: Text.ElideRight
             }
             Text {
                 x: 32; y: 90
-                text: "Any unsaved progress will be lost."
+                text: guide.question[1] || ""
                 color: "#555555"
                 font.pixelSize: 30
             }
@@ -566,7 +588,7 @@ FocusScope {
                 interactive: false
                 keyNavigationEnabled: true
                 highlightMoveDuration: 0
-                model: ["Yes, quit and go to Xbox Home", "No, back to the game"]
+                model: [guide.question[2] || "", guide.question[3] || ""]
 
                 delegate: GuideRow {
                     required property int index
