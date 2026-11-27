@@ -301,7 +301,7 @@ FocusScope {
             color: "#E8E8E8"
 
             // Left column: Cursor (LB), Symbols (LT), Caps (left stick)
-            BigKey { x: 53; y: 55; keyId: "cursorLeft"; label: "Cursor"; badge: "LB"; arrow: "left" }
+            BigKey { x: 53; y: 55; keyId: "cursorLeft"; label: "Cursor"; badge: "LB" }
             BigKey { x: 53; y: 195; keyId: "symbols"; label: "Symbols"; badge: "LT"
                      active: keyboard.keySet === "symbols" }
             BigKey { x: 53; y: 335; keyId: "caps"; label: "Caps"; badge: "L"
@@ -349,7 +349,7 @@ FocusScope {
             }
 
             // Right column: Cursor (RB), Accents (RT), Done (Start)
-            BigKey { x: 1197; y: 55; keyId: "cursorRight"; label: "Cursor"; badge: "RB"; arrow: "right" }
+            BigKey { x: 1197; y: 55; keyId: "cursorRight"; label: "Cursor"; badge: "RB" }
             BigKey { x: 1197; y: 195; keyId: "accents"; label: "Accents"; badge: "RT"
                      active: keyboard.keySet === "accents" }
             BigKey { x: 1197; y: 335; keyId: "done"; label: keyboard.doneLabel; badge: "Start" }
@@ -419,18 +419,14 @@ FocusScope {
     component BigKey: Key {
         id: big
         property string badge                   // "LB", "RB", "LT", "RT", "L" or "Start"
-        property string arrow: ""               // "left" / "right" for the cursor keys
         width: 237; height: 132
         showLabel: false
 
-        Row {
+        Glyph {
             anchors.horizontalCenter: parent.horizontalCenter
-            y: 22
-            height: 42
-            spacing: 4
-            Arrow { visible: big.arrow === "left"; anchors.verticalCenter: parent.verticalCenter; focused: big.focused }
-            Glyph { kind: big.badge; focused: big.focused; anchors.verticalCenter: parent.verticalCenter }
-            Arrow { visible: big.arrow === "right"; pointsRight: true; anchors.verticalCenter: parent.verticalCenter; focused: big.focused }
+            kind: big.badge
+            focused: big.focused
+            keyColor: big.color
         }
 
         Text {
@@ -442,69 +438,70 @@ FocusScope {
         }
     }
 
-    // A controller button's picture. Dark (the triggers pale), or white on a
-    // key that's selected, with its letters cut out in the key's colour.
-    component Glyph: Item {
+    // A controller button's picture, traced from the 360's own keyboard: dark
+    // grey with its letters cut out in the key's colour, or white on the key
+    // that's selected
+    component Glyph: Shape {
         id: glyph
         property string kind
         property bool focused: false
-        readonly property bool bumper: kind === "LB" || kind === "RB"
-        readonly property bool trigger: kind === "LT" || kind === "RT"
-        readonly property bool mirrored: kind === "RB" || kind === "RT"
-        readonly property color fill: focused ? "white" : "#2F3437"
-        readonly property color letters: focused ? "#008E00" : "white"
+        property color keyColor: "#EAEAEA"
+        readonly property color ink: focused ? "white" : "#474A4F"
+        readonly property var drawing: glyphs[kind] || glyphs.Start
 
-        width: bumper ? 58 : trigger ? 40 : kind === "L" ? 56 : 40
-        height: bumper ? 40 : trigger ? 44 : kind === "L" ? 42 : 40
+        // Each one's size, how far down the key it sits, its outline, its
+        // letters, and the holes in them (B and R)
+        readonly property var glyphs: ({
+            LB: { width: 81.1, height: 35.9, top: 21.8,
+                shape: "M0,20.6 L14.8,5.7 14.8,13.6 27.7,13.6 27.7,27.7 14.8,27.7 14.8,35.6 Z M30.5,27.3 C30.5,12 43.7,0 58.6,0 H75.8 Q81.1,0 81.1,5.3 V30.6 Q81.1,35.9 75.8,35.9 H35.8 Q30.5,35.9 30.5,30.6 Z",
+                letters: "M46.9,9.2 H50.2 V27.4 H46.9 Z M46.9,24.6 H56.2 V27.4 H46.9 Z M59.6,9.2 H66.9 C69.4,9.2 71.4,11.3 71.4,13.7 V15.3 C71.4,17.8 69.4,19.8 66.9,19.8 H59.6 Z M59.6,16.5 H67.5 C70.1,16.5 72.2,18.5 72.2,21.1 V22.8 C72.2,25.3 70.1,27.4 67.5,27.4 H59.6 Z",
+                counters: "M62.9,12.6 H66.9 C67.6,12.6 68.1,13.1 68.1,13.7 V15.3 C68.1,15.9 67.6,16.5 66.9,16.5 H62.9 Z M62.9,19.8 H67.5 C68.3,19.8 68.9,20.4 68.9,21.1 V22.8 C68.9,23.5 68.3,24.1 67.5,24.1 H62.9 Z" },
+            RB: { width: 83.8, height: 35.9, top: 21.8,
+                shape: "M53.3,27.3 C53.3,12 40.1,0 25.2,0 H5.3 Q0,0 0,5.3 V30.6 Q0,35.9 5.3,35.9 H48 Q53.3,35.9 53.3,30.6 Z M83.8,20.6 L68.9,5.7 68.9,13.6 56.1,13.6 56.1,27.7 68.9,27.7 68.9,35.6 Z",
+                letters: "M8.9,9.2 H12.2 V27.4 H8.9 Z M8.9,9.2 H16 C18.8,9.2 21.1,11.6 21.1,14.4 V15.6 C21.1,18.4 18.8,20.7 16,20.7 H8.9 Z M13.1,17.4 L16.8,17.4 21.5,27.4 17.8,27.4 Z M24.3,9.2 H31.6 C34.1,9.2 36.1,11.3 36.1,13.7 V15.3 C36.1,17.8 34.1,19.8 31.6,19.8 H24.3 Z M24.3,16.5 H32.2 C34.8,16.5 36.9,18.5 36.9,21.1 V22.8 C36.9,25.3 34.8,27.4 32.2,27.4 H24.3 Z",
+                counters: "M12.2,12.6 H16 C17,12.6 17.8,13.4 17.8,14.4 V15.6 C17.8,16.6 17,17.4 16,17.4 H12.2 Z M27.6,12.6 H31.6 C32.3,12.6 32.8,13.1 32.8,13.7 V15.3 C32.8,15.9 32.3,16.5 31.6,16.5 H27.6 Z M27.6,19.8 H32.2 C33,19.8 33.6,20.4 33.6,21.1 V22.8 C33.6,23.5 33,24.1 32.2,24.1 H27.6 Z" },
+            LT: { width: 38.6, height: 47.5, top: 16.9,
+                shape: "M2.9,3.3 Q2.9,0 6.2,0 H33.2 Q38.6,0 38.6,5.4 V28 C38.6,38.7 29.5,47.5 18.3,47.5 H4.9 Q0,47.5 0,42.6 C8.1,31.1 9,15.6 2.9,3.3 Z",
+                letters: "M13,13.9 H15.7 V30 H13 Z M13,27.9 H21.5 V30 H13 Z M21.5,13.9 H31.9 V16.1 H21.5 Z M25.4,13.9 H28.1 V30 H25.4 Z",
+                counters: "" },
+            RT: { width: 38.6, height: 47.5, top: 16.9,
+                shape: "M35.6,3.3 Q35.6,0 32.4,0 H5.4 Q0,0 0,5.4 V28 C0,38.7 9.1,47.5 20.2,47.5 H33.7 Q38.6,47.5 38.6,42.6 C30.5,31.1 29.5,15.6 35.6,3.3 Z",
+                letters: "M5.7,13.9 H8.4 V30 H5.7 Z M5.7,13.9 H10.9 C13.4,13.9 15.4,15.9 15.4,18.3 V19.3 C15.4,21.7 13.4,23.7 10.9,23.7 H5.7 Z M8.8,21 L11.6,21 15.4,30 12.6,30 Z M16.1,13.9 H26.4 V16.1 H16.1 Z M19.9,13.9 H22.6 V30 H19.9 Z",
+                counters: "M8.4,16.6 H10.9 C11.9,16.6 12.7,17.4 12.7,18.3 V19.3 C12.7,20.3 11.9,21 10.9,21 H8.4 Z" },
+            L: { width: 59.3, height: 48.4, top: 16.8,
+                shape: "M18.5,0 L40.9,0 29.7,11.1 Z M13.5,12 H45.9 C53.3,12 59.3,18 59.3,25.5 C59.3,32.9 53.3,38.9 45.9,38.9 H41.6 V45 Q41.6,48.4 38.2,48.4 H21.1 Q17.8,48.4 17.8,45 V38.9 H13.5 C6,38.9 0,32.9 0,25.5 C0,18 6,12 13.5,12 Z",
+                letters: "M26.3,18.1 H29.4 V34.2 H26.3 Z M26.3,31.5 H35.3 V34.2 H26.3 Z",
+                counters: "" },
+            Start: { width: 42.7, height: 36.8, top: 22.1,
+                shape: "M0,18.4 C0,8.2 9.6,0 21.4,0 C33.1,0 42.7,8.2 42.7,18.4 C42.7,28.6 33.1,36.8 21.4,36.8 C9.6,36.8 0,28.6 0,18.4 Z",
+                letters: "M14.5,8.3 L32.5,18.4 14.5,28.6 Z",
+                counters: "" }
+        })
 
-        Shape {
-            anchors.fill: parent
-            preferredRendererType: Shape.CurveRenderer
-            transform: Scale { xScale: glyph.mirrored ? -1 : 1; origin.x: glyph.width / 2 }
-            ShapePath {
-                strokeColor: "transparent"
-                fillColor: glyph.fill
-                PathSvg {
-                    path: glyph.bumper  ? "M4,40 L54,40 Q58,40 58,36 L58,4 Q58,0 54,0 L27,0 C11,0 0,9 0,23 L0,36 Q0,40 4,40 Z"
-                        : glyph.trigger ? "M9,0 L36,0 Q40,0 40,4 L40,31 Q40,38 33,40 Q20,42 7,44 Q4,44 5,41 Q11,22 6,4 Q5,0 9,0 Z"
-                        : glyph.kind === "L" ? "M24,6 L19,6 Q17,6 17,4 L17,2 Q17,0 19,0 L37,0 Q39,0 39,2 L39,4 Q39,6 37,6 L32,6 L32,13 "
-                                              + "L44,13 Q56,13 56,27 Q56,42 44,42 L12,42 Q0,42 0,27 Q0,13 12,13 L24,13 Z"
-                        : "M20,0 A20,20 0 1,1 19.99,0 Z"
-                }
-            }
-            ShapePath {                         // Start's arrow
-                strokeColor: "transparent"
-                fillColor: glyph.kind === "Start" ? glyph.letters : "transparent"
-                PathSvg { path: "M14,9 L31,20 L14,31 Z" }
-            }
-        }
-        Text {
-            visible: glyph.kind !== "Start"
-            anchors.centerIn: parent
-            anchors.verticalCenterOffset: glyph.kind === "L" ? 7 : glyph.trigger ? -3 : 1
-            anchors.horizontalCenterOffset: glyph.bumper ? (glyph.mirrored ? -4 : 4) : glyph.trigger ? (glyph.mirrored ? -2 : 2) : 0
-            text: glyph.kind
-            color: glyph.letters
-            font.pixelSize: glyph.bumper ? 23 : 22
-            font.bold: true
-        }
-    }
-
-    // The thick arrow beside a bumper
-    component Arrow: Shape {
-        id: arrowShape
-        property bool pointsRight: false
-        property bool focused: false
-        width: 30; height: 30
+        y: drawing.top
+        width: drawing.width
+        height: drawing.height
         preferredRendererType: Shape.CurveRenderer
-        transform: Scale { xScale: arrowShape.pointsRight ? -1 : 1; origin.x: arrowShape.width / 2 }
+
         ShapePath {
             strokeColor: "transparent"
-            fillColor: arrowShape.focused ? "white" : "#2F3437"
-            PathSvg { path: "M0,15 L14,1 L14,9 L30,9 L30,21 L14,21 L14,29 Z" }
+            fillColor: glyph.ink
+            fillRule: ShapePath.WindingFill
+            PathSvg { path: glyph.drawing.shape }
+        }
+        ShapePath {
+            strokeColor: "transparent"
+            fillColor: glyph.keyColor
+            fillRule: ShapePath.WindingFill
+            PathSvg { path: glyph.drawing.letters }
+        }
+        ShapePath {
+            strokeColor: "transparent"
+            fillColor: glyph.ink
+            fillRule: ShapePath.WindingFill
+            PathSvg { path: glyph.drawing.counters }
         }
     }
-
 
     // The coloured controller button drawn on Backspace and Space
     component Circle: Rectangle {
