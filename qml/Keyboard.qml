@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 
 // The 360's on-screen keyboard, for everything you type: a grey top with the
 // question and the text box, then the keys. Works with the controller (move
@@ -303,7 +304,7 @@ FocusScope {
             BigKey { x: 53; y: 55; keyId: "cursorLeft"; label: "Cursor"; badge: "LB"; arrow: "left" }
             BigKey { x: 53; y: 195; keyId: "symbols"; label: "Symbols"; badge: "LT"
                      active: keyboard.keySet === "symbols" }
-            BigKey { x: 53; y: 335; keyId: "caps"; label: "Caps"; badge: "L"; round: true
+            BigKey { x: 53; y: 335; keyId: "caps"; label: "Caps"; badge: "L"
                      active: keyboard.caps }
 
             // The 40 letters, numbers and symbols
@@ -351,7 +352,7 @@ FocusScope {
             BigKey { x: 1197; y: 55; keyId: "cursorRight"; label: "Cursor"; badge: "RB"; arrow: "right" }
             BigKey { x: 1197; y: 195; keyId: "accents"; label: "Accents"; badge: "RT"
                      active: keyboard.keySet === "accents" }
-            BigKey { x: 1197; y: 335; keyId: "done"; label: keyboard.doneLabel; badge: "▶"; round: true;}
+            BigKey { x: 1197; y: 335; keyId: "done"; label: keyboard.doneLabel; badge: "Start" }
         }
 
         SequentialAnimation {
@@ -412,45 +413,24 @@ FocusScope {
         }
     }
 
-    // A big key at the side: its controller button above the name
+    // A big key at the side: its controller button above the name, drawn like
+    // the 360's own: a bumper with an arrow (LB, RB), a trigger (LT, RT), the
+    // left stick (L) or the Start button
     component BigKey: Key {
         id: big
-        property string badge                   // "LB", "RT", "L", "▶"...
+        property string badge                   // "LB", "RB", "LT", "RT", "L" or "Start"
         property string arrow: ""               // "left" / "right" for the cursor keys
-        property bool round: false
         width: 237; height: 132
         showLabel: false
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter
-            y: 24
+            y: 22
+            height: 42
             spacing: 4
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                visible: big.arrow === "left"
-                text: "◀"
-                color: big.ink
-                font.pixelSize: 24
-            }
-            Rectangle {
-                width: big.round ? 40 : 52; height: 36
-                radius: big.round ? 18 : 8
-                color: big.focused ? "white" : "#3C3C3C"            // the box
-                Text {
-                    anchors.centerIn: parent
-                    text: big.badge
-                    color: big.focused ? "#008E00" : "white"        // the letters on it
-                    font.pixelSize: big.round ? 22 : 20
-                    font.bold: true
-                }
-            }
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                visible: big.arrow === "right"
-                text: "▶"
-                color: big.ink
-                font.pixelSize: 24
-            }
+            Arrow { visible: big.arrow === "left"; anchors.verticalCenter: parent.verticalCenter; focused: big.focused }
+            Glyph { kind: big.badge; focused: big.focused; anchors.verticalCenter: parent.verticalCenter }
+            Arrow { visible: big.arrow === "right"; pointsRight: true; anchors.verticalCenter: parent.verticalCenter; focused: big.focused }
         }
 
         Text {
@@ -461,6 +441,70 @@ FocusScope {
             font.pixelSize: 32
         }
     }
+
+    // A controller button's picture. Dark (the triggers pale), or white on a
+    // key that's selected, with its letters cut out in the key's colour.
+    component Glyph: Item {
+        id: glyph
+        property string kind
+        property bool focused: false
+        readonly property bool bumper: kind === "LB" || kind === "RB"
+        readonly property bool trigger: kind === "LT" || kind === "RT"
+        readonly property bool mirrored: kind === "RB" || kind === "RT"
+        readonly property color fill: focused ? "white" : "#2F3437"
+        readonly property color letters: focused ? "#008E00" : "white"
+
+        width: bumper ? 58 : trigger ? 40 : kind === "L" ? 56 : 40
+        height: bumper ? 40 : trigger ? 44 : kind === "L" ? 42 : 40
+
+        Shape {
+            anchors.fill: parent
+            preferredRendererType: Shape.CurveRenderer
+            transform: Scale { xScale: glyph.mirrored ? -1 : 1; origin.x: glyph.width / 2 }
+            ShapePath {
+                strokeColor: "transparent"
+                fillColor: glyph.fill
+                PathSvg {
+                    path: glyph.bumper  ? "M4,40 L54,40 Q58,40 58,36 L58,4 Q58,0 54,0 L27,0 C11,0 0,9 0,23 L0,36 Q0,40 4,40 Z"
+                        : glyph.trigger ? "M9,0 L36,0 Q40,0 40,4 L40,31 Q40,38 33,40 Q20,42 7,44 Q4,44 5,41 Q11,22 6,4 Q5,0 9,0 Z"
+                        : glyph.kind === "L" ? "M24,6 L19,6 Q17,6 17,4 L17,2 Q17,0 19,0 L37,0 Q39,0 39,2 L39,4 Q39,6 37,6 L32,6 L32,13 "
+                                              + "L44,13 Q56,13 56,27 Q56,42 44,42 L12,42 Q0,42 0,27 Q0,13 12,13 L24,13 Z"
+                        : "M20,0 A20,20 0 1,1 19.99,0 Z"
+                }
+            }
+            ShapePath {                         // Start's arrow
+                strokeColor: "transparent"
+                fillColor: glyph.kind === "Start" ? glyph.letters : "transparent"
+                PathSvg { path: "M14,9 L31,20 L14,31 Z" }
+            }
+        }
+        Text {
+            visible: glyph.kind !== "Start"
+            anchors.centerIn: parent
+            anchors.verticalCenterOffset: glyph.kind === "L" ? 7 : glyph.trigger ? -3 : 1
+            anchors.horizontalCenterOffset: glyph.bumper ? (glyph.mirrored ? -4 : 4) : glyph.trigger ? (glyph.mirrored ? -2 : 2) : 0
+            text: glyph.kind
+            color: glyph.letters
+            font.pixelSize: glyph.bumper ? 23 : 22
+            font.bold: true
+        }
+    }
+
+    // The thick arrow beside a bumper
+    component Arrow: Shape {
+        id: arrowShape
+        property bool pointsRight: false
+        property bool focused: false
+        width: 30; height: 30
+        preferredRendererType: Shape.CurveRenderer
+        transform: Scale { xScale: arrowShape.pointsRight ? -1 : 1; origin.x: arrowShape.width / 2 }
+        ShapePath {
+            strokeColor: "transparent"
+            fillColor: arrowShape.focused ? "white" : "#2F3437"
+            PathSvg { path: "M0,15 L14,1 L14,9 L30,9 L30,21 L14,21 L14,29 Z" }
+        }
+    }
+
 
     // The coloured controller button drawn on Backspace and Space
     component Circle: Rectangle {
