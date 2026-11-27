@@ -396,6 +396,34 @@ void Launcher::exitToDesktop()
 #endif
 }
 
+#ifdef Q_OS_LINUX
+// Streaming apps and emulators: they always read the controller, so they
+// count even when the devices a program has open can't be seen (a Flatpak's,
+// for one). By program name, in lower case, as Linux shortens it (15 letters).
+static bool isPlayer(const QString &name)
+{
+    static const QStringList players = {
+        "moonlight", "steamlink", "chiaki", "chiaki-ng", "greenlight",
+        "retroarch", "pcsx2-qt", "rpcs3", "ppssppqt", "ppssppsdl", "xemu", "dolphin-emu",
+        "cemu", "melonds", "mgba-qt", "duckstation-qt", "scummvm", "dosbox",
+    };
+    return players.contains(name.toLower());
+}
+#endif
+
+bool Launcher::playerRunning()
+{
+#ifdef Q_OS_LINUX
+    const QDir proc("/proc");
+    for (const QString &entry : proc.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+        QFile comm(proc.filePath(entry + "/comm"));
+        if (comm.open(QIODevice::ReadOnly) && isPlayer(QString::fromUtf8(comm.readAll().trimmed())))
+            return true;
+    }
+#endif
+    return false;
+}
+
 bool Launcher::readsController(qint64 pid)
 {
 #ifdef Q_OS_LINUX
@@ -432,7 +460,10 @@ bool Launcher::readsController(qint64 pid)
         if (!stat.open(QIODevice::ReadOnly))
             break;
         const QString line = QString::fromUtf8(stat.readAll());
-        if (line.mid(line.indexOf('(') + 1, line.lastIndexOf(')') - line.indexOf('(') - 1) == "systemd")
+        const QString name = line.mid(line.indexOf('(') + 1, line.lastIndexOf(')') - line.indexOf('(') - 1);
+        if (isPlayer(name))
+            return true;
+        if (name == "systemd")
             break;
         current = line.mid(line.lastIndexOf(')') + 2).section(' ', 1, 1).toLongLong();
     }

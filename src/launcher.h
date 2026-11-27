@@ -37,8 +37,13 @@ public:
     static bool gameRunning();
 
     // Does this program (or the one that started it) read a controller
-    // itself? Like Steam's Big Picture, or an app with a TV mode
+    // itself? Like Steam's Big Picture, an app with a TV mode, Moonlight or
+    // an emulator
     static bool readsController(qint64 pid);
+
+    // Is a streaming app (Moonlight...) or an emulator running anywhere? For
+    // when which window is in front isn't known
+    static bool playerRunning();
 
     Q_INVOKABLE void rememberGame();
     Q_INVOKABLE void closeGame();

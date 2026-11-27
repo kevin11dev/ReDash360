@@ -677,7 +677,13 @@ void Gamepad::updateMouseMode()
             m_front = front;
             m_mouseWanted = false;              // View's "the mouse after all" was for the last one
         }
-        m_appHasController = front > 0 && Launcher::readsController(front);
+        // Which window is in front isn't known (not Plasma or Hyprland): any
+        // streaming app or emulator that's running has the controller
+        const bool has = front > 0 ? Launcher::readsController(front) : Launcher::playerRunning();
+        if (has != m_appHasController)
+            qInfo("Controller as mouse: %s", has ? "the app in front reads the controller itself, so it has it"
+                                                 : "the app in front doesn't read the controller");
+        m_appHasController = has;
         m_gameCheck.restart();
     }
     setMouseMode(!m_gameRunning && (!m_appHasController || m_mouseWanted));
