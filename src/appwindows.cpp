@@ -21,6 +21,30 @@ namespace {
 
 constexpr char ScriptName[] = "redash360-fill-screen";
 
+// The names a window's program goes by: what Linux calls it (15 letters at
+// most) and the name of its file ("firefox", "recomplauncher"), in lower case.
+// An app's window often has an ID of its own ("com.recomplauncher.app"), so
+// this is how it's still found.
+QStringList processNames(qint64 pid)
+{
+    QStringList names;
+    QFile comm(QString("/proc/%1/comm").arg(pid));
+    if (comm.open(QIODevice::ReadOnly))
+        names << QString::fromUtf8(comm.readAll().trimmed()).toLower();
+    const QString exe = QFileInfo(QString("/proc/%1/exe").arg(pid)).symLinkTarget();
+    if (!exe.isEmpty())
+        names << QFileInfo(exe).fileName().toLower();
+    return names;
+}
+
+bool anyOf(const QStringList &names, const QStringList &these)
+{
+    for (const QString &name : these)
+        if (!name.isEmpty() && names.contains(name))
+            return true;
+    return false;
+}
+
 #ifdef HAVE_QTDBUS
 // Where the KWin script tells the dashboard which window is in front: a call
 // to front("1234", "its title") on /FrontWindow
@@ -102,11 +126,12 @@ void runOnPlasma(const QVariantMap &window, int action)
 bool raiseOnPlasma(const QStringList &names)
 {
     for (const QVariantMap &window : plasmaWindows()) {
-        for (const char *key : { "desktopFile", "resourceClass", "resourceName" }) {
-            if (names.contains(window.value(key).toString().toLower())) {
-                runOnPlasma(window, 0);
-                return true;
-            }
+        const QStringList ids = { window.value("desktopFile").toString().toLower(),
+                                 window.value("resourceClass").toString().toLower(),
+                                 window.value("resourceName").toString().toLower() };
+        if (anyOf(names, ids) || anyOf(names, processNames(window.value("pid").toLongLong()))) {
+            runOnPlasma(window, 0);
+            return true;
         }
     }
     return false;
@@ -135,9 +160,10 @@ bool raiseOnHyprland(const QStringList &names)
     const QJsonArray windows = QJsonDocument::fromJson(hyprctl({ "clients", "-j" }).toUtf8()).array();
     for (const QJsonValue &value : windows) {
         const QJsonObject window = value.toObject();
+        const QStringList ids = { window.value("class").toString().toLower(),
+                                 window.value("initialClass").toString().toLower() };
         if (window.value("pid").toInteger() == dashboard
-            || (!names.contains(window.value("class").toString().toLower())
-                && !names.contains(window.value("initialClass").toString().toLower())))
+            || (!anyOf(names, ids) && !anyOf(names, processNames(window.value("pid").toInteger()))))
             continue;
         const QString address = window.value("address").toString();
         return dispatchOnHyprland(QString("hl.dsp.focus({ window = \"address:%1\" })").arg(address),
