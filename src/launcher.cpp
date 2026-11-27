@@ -545,6 +545,29 @@ void Launcher::rememberGame()
     emit gameChanged();
 }
 
+QVariantList Launcher::openWindows() const
+{
+    QVariantList list;
+    for (const AppWindows::Window &window : AppWindows::windows())
+        list << QVariantMap{ { "id", window.id }, { "title", window.title }, { "names", window.names } };
+    return list;
+}
+
+QStringList Launcher::appNames(const QString &command, const QString &icon) const
+{
+    return AppWindows::appNames(command, icon);
+}
+
+bool Launcher::switchTo(const QString &windowId)
+{
+    return AppWindows::activate(windowId);
+}
+
+bool Launcher::closeWindow(const QString &windowId)
+{
+    return AppWindows::closeWindow(windowId);
+}
+
 // Close the app the Guide opened over, the way clicking its X would: it gets
 // to save, or ask first
 void Launcher::closeApp()

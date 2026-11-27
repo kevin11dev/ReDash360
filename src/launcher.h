@@ -50,6 +50,14 @@ public:
     Q_INVOKABLE void rememberGame();
     Q_INVOKABLE void closeGame();
     Q_INVOKABLE void closeApp();
+    // The apps that are open (Plasma and Hyprland): [{id, title, names}], for
+    // the Guide's Open Apps and the Open marks in My Apps
+    Q_INVOKABLE QVariantList openWindows() const;
+    // The names an app's windows go by, to find it among those (see AppWindows)
+    Q_INVOKABLE QStringList appNames(const QString &command, const QString &icon) const;
+    // Bring one of them to the front, or close it the way its X would
+    Q_INVOKABLE bool switchTo(const QString &windowId);
+    Q_INVOKABLE bool closeWindow(const QString &windowId);
     Q_INVOKABLE void pauseGame();
     Q_INVOKABLE void resumeGame();
 

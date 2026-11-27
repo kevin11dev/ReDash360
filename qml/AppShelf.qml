@@ -11,6 +11,27 @@ FocusScope {
     property var apps: []
     property var pickCallback: null             // set while choosing an app for a slot
     readonly property bool picking: pickCallback !== null
+    // The names the open windows go by, for the Open marks (see Launcher.openWindows)
+    property var openNames: []
+
+    function lookForOpen() {
+        let names = []
+        for (const window of Launcher.openWindows())
+            names = names.concat(window.names)
+        openNames = names
+    }
+
+    function isOpen(app) {
+        return openNames.length > 0 && Launcher.appNames(app.command, app.icon).some(name => openNames.includes(name))
+    }
+
+    // Apps opened or closed while it's showing
+    Timer {
+        interval: 3000
+        running: appShelf.visible
+        repeat: true
+        onTriggered: appShelf.lookForOpen()
+    }
 
     // open()                          -> every app, as "my apps"
     // open("my video apps", someApps) -> just those apps, with that title
@@ -28,6 +49,7 @@ FocusScope {
     function show(newTitle, newApps) {
         title = newTitle || "my apps"
         apps = newApps || AppLibrary.all()
+        lookForOpen()
         returnFocusTo = Window.activeFocusItem
         visible = true
         grid.currentIndex = 0
@@ -137,7 +159,11 @@ FocusScope {
         x: 180
         y: 990
         spacing: 40
-        ButtonHint { button: "A"; label: appShelf.picking ? "Choose" : "Launch" }
+        ButtonHint {
+            readonly property var app: appShelf.apps[grid.currentIndex]
+            button: "A"
+            label: appShelf.picking ? "Choose" : app && appShelf.isOpen(app) ? "Switch To" : "Launch"
+        }
         ButtonHint { button: "B"; label: "Back" }
         ButtonHint {
             readonly property var app: appShelf.apps[grid.currentIndex]
@@ -147,11 +173,13 @@ FocusScope {
         }
     }
 
-    // One app: a square green tile with its icon and name
+    // One app: a square green tile with its icon and name, marked Open while
+    // it's running
     component AppTile: Rectangle {
         id: tile
         property var app
         property bool selected
+        readonly property bool open: appShelf.isOpen(app)
         signal clicked()
 
         width: 287
@@ -198,6 +226,25 @@ FocusScope {
             width: 96; height: 96
             name: "apps"
             visible: icon.status !== Image.Ready
+        }
+
+        Rectangle {                             // "Open"
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.margins: 12
+            width: openText.implicitWidth + 22
+            height: 36
+            radius: 4
+            color: "#F2FFFFFF"
+            visible: tile.open
+            Text {
+                id: openText
+                anchors.centerIn: parent
+                text: "Open"
+                color: "#007A00"
+                font.pixelSize: 22
+                font.bold: true
+            }
         }
 
         Text {

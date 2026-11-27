@@ -73,7 +73,9 @@ FrontWindow *frontWindow()
     static FrontWindow *window = new FrontWindow;   // for as long as the dashboard runs
     return window;
 }
+#endif
 
+#ifdef HAVE_QTDBUS
 // KWin: its window search (the one KRunner uses) lists every window when
 // asked for "", as "0_{id}", and getWindowInfo() tells what each one is
 // (uuid, pid, desktopFile, resourceClass...). Not the dashboard's own.
@@ -123,19 +125,6 @@ void runOnPlasma(const QVariantMap &window, int action)
     runner.call("Run", QString("%1_%2").arg(action).arg(window.value("uuid").toString()), QString());
 }
 
-bool raiseOnPlasma(const QStringList &names)
-{
-    for (const QVariantMap &window : plasmaWindows()) {
-        const QStringList ids = { window.value("desktopFile").toString().toLower(),
-                                 window.value("resourceClass").toString().toLower(),
-                                 window.value("resourceName").toString().toLower() };
-        if (anyOf(names, ids) || anyOf(names, processNames(window.value("pid").toLongLong()))) {
-            runOnPlasma(window, 0);
-            return true;
-        }
-    }
-    return false;
-}
 #endif
 
 QString hyprctl(const QStringList &arguments)
@@ -152,24 +141,6 @@ QString hyprctl(const QStringList &arguments)
 bool dispatchOnHyprland(const QString &lua, const QStringList &old)
 {
     return hyprctl({ "dispatch", lua }) == "ok" || hyprctl(QStringList{ "dispatch" } + old) == "ok";
-}
-
-bool raiseOnHyprland(const QStringList &names)
-{
-    const qint64 dashboard = QCoreApplication::applicationPid();
-    const QJsonArray windows = QJsonDocument::fromJson(hyprctl({ "clients", "-j" }).toUtf8()).array();
-    for (const QJsonValue &value : windows) {
-        const QJsonObject window = value.toObject();
-        const QStringList ids = { window.value("class").toString().toLower(),
-                                 window.value("initialClass").toString().toLower() };
-        if (window.value("pid").toInteger() == dashboard
-            || (!anyOf(names, ids) && !anyOf(names, processNames(window.value("pid").toInteger()))))
-            continue;
-        const QString address = window.value("address").toString();
-        return dispatchOnHyprland(QString("hl.dsp.focus({ window = \"address:%1\" })").arg(address),
-                                  { "focuswindow", "address:" + address });
-    }
-    return false;
 }
 
 } // namespace
@@ -331,13 +302,19 @@ bool AppWindows::raise(const QStringList &names)
 {
     if (names.isEmpty())
         return false;
-    const QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP");
-#ifdef HAVE_QTDBUS
-    if (desktop.contains("KDE"))
-        return raiseOnPlasma(names);
-#endif
-    if (desktop.contains("Hyprland"))
-        return raiseOnHyprland(names);
+    const QList<Window> open = windows();
+    for (const Window &window : open) {
+        if (anyOf(names, window.names)) {
+            qInfo("Open apps: back to \"%s\"", qPrintable(window.title));
+            return activate(window.id);
+        }
+    }
+    if (!open.isEmpty()) {
+        QStringList seen;
+        for (const Window &window : open)
+            seen << window.names.join('/');
+        qInfo("Open apps: no window for %s among %s", qPrintable(names.join('/')), qPrintable(seen.join(", ")));
+    }
     return false;
 }
 
@@ -376,30 +353,83 @@ QString AppWindows::frontTitle()
 
 bool AppWindows::close(qint64 pid)
 {
-    if (pid <= 0)
-        return false;
     bool found = false;
+    for (const Window &window : windows()) {
+        if (pid > 0 && window.pid == pid)
+            found |= closeWindow(window.id);
+    }
+    return found;
+}
+
+QList<AppWindows::Window> AppWindows::windows()
+{
+    QList<Window> list;
     const QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP");
 #ifdef HAVE_QTDBUS
     if (desktop.contains("KDE")) {
-        for (const QVariantMap &window : plasmaWindows()) {
-            if (window.value("pid").toLongLong() == pid) {
-                runOnPlasma(window, 1);
-                found = true;
-            }
+        for (const QVariantMap &info : plasmaWindows()) {
+            if (info.value("skipTaskbar").toBool())
+                continue;                       // a tool window, not an app's own
+            Window window;
+            window.id = info.value("uuid").toString();
+            window.pid = info.value("pid").toLongLong();
+            window.title = info.value("caption").toString();
+            window.names = QStringList{ info.value("desktopFile").toString().toLower(),
+                                       info.value("resourceClass").toString().toLower(),
+                                       info.value("resourceName").toString().toLower() }
+                           + processNames(window.pid);
+            window.names.removeAll(QString());
+            window.names.removeDuplicates();
+            list << window;
         }
     }
 #endif
     if (desktop.contains("Hyprland")) {
-        const QJsonArray windows = QJsonDocument::fromJson(hyprctl({ "clients", "-j" }).toUtf8()).array();
-        for (const QJsonValue &value : windows) {
-            const QJsonObject window = value.toObject();
-            if (window.value("pid").toInteger() != pid)
+        const qint64 dashboard = QCoreApplication::applicationPid();
+        const QJsonArray clients = QJsonDocument::fromJson(hyprctl({ "clients", "-j" }).toUtf8()).array();
+        for (const QJsonValue &value : clients) {
+            const QJsonObject client = value.toObject();
+            if (client.value("pid").toInteger() == dashboard || client.value("mapped") == false || client.value("hidden") == true)
                 continue;
-            const QString address = window.value("address").toString();
-            found |= dispatchOnHyprland(QString("hl.dsp.window.close({ window = \"address:%1\" })").arg(address),
-                                        { "closewindow", "address:" + address });
+            Window window;
+            window.id = client.value("address").toString();
+            window.pid = client.value("pid").toInteger();
+            window.title = client.value("title").toString();
+            window.names = QStringList{ client.value("class").toString().toLower(),
+                                       client.value("initialClass").toString().toLower() }
+                           + processNames(window.pid);
+            window.names.removeAll(QString());
+            window.names.removeDuplicates();
+            list << window;
         }
     }
-    return found;
+    return list;
+}
+
+bool AppWindows::activate(const QString &id)
+{
+    const QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP");
+#ifdef HAVE_QTDBUS
+    if (desktop.contains("KDE")) {
+        runOnPlasma({ { "uuid", id } }, 0);
+        return true;
+    }
+#endif
+    if (desktop.contains("Hyprland"))
+        return dispatchOnHyprland(QString("hl.dsp.focus({ window = \"address:%1\" })").arg(id), { "focuswindow", "address:" + id });
+    return false;
+}
+
+bool AppWindows::closeWindow(const QString &id)
+{
+    const QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP");
+#ifdef HAVE_QTDBUS
+    if (desktop.contains("KDE")) {
+        runOnPlasma({ { "uuid", id } }, 1);
+        return true;
+    }
+#endif
+    if (desktop.contains("Hyprland"))
+        return dispatchOnHyprland(QString("hl.dsp.window.close({ window = \"address:%1\" })").arg(id), { "closewindow", "address:" + id });
+    return false;
 }

@@ -35,6 +35,7 @@ FocusScope {
     property var afterQuit: null
     // What the confirm box asks: [question, note, yes, no]
     property var question: []
+    property var openList: null
     property Item returnFocusTo: null
     property int tab: 1                         // opens on your gamertag blade
     property bool inControls: false             // on the media buttons (Media blade)
@@ -68,6 +69,7 @@ FocusScope {
     // on the dashboard, so over a game you're asked to quit the game first.
     readonly property var blades: [
         { title: "Games & Apps", rows: [
+            { label: "Open Apps", icon: "apps", asks: true, run: () => guide.showOpenApps() },
             { label: "Achievements", dashboard: true, run: () => guide.achievementsRequested() },
             { label: "Recent", dashboard: true, run: () => guide.recentsRequested() },
             { label: "My Games", dashboard: true, run: () => guide.shelfRequested() }
@@ -110,6 +112,7 @@ FocusScope {
     readonly property var current: blades[tab]
 
     function open() {
+        openList = null
         returnFocusTo = guide.Window.activeFocusItem
         tab = 1
         targetTab = 1
@@ -183,6 +186,14 @@ FocusScope {
     }
 
     function activateCurrent() {
+        if (openList !== null) {                // Open Apps: to that one
+            const window = openList[list.currentIndex]
+            if (window && window.id !== "") {
+                close()
+                Launcher.switchTo(window.id)
+            }
+            return
+        }
         if (inControls) {
             Launcher.run(mediaControls[control].command)    // the guide stays open
             return
@@ -200,6 +211,38 @@ FocusScope {
         }
         close()                                 // close first, so focus is back on the dashboard
         row.run()
+    }
+
+    // Open Apps: what's open, by its app's name and icon where it's one of
+    // yours, otherwise by its window's title
+    function showOpenApps() {
+        const apps = AppLibrary.all().map(app => ({ app: app, names: Launcher.appNames(app.command, app.icon) }))
+        const shown = Launcher.openWindows().map(window => {
+            const found = apps.find(a => a.names.some(name => window.names.includes(name)))
+            const icon = found && found.app.icon !== "" ? found.app.icon : ""
+            return { id: window.id, label: found ? found.app.name : window.title,
+                     image: icon !== "" ? "image://appicon/" + icon : "", icon: icon !== "" ? "" : "apps" }
+        })
+        openList = shown.length > 0 ? shown : [{ id: "", label: "Nothing's open", image: "", icon: "" }]
+        list.currentIndex = 0
+    }
+
+    function hideOpenApps() {
+        openList = null
+        list.currentIndex = 0                   // back on Open Apps
+    }
+
+    // X in Open Apps: close that one, the way its X would
+    function closeOpen() {
+        const at = list.currentIndex
+        const window = openList[at]
+        if (!window || window.id === "")
+            return
+        Launcher.closeWindow(window.id)
+        const rest = openList.slice()
+        rest.splice(at, 1)
+        openList = rest.length > 0 ? rest : [{ id: "", label: "Nothing's open", image: "", icon: "" }]
+        list.currentIndex = Math.min(at, openList.length - 1)      // the one after it (a new list starts at the top)
     }
 
     function goHome() {
@@ -365,7 +408,7 @@ FocusScope {
                     id: list
                     width: parent.width
                     height: guide.current.media ? 326 : parent.height
-                    model: guide.current.rows
+                    model: guide.openList !== null ? guide.openList : guide.current.rows
                     interactive: false
                     keyNavigationEnabled: true
                     highlightMoveDuration: 0
@@ -411,9 +454,11 @@ FocusScope {
                     }
                     Keys.onReturnPressed: guide.activateCurrent()
                     Keys.onEnterPressed: guide.activateCurrent()
-                    Keys.onEscapePressed: guide.close()
+                    Keys.onEscapePressed: guide.openList !== null ? guide.hideOpenApps() : guide.close()
                     Keys.onPressed: (event) => {
                         const left = event.key === Qt.Key_Left, right = event.key === Qt.Key_Right
+                        if (guide.openList !== null && (event.key === Qt.Key_Q || event.key === Qt.Key_E || left || right))
+                            guide.openList = null           // another blade: Open Apps closes
                         if (guide.inControls && (left || right)) {
                             // Left/right move between the media buttons
                             guide.control = Math.max(0, Math.min(guide.mediaControls.length - 1,
@@ -427,6 +472,9 @@ FocusScope {
                             event.accepted = true
                         } else if (event.key === Qt.Key_Y) {
                             guide.goHome()
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_X && guide.openList !== null) {
+                            guide.closeOpen()
                             event.accepted = true
                         } else if (event.key === Qt.Key_X) {
                             guide.close()
@@ -608,9 +656,9 @@ FocusScope {
         Row {
             x: 548; y: 793
             spacing: 30
-            ButtonHint { button: "A"; label: "Select" }
+            ButtonHint { button: "A"; label: guide.openList !== null ? "Switch To" : "Select" }
             ButtonHint { button: "B"; label: "Back" }
-            ButtonHint { button: "X"; label: "Sign Out" }
+            ButtonHint { button: "X"; label: guide.openList !== null ? "Close" : "Sign Out" }
             ButtonHint { button: "Y"; label: "Xbox Home" }
         }
     }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QList>
 #include <QString>
 #include <QStringList>
 
@@ -45,5 +46,23 @@ QStringList appNames(const QString &command, const QString &icon);
 // front and say so: then it isn't started a second time. On Plasma (KWin)
 // and Hyprland; elsewhere it always says no.
 bool raise(const QStringList &names);
+
+// An app's window that's open: an id to bring it to the front or close it
+// with, its program's process id, its title, and the names it goes by (its
+// window's IDs and its program's names, in lower case, to compare with
+// appNames())
+struct Window {
+    QString id;
+    qint64 pid = 0;
+    QString title;
+    QStringList names;
+};
+
+// Every app's window that's open, not the dashboard's (Plasma and Hyprland)
+QList<Window> windows();
+
+// Bring that window to the front, or close it the way its X would
+bool activate(const QString &id);
+bool closeWindow(const QString &id);
 
 }
