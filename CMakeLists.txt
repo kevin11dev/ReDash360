@@ -74,6 +74,7 @@ set(qml_files
     qml/AddOnsScreen.qml
     qml/UpdateScreen.qml
     qml/icons.js
+    qml/LaptopBattery.qml
 )
 
 # Inside the module each file keeps its plain name (Main.qml, not
@@ -115,6 +116,7 @@ qt_add_qml_module(appReDash360
         src/news.h src/news.cpp
         src/loginscreen.h src/loginscreen.cpp
         src/controllerwatch.h
+        src/battery.h src/battery.cpp
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

@@ -382,6 +382,15 @@ FocusScope {
             }
         }
 
+        // A laptop's own battery, beside the clock
+        LaptopBattery {
+            anchors.right: clock.left
+            anchors.rightMargin: 26
+            anchors.verticalCenter: clock.verticalCenter
+            color: "#F0F0F0"
+            fontSize: 28
+        }
+
         // The blades: the current one's rows (and media buttons) in the white
         // panel, and a strip for each
         Item {
