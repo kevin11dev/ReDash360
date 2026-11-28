@@ -285,12 +285,13 @@ Rectangle {
         Behavior on opacity { NumberAnimation { duration: 300 } }
 
         Avatar {
+            id: figure
             lit: profile.current
             source: profile.shared + "avatar"
         }
 
         Column {
-            x: 205; y: 52
+            x: Math.max(205, figure.pictureRight + 6); y: 52
             width: 290
 
             Text {                              // "SIGNING IN..." above the picture, like the 360

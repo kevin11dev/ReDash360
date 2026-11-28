@@ -9,6 +9,9 @@ Item {
     id: avatar
     property bool lit: false
     property string source                      // their avatar, if they have one
+    // Where the picture ends on the right, so a wide one doesn't run under
+    // the name next to it
+    readonly property real pictureRight: own.visible ? own.x + (own.width + own.paintedWidth) / 2 : 205
 
     width: 220
     height: 410
